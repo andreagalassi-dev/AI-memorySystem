@@ -18,6 +18,13 @@ non esiste nel dato strutturato recuperato (guardrail deterministico non-LLM, ve
 - Usa sempre la **plan mode** prima di scrivere codice: mostrami il piano, aspetta ok, poi esegui.
 - A fine Punto: confronta il risultato col DoD del Punto, fai un commit, e fermati.
 
+## Note per il gate P1
+IMPORTANT: le sfide di ingestion individuate sul corpus reale (parser tabelle,
+immagini/schemi, chunking, dual-indexing, multilingua) sono registrate in
+`docs/ingestion-challenges.md`. Sono **note pre-gate, non decisioni**:
+l'architettura di ingestion si fissa a P1/P2 **dopo** lo spike di estrazione
+reale. Leggile prima di pianificare P1.
+
 ## Stack deciso (dettaglio in SPEC §L0)
 - Container: Docker + docker-compose. Servizi: backend, qdrant, ocr, ui.
 - LLM locale: Ollama / LM Studio. Hardware disponibile: Apple Silicon + NVIDIA RTX.
