@@ -21,7 +21,6 @@ dist/
 .venv/
 venv/
 .uv/
-uv.lock
 
 # --- Test / coverage ---
 .pytest_cache/
