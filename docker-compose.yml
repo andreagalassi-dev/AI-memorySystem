@@ -1,0 +1,80 @@
+# AI Knowledge Engine Manifatturiero — Fase 0 locale, single-tenant.
+# Scheletro servizi (P0.2): backend, qdrant, ocr, ui.
+# I servizi Python sono placeholder che restano "healthy" in attesa del codice
+# dei Punti successivi (montato via volume ./src).
+
+services:
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: aike_qdrant
+    ports:
+      - "6333:6333"   # REST
+      - "6334:6334"   # gRPC
+    volumes:
+      - qdrant_storage:/qdrant/storage
+    networks:
+      - aike_net
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: .
+      dockerfile: docker/backend.Dockerfile
+    container_name: aike_backend
+    depends_on:
+      qdrant:
+        condition: service_started
+    env_file:
+      - path: .env
+        required: false
+    volumes:
+      - ./src:/app/src
+    ports:
+      - "8000:8000"
+    networks:
+      - aike_net
+    restart: unless-stopped
+
+  ocr:
+    build:
+      context: .
+      dockerfile: docker/ocr.Dockerfile
+    container_name: aike_ocr
+    depends_on:
+      qdrant:
+        condition: service_started
+    env_file:
+      - path: .env
+        required: false
+    volumes:
+      - ./src:/app/src
+      - ./corpus:/app/corpus
+    networks:
+      - aike_net
+    restart: unless-stopped
+
+  ui:
+    build:
+      context: .
+      dockerfile: docker/ui.Dockerfile
+    container_name: aike_ui
+    depends_on:
+      backend:
+        condition: service_started
+    env_file:
+      - path: .env
+        required: false
+    volumes:
+      - ./src:/app/src
+    ports:
+      - "8501:8501"
+    networks:
+      - aike_net
+    restart: unless-stopped
+
+networks:
+  aike_net:
+    driver: bridge
+
+volumes:
+  qdrant_storage:
