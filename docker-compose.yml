@@ -29,8 +29,9 @@ services:
         required: false
     volumes:
       - ./src:/app/src
-    ports:
-      - "8000:8000"
+    # Nessuna pubblicazione porte finche' e' placeholder: non serve HTTP e
+    # occuperebbe host:8000 impedendo l'uvicorn locale. Riaggiungere "8000:8000"
+    # quando il container servira' davvero il backend (deps nell'immagine).
     networks:
       - aike_net
     restart: unless-stopped
@@ -66,8 +67,7 @@ services:
         required: false
     volumes:
       - ./src:/app/src
-    ports:
-      - "8501:8501"
+    # Porta 8501 da riaggiungere quando la UI Streamlit servira' davvero (P5).
     networks:
       - aike_net
     restart: unless-stopped
