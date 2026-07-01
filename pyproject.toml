@@ -1,0 +1,33 @@
+[project]
+name = "ai-knowledge-engine"
+version = "0.0.0"
+description = "RAG ibrido verticale per il manifatturiero — Fase 0 locale, single-tenant"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.29",
+    "pydantic>=2.6",
+    "pydantic-settings>=2.2",
+    "python-dotenv>=1.0",
+    "qdrant-client>=1.9",
+    "ollama>=0.2",
+    "streamlit>=1.33",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.4",
+]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
