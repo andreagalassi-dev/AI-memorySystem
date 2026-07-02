@@ -47,8 +47,9 @@ from src.ingestion.embedding import (  # noqa: E402
 )
 
 CHUNKS_DIR = ROOT / "output" / "spike" / "chunks"
-TABLE_IDS = ["MAMOLI_P231_IT", "MAMOLI_P060_IT"]
-EXPECTED_TOTAL = 173  # 89 (P231) + 84 (P060), come da report P2.2
+TABLE_IDS = ["MAMOLI_P231_IT", "MAMOLI_P060_IT",
+             "DELITOOLS_EN", "ELECTROLUX_EN", "ELECTROLUX_ES"]
+EXPECTED_TOTAL = 234  # 89+84 (Mamoli P2.2) + 19+21+21 (CSV XLSX P2.4)
 UPSERT_BATCH = 64
 EXACT_CODE = "V09156800007"   # canale lessicale, worst-case P231
 SHARED_CODE = "11282"         # codice corto ripetuto su piu' blocchi P060

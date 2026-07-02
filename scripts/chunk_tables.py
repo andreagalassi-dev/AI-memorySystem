@@ -33,9 +33,11 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from src.ingestion.chunking import chunk_table  # noqa: E402
+from src.ingestion.csv_chunks import CSV_TABLES, chunk_csv_table  # noqa: E402
 
 NORM = ROOT / "output" / "spike" / "docling_normalized"
 OUT = ROOT / "output" / "spike" / "chunks"
+GT_DIR = ROOT / "data" / "ground_truth"
 
 # Metadati di citazione per table_id (per lo spike; a regime dal catalogo corpus).
 TABLE_META = {
@@ -118,6 +120,47 @@ def main() -> int:
         print(f"        riconciliazione CSV: valori={rec['csv_values']} "
               f"inventati={rec['invented_codes'] or 'nessuno'} "
               f"non-spiegati={rec['unaccounted_values'] or 'nessuno'}")
+
+    # --- tabelle CSV (XLSX estratti in P1, codeAcc baseline 1.0) ----------------
+    # Contratto: estrazione pulita => corrispondenza 1:1 col GT annotato
+    # (multiset su pos/codice/desc/qty). Qualsiasi scarto = exit 1.
+    from collections import Counter
+    for tid, cfg in CSV_TABLES.items():
+        csv_path = ROOT / cfg["path"]
+        if not csv_path.exists():
+            print(f"[chunk] FATALE: input assente {csv_path}")
+            return 1
+        res = chunk_csv_table(tid, csv_path.read_text(encoding="utf-8"), cfg)
+        chunks, rejects, report = res["chunks"], res["rejects"], res["report"]
+
+        d = OUT / tid
+        d.mkdir(parents=True, exist_ok=True)
+        with (d / "chunks.jsonl").open("w", encoding="utf-8") as fh:
+            for c in chunks:
+                fh.write(json.dumps(asdict(c), ensure_ascii=False) + "\n")
+        with (d / "_rejects.jsonl").open("w", encoding="utf-8") as fh:
+            for r in rejects:
+                fh.write(json.dumps(asdict(r), ensure_ascii=False) + "\n")
+
+        gt_rows = list(csv.DictReader(
+            (GT_DIR / tid / "expected.csv").open(encoding="utf-8")))
+        cgt = Counter((g["pos"], g["codice"], g["descrizione"], g["quantita"])
+                      for g in gt_rows)
+        cch = Counter((c.pos or "", c.code or "", c.desc or "", c.qty or "")
+                      for c in chunks)
+        gt_ok = cgt == cch
+        report["gt_contract"] = {"gt_rows": len(gt_rows), "match": gt_ok,
+                                 "solo_chunk": list(map(list, (cch - cgt))),
+                                 "solo_gt": list(map(list, (cgt - cch)))}
+        full_report[tid] = report
+        contract_ok &= gt_ok
+        ch = report["chunks"]
+        print(f"[chunk] {tid}: chunks={ch['total']} (ok={ch['ok']} "
+              f"degraded={ch['degraded']} senza_codice={ch['senza_codice']}) "
+              f"rejects={report['rejects'] or '{}'} GT 1:1={'OK' if gt_ok else 'FAIL'}")
+        if not gt_ok:
+            print(f"        solo_chunk={report['gt_contract']['solo_chunk']}")
+            print(f"        solo_gt={report['gt_contract']['solo_gt']}")
 
     (OUT / "_chunking_report.json").write_text(
         json.dumps(full_report, indent=2, ensure_ascii=False), encoding="utf-8")

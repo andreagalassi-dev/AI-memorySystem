@@ -262,22 +262,23 @@ def extract_raw_record(cells: list[str], seg: Segment, block: int,
 class Chunk:
     chunk_id: str
     text: str
-    code: str
-    code_raw: str
+    code: str | None       # None = riga legittimamente senza codice (es. DeliTools)
+    code_raw: str | None
     normalization_type: str | None
     pos: str | None
     desc: str | None
     qty: str | None
     price: str | None
     doc: str
-    page: int
+    page: int                 # 0 per sorgenti XLSX (l'ancora e' `sheet`)
     lang: str
     table_index: int
     row_index: int
     segment: str
     status: str
     warnings: list[str]
-    source_cells: list[str]   # celle md originarie del record (audit trail)
+    source_cells: list[str]   # celle sorgente del record (audit trail)
+    sheet: str | None = None  # foglio XLSX per la citazione (None per i PDF)
 
 
 @dataclass
