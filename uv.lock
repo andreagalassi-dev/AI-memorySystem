@@ -45,7 +45,7 @@ requires-dist = [
     { name = "pydantic-settings", specifier = ">=2.2" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
     { name = "python-dotenv", specifier = ">=1.0" },
-    { name = "qdrant-client", specifier = ">=1.9" },
+    { name = "qdrant-client", specifier = ">=1.18,<2.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.4" },
     { name = "streamlit", specifier = ">=1.33" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.29" },
