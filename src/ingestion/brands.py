@@ -61,6 +61,15 @@ def all_token_patterns() -> list[re.Pattern]:
             for fam in p.get("long_families", [])]
 
 
+def all_extract_patterns() -> list[re.Pattern]:
+    """Regex di ESTRAZIONE (tolleranti a spazi/markup, NON ancorate) di TUTTI i
+    brand. Usate dal guardrail P3.1 per catturare codici spezzati da spazi
+    (V0 91568 00007) e codici-doppi fusi. Vedi all_token_patterns per la forma
+    canonica ancorata."""
+    return [fam["_extract"] for p in _config()["profiles"].values()
+            for fam in p.get("long_families", [])]
+
+
 def normalize_cell(cell: str, profile: dict) -> tuple[list[str], list[dict]]:
     """Motore generico di normalizzazione cella guidato dal profilo.
 
