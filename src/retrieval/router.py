@@ -35,6 +35,13 @@ MARKERS = {"codice", "cod", "cod.", "code", "art", "art.", "articolo",
            "part", "pn", "p/n", "ricambio", "referencia", "código", "codigo",
            "number", "numero", "n.", "nr", "nr."}
 
+# Marker di intento VISIVO (P2.7): la query chiede un esploso/schema/disegno
+# -> collection visiva aike_pages_visual. Multi-lingua IT/EN/DE/ES.
+VISUAL_MARKERS = {"esploso", "esplosa", "esplosi", "spaccato", "schema",
+                  "schemi", "tavola", "disegno", "figura", "mostrami",
+                  "exploded", "diagram", "drawing", "wiring", "schematic",
+                  "explosionszeichnung", "zeichnung", "despiece", "diagrama"}
+
 TOKEN_RE = re.compile(r"[0-9A-Za-zÀ-ÿ][0-9A-Za-zÀ-ÿ./*-]*")
 _HAS_DIGIT = re.compile(r"\d")
 
@@ -84,6 +91,14 @@ def classify_query(query: str) -> QueryRoute:
     if code_token is None and len(tokens) == 1 and _codey(tokens[0]):
         code_token = tokens[0].upper()
         reason = "tier B: query a token singolo con cifre"
+
+    # Intento visivo: prevale sulle classi testuali (l'eventuale code_token
+    # trovato sopra viene conservato: l'esploso E la riga ricambio).
+    visual_hits = [t for t in tokens if t.lower() in VISUAL_MARKERS]
+    if visual_hits:
+        return QueryRoute("visual", code_token,
+                          f"marker visivo '{visual_hits[0]}' -> collection visiva"
+                          + (f" + lessicale su {code_token}" if code_token else ""))
 
     if code_token is None:
         return QueryRoute("natural", None, "nessun token-codice riconosciuto")

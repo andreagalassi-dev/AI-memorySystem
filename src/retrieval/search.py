@@ -69,3 +69,26 @@ def search(client: QdrantClient, query: str, strategy: str, limit: int = 10):
                 with_payload=True, limit=limit).points
         return search(client, query, "rrf", limit)
     raise ValueError(f"strategia sconosciuta: {strategy}")
+
+
+def search_unified(client: QdrantClient, query: str, limit: int = 10) -> dict:
+    """Instradamento unificato testo/visione (P2.7).
+
+    - query 'visual' -> collection visiva (pagine citabili con render);
+      se porta anche un codice -> IN AGGIUNTA il canale lessicale su
+      aike_chunks (l'esploso E la riga ricambio);
+    - tutto il resto -> strategia routed su aike_chunks (invariata).
+    Ritorna {"route", "reason", "text_hits", "visual_hits"}.
+    """
+    from src.retrieval.visual import search_visual
+
+    route = classify_query(query)
+    if route.query_type == "visual":
+        visual = search_visual(client, query, limit)
+        text = (search(client, route.code_token, "sparse", limit)
+                if route.code_token else [])
+        return {"route": "visual", "reason": route.reason,
+                "text_hits": text, "visual_hits": visual}
+    return {"route": route.query_type, "reason": route.reason,
+            "text_hits": search(client, query, "routed", limit),
+            "visual_hits": []}
