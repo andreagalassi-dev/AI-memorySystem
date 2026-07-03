@@ -1,0 +1,1026 @@
+{
+  "date": "2026-07-04",
+  "eval_set": "eval_set_v1.jsonl",
+  "tau": {
+    "tau_hi": 0.9,
+    "tau_lo": 0.0054
+  },
+  "sweep_reranker": [
+    {
+      "tau_lo": 0.0,
+      "silence_recall": 0.0,
+      "pigrizia_rate": 0.0
+    },
+    {
+      "tau_lo": 0.05,
+      "silence_recall": 0.184,
+      "pigrizia_rate": 0.238
+    },
+    {
+      "tau_lo": 0.1,
+      "silence_recall": 0.289,
+      "pigrizia_rate": 0.286
+    },
+    {
+      "tau_lo": 0.2,
+      "silence_recall": 0.474,
+      "pigrizia_rate": 0.381
+    },
+    {
+      "tau_lo": 0.3,
+      "silence_recall": 0.553,
+      "pigrizia_rate": 0.381
+    },
+    {
+      "tau_lo": 0.5,
+      "silence_recall": 0.658,
+      "pigrizia_rate": 0.476
+    }
+  ],
+  "measure": {
+    "overall": {
+      "n": 78,
+      "n_should_silence": 43,
+      "n_answerable_hit1": 35,
+      "silenzio_giusto": 10,
+      "silence_recall": 0.233,
+      "pigrizia": 4,
+      "pigrizia_rate": 0.114,
+      "risposte_su_da_tacere": 33,
+      "livelli": {
+        "ALTA": 13,
+        "BASSA": 14,
+        "MEDIA": 51
+      }
+    },
+    "per_lang": {
+      "DE": {
+        "n": 10,
+        "n_should_silence": 4,
+        "n_answerable_hit1": 6,
+        "silenzio_giusto": 1,
+        "silence_recall": 0.25,
+        "pigrizia": 1,
+        "pigrizia_rate": 0.167,
+        "risposte_su_da_tacere": 3,
+        "livelli": {
+          "ALTA": 2,
+          "BASSA": 2,
+          "MEDIA": 6
+        }
+      },
+      "EN": {
+        "n": 18,
+        "n_should_silence": 8,
+        "n_answerable_hit1": 10,
+        "silenzio_giusto": 3,
+        "silence_recall": 0.375,
+        "pigrizia": 2,
+        "pigrizia_rate": 0.2,
+        "risposte_su_da_tacere": 5,
+        "livelli": {
+          "ALTA": 6,
+          "BASSA": 5,
+          "MEDIA": 7
+        }
+      },
+      "ES": {
+        "n": 5,
+        "n_should_silence": 2,
+        "n_answerable_hit1": 3,
+        "silenzio_giusto": 1,
+        "silence_recall": 0.5,
+        "pigrizia": 0,
+        "pigrizia_rate": 0.0,
+        "risposte_su_da_tacere": 1,
+        "livelli": {
+          "ALTA": 0,
+          "BASSA": 1,
+          "MEDIA": 4
+        }
+      },
+      "FR": {
+        "n": 4,
+        "n_should_silence": 1,
+        "n_answerable_hit1": 3,
+        "silenzio_giusto": 0,
+        "silence_recall": 0.0,
+        "pigrizia": 1,
+        "pigrizia_rate": 0.333,
+        "risposte_su_da_tacere": 1,
+        "livelli": {
+          "ALTA": 0,
+          "BASSA": 1,
+          "MEDIA": 3
+        }
+      },
+      "IT": {
+        "n": 41,
+        "n_should_silence": 28,
+        "n_answerable_hit1": 13,
+        "silenzio_giusto": 5,
+        "silence_recall": 0.179,
+        "pigrizia": 0,
+        "pigrizia_rate": 0.0,
+        "risposte_su_da_tacere": 23,
+        "livelli": {
+          "ALTA": 5,
+          "BASSA": 5,
+          "MEDIA": 31
+        }
+      }
+    },
+    "per_scorer": {
+      "bm25": {
+        "n": 19,
+        "n_should_silence": 5,
+        "n_answerable_hit1": 14,
+        "silenzio_giusto": 5,
+        "silence_recall": 1.0,
+        "pigrizia": 2,
+        "pigrizia_rate": 0.143,
+        "risposte_su_da_tacere": 0,
+        "livelli": {
+          "ALTA": 8,
+          "BASSA": 7,
+          "MEDIA": 4
+        }
+      },
+      "reranker": {
+        "n": 59,
+        "n_should_silence": 38,
+        "n_answerable_hit1": 21,
+        "silenzio_giusto": 5,
+        "silence_recall": 0.132,
+        "pigrizia": 2,
+        "pigrizia_rate": 0.095,
+        "risposte_su_da_tacere": 33,
+        "livelli": {
+          "ALTA": 5,
+          "BASSA": 7,
+          "MEDIA": 47
+        }
+      }
+    }
+  },
+  "rows": [
+    {
+      "qa_id": "W001",
+      "lang": "IT",
+      "query_type": "natural",
+      "scorer": "reranker",
+      "margin": 0.6363,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": null,
+      "cat": "POS_MISS"
+    },
+    {
+      "qa_id": "W002",
+      "lang": "IT",
+      "query_type": "natural",
+      "scorer": "reranker",
+      "margin": 0.7304,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": null,
+      "cat": "POS_MISS"
+    },
+    {
+      "qa_id": "W003",
+      "lang": "IT",
+      "query_type": "natural",
+      "scorer": "reranker",
+      "margin": 0.7587,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": null,
+      "cat": "POS_MISS"
+    },
+    {
+      "qa_id": "W004",
+      "lang": "IT",
+      "query_type": "natural",
+      "scorer": "reranker",
+      "margin": 0.7104,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": null,
+      "cat": "POS_MISS"
+    },
+    {
+      "qa_id": "W005",
+      "lang": "IT",
+      "query_type": "natural",
+      "scorer": "reranker",
+      "margin": 0.5047,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": null,
+      "cat": "POS_MISS"
+    },
+    {
+      "qa_id": "W006",
+      "lang": "IT",
+      "query_type": "mixed",
+      "scorer": "reranker",
+      "margin": 0.9936,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": 1,
+      "cat": "POS_HIT1"
+    },
+    {
+      "qa_id": "W007",
+      "lang": "IT",
+      "query_type": "natural",
+      "scorer": "reranker",
+      "margin": 0.0343,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": 10,
+      "cat": "POS_MISS"
+    },
+    {
+      "qa_id": "W008",
+      "lang": "IT",
+      "query_type": "natural",
+      "scorer": "reranker",
+      "margin": 0.8258,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": null,
+      "cat": "POS_MISS"
+    },
+    {
+      "qa_id": "W009",
+      "lang": "IT",
+      "query_type": "mixed",
+      "scorer": "reranker",
+      "margin": 0.6831,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": 1,
+      "cat": "POS_HIT1"
+    },
+    {
+      "qa_id": "W010",
+      "lang": "IT",
+      "query_type": "natural",
+      "scorer": "reranker",
+      "margin": 0.0975,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": null,
+      "cat": "POS_MISS"
+    },
+    {
+      "qa_id": "W011",
+      "lang": "IT",
+      "query_type": "natural",
+      "scorer": "reranker",
+      "margin": 0.8889,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": null,
+      "cat": "POS_MISS"
+    },
+    {
+      "qa_id": "W012",
+      "lang": "IT",
+      "query_type": "natural",
+      "scorer": "reranker",
+      "margin": 0.1137,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": 1,
+      "cat": "POS_HIT1"
+    },
+    {
+      "qa_id": "W013",
+      "lang": "IT",
+      "query_type": "code",
+      "scorer": "bm25",
+      "margin": 0.351,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": 1,
+      "cat": "POS_HIT1"
+    },
+    {
+      "qa_id": "W014",
+      "lang": "IT",
+      "query_type": "natural",
+      "scorer": "reranker",
+      "margin": 0.7734,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": null,
+      "cat": "POS_MISS"
+    },
+    {
+      "qa_id": "W015",
+      "lang": "IT",
+      "query_type": "natural",
+      "scorer": "reranker",
+      "margin": 0.5054,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": 1,
+      "cat": "POS_HIT1"
+    },
+    {
+      "qa_id": "W016",
+      "lang": "IT",
+      "query_type": "code",
+      "scorer": "bm25",
+      "margin": 1.0,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": 1,
+      "cat": "POS_HIT1"
+    },
+    {
+      "qa_id": "W017",
+      "lang": "IT",
+      "query_type": "natural",
+      "scorer": "reranker",
+      "margin": 0.0054,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": 1,
+      "cat": "POS_HIT1"
+    },
+    {
+      "qa_id": "W018",
+      "lang": "IT",
+      "query_type": "natural",
+      "scorer": "reranker",
+      "margin": 0.2589,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": null,
+      "cat": "POS_MISS"
+    },
+    {
+      "qa_id": "W019",
+      "lang": "IT",
+      "query_type": "natural",
+      "scorer": "reranker",
+      "margin": 0.1245,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": 2,
+      "cat": "POS_MISS"
+    },
+    {
+      "qa_id": "W020",
+      "lang": "IT",
+      "query_type": "natural",
+      "scorer": "reranker",
+      "margin": 0.4869,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": 6,
+      "cat": "POS_MISS"
+    },
+    {
+      "qa_id": "W021",
+      "lang": "IT",
+      "query_type": "code",
+      "scorer": "bm25",
+      "margin": 1.0,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": 1,
+      "cat": "POS_HIT1"
+    },
+    {
+      "qa_id": "W022",
+      "lang": "IT",
+      "query_type": "natural",
+      "scorer": "reranker",
+      "margin": 0.7694,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": null,
+      "cat": "POS_MISS"
+    },
+    {
+      "qa_id": "W023",
+      "lang": "IT",
+      "query_type": "natural",
+      "scorer": "reranker",
+      "margin": 0.159,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": null,
+      "cat": "POS_MISS"
+    },
+    {
+      "qa_id": "W024",
+      "lang": "EN",
+      "query_type": "code",
+      "scorer": "bm25",
+      "margin": 0.0027,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": 1,
+      "cat": "POS_HIT1"
+    },
+    {
+      "qa_id": "W025",
+      "lang": "EN",
+      "query_type": "natural",
+      "scorer": "reranker",
+      "margin": 0.1993,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": null,
+      "cat": "POS_MISS"
+    },
+    {
+      "qa_id": "W026",
+      "lang": "EN",
+      "query_type": "code",
+      "scorer": "bm25",
+      "margin": 0.0026,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": 2,
+      "cat": "POS_MISS"
+    },
+    {
+      "qa_id": "W027",
+      "lang": "IT",
+      "query_type": "natural",
+      "scorer": "reranker",
+      "margin": 0.1319,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": null,
+      "cat": "POS_MISS"
+    },
+    {
+      "qa_id": "W028",
+      "lang": "EN",
+      "query_type": "code",
+      "scorer": "reranker",
+      "margin": 0.1825,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": null,
+      "cat": "POS_MISS"
+    },
+    {
+      "qa_id": "W029",
+      "lang": "EN",
+      "query_type": "natural",
+      "scorer": "reranker",
+      "margin": 0.0,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": null,
+      "cat": "POS_MISS"
+    },
+    {
+      "qa_id": "W030",
+      "lang": "EN",
+      "query_type": "code",
+      "scorer": "bm25",
+      "margin": 1.0,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": 1,
+      "cat": "POS_HIT1"
+    },
+    {
+      "qa_id": "W031",
+      "lang": "EN",
+      "query_type": "mixed",
+      "scorer": "reranker",
+      "margin": 0.9899,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": 1,
+      "cat": "POS_HIT1"
+    },
+    {
+      "qa_id": "W032",
+      "lang": "EN",
+      "query_type": "code",
+      "scorer": "bm25",
+      "margin": 0.166,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": 1,
+      "cat": "POS_HIT1"
+    },
+    {
+      "qa_id": "W033",
+      "lang": "IT",
+      "query_type": "natural",
+      "scorer": "reranker",
+      "margin": 0.2765,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": 5,
+      "cat": "POS_MISS"
+    },
+    {
+      "qa_id": "W034",
+      "lang": "EN",
+      "query_type": "code",
+      "scorer": "bm25",
+      "margin": 0.008,
+      "has_evidence": true,
+      "unreliable": true,
+      "gold_rank": 1,
+      "cat": "POS_HIT1"
+    },
+    {
+      "qa_id": "W035",
+      "lang": "EN",
+      "query_type": "code",
+      "scorer": "bm25",
+      "margin": 1.0,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": 1,
+      "cat": "POS_HIT1"
+    },
+    {
+      "qa_id": "W036",
+      "lang": "EN",
+      "query_type": "mixed",
+      "scorer": "reranker",
+      "margin": 0.1343,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": null,
+      "cat": "POS_MISS"
+    },
+    {
+      "qa_id": "W037",
+      "lang": "EN",
+      "query_type": "code",
+      "scorer": "bm25",
+      "margin": 1.0,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": 1,
+      "cat": "POS_HIT1"
+    },
+    {
+      "qa_id": "W038",
+      "lang": "EN",
+      "query_type": "code",
+      "scorer": "bm25",
+      "margin": 1.0,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": 1,
+      "cat": "POS_HIT1"
+    },
+    {
+      "qa_id": "W039",
+      "lang": "IT",
+      "query_type": "natural",
+      "scorer": "reranker",
+      "margin": 0.6816,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": null,
+      "cat": "POS_MISS"
+    },
+    {
+      "qa_id": "W040",
+      "lang": "EN",
+      "query_type": "code",
+      "scorer": "bm25",
+      "margin": 1.0,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": 1,
+      "cat": "POS_HIT1"
+    },
+    {
+      "qa_id": "W041",
+      "lang": "IT",
+      "query_type": "natural",
+      "scorer": "reranker",
+      "margin": 0.8846,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": 1,
+      "cat": "POS_HIT1"
+    },
+    {
+      "qa_id": "W042",
+      "lang": "IT",
+      "query_type": "mixed",
+      "scorer": "reranker",
+      "margin": 0.9887,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": 1,
+      "cat": "POS_HIT1"
+    },
+    {
+      "qa_id": "W043",
+      "lang": "IT",
+      "query_type": "natural",
+      "scorer": "reranker",
+      "margin": 0.0585,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": 17,
+      "cat": "POS_MISS"
+    },
+    {
+      "qa_id": "W044",
+      "lang": "IT",
+      "query_type": "natural",
+      "scorer": "reranker",
+      "margin": 0.1097,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": null,
+      "cat": "POS_MISS"
+    },
+    {
+      "qa_id": "W045",
+      "lang": "IT",
+      "query_type": "natural",
+      "scorer": "reranker",
+      "margin": 0.0,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": null,
+      "cat": "POS_MISS"
+    },
+    {
+      "qa_id": "W046",
+      "lang": "DE",
+      "query_type": "natural",
+      "scorer": "reranker",
+      "margin": 0.4054,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": 9,
+      "cat": "POS_MISS"
+    },
+    {
+      "qa_id": "W047",
+      "lang": "DE",
+      "query_type": "mixed",
+      "scorer": "reranker",
+      "margin": 0.0,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": 1,
+      "cat": "POS_HIT1"
+    },
+    {
+      "qa_id": "W048",
+      "lang": "DE",
+      "query_type": "natural",
+      "scorer": "reranker",
+      "margin": 0.4272,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": null,
+      "cat": "POS_MISS"
+    },
+    {
+      "qa_id": "W049",
+      "lang": "DE",
+      "query_type": "natural",
+      "scorer": "reranker",
+      "margin": 0.5546,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": 2,
+      "cat": "POS_MISS"
+    },
+    {
+      "qa_id": "W050",
+      "lang": "DE",
+      "query_type": "natural",
+      "scorer": "reranker",
+      "margin": 0.0072,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": 1,
+      "cat": "POS_HIT1"
+    },
+    {
+      "qa_id": "W051",
+      "lang": "DE",
+      "query_type": "code",
+      "scorer": "bm25",
+      "margin": 1.0,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": 1,
+      "cat": "POS_HIT1"
+    },
+    {
+      "qa_id": "W052",
+      "lang": "DE",
+      "query_type": "natural",
+      "scorer": "reranker",
+      "margin": 0.6739,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": 1,
+      "cat": "POS_HIT1"
+    },
+    {
+      "qa_id": "W053",
+      "lang": "DE",
+      "query_type": "natural",
+      "scorer": "reranker",
+      "margin": 0.066,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": 1,
+      "cat": "POS_HIT1"
+    },
+    {
+      "qa_id": "W054",
+      "lang": "DE",
+      "query_type": "code",
+      "scorer": "reranker",
+      "margin": 0.9981,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": 1,
+      "cat": "POS_HIT1"
+    },
+    {
+      "qa_id": "W055",
+      "lang": "FR",
+      "query_type": "code",
+      "scorer": "reranker",
+      "margin": 0.0017,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": 1,
+      "cat": "POS_HIT1"
+    },
+    {
+      "qa_id": "W056",
+      "lang": "FR",
+      "query_type": "natural",
+      "scorer": "reranker",
+      "margin": 0.5502,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": 1,
+      "cat": "POS_HIT1"
+    },
+    {
+      "qa_id": "W057",
+      "lang": "FR",
+      "query_type": "natural",
+      "scorer": "reranker",
+      "margin": 0.6149,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": 1,
+      "cat": "POS_HIT1"
+    },
+    {
+      "qa_id": "W058",
+      "lang": "IT",
+      "query_type": "natural",
+      "scorer": "reranker",
+      "margin": 0.584,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": null,
+      "cat": "POS_MISS"
+    },
+    {
+      "qa_id": "C001",
+      "lang": "IT",
+      "query_type": "code",
+      "scorer": "bm25",
+      "margin": 1.0,
+      "has_evidence": true,
+      "unreliable": true,
+      "gold_rank": 1,
+      "cat": "POS_HIT1"
+    },
+    {
+      "qa_id": "C002",
+      "lang": "IT",
+      "query_type": "code",
+      "scorer": "bm25",
+      "margin": 0.0,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": 2,
+      "cat": "POS_MISS"
+    },
+    {
+      "qa_id": "C003",
+      "lang": "EN",
+      "query_type": "code",
+      "scorer": "bm25",
+      "margin": 0.0,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": 1,
+      "cat": "POS_HIT1"
+    },
+    {
+      "qa_id": "C004",
+      "lang": "IT",
+      "query_type": "mixed",
+      "scorer": "reranker",
+      "margin": 0.9922,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": 1,
+      "cat": "POS_HIT1"
+    },
+    {
+      "qa_id": "C005",
+      "lang": "IT",
+      "query_type": "natural",
+      "scorer": "reranker",
+      "margin": 0.461,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": 1,
+      "cat": "POS_HIT1"
+    },
+    {
+      "qa_id": "C006",
+      "lang": "IT",
+      "query_type": "natural",
+      "scorer": "reranker",
+      "margin": 0.0963,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": 12,
+      "cat": "POS_MISS"
+    },
+    {
+      "qa_id": "C007",
+      "lang": "IT",
+      "query_type": "natural",
+      "scorer": "reranker",
+      "margin": 0.0035,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": 2,
+      "cat": "POS_MISS"
+    },
+    {
+      "qa_id": "C008",
+      "lang": "EN",
+      "query_type": "natural",
+      "scorer": "reranker",
+      "margin": 0.0665,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": 2,
+      "cat": "POS_MISS"
+    },
+    {
+      "qa_id": "C009",
+      "lang": "ES",
+      "query_type": "natural",
+      "scorer": "reranker",
+      "margin": 0.0325,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": 1,
+      "cat": "POS_HIT1"
+    },
+    {
+      "qa_id": "C010",
+      "lang": "ES",
+      "query_type": "natural",
+      "scorer": "reranker",
+      "margin": 0.7362,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": 3,
+      "cat": "POS_MISS"
+    },
+    {
+      "qa_id": "C011",
+      "lang": "ES",
+      "query_type": "natural",
+      "scorer": "reranker",
+      "margin": 0.4783,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": 1,
+      "cat": "POS_HIT1"
+    },
+    {
+      "qa_id": "C012",
+      "lang": "ES",
+      "query_type": "mixed",
+      "scorer": "reranker",
+      "margin": 0.1315,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": 1,
+      "cat": "POS_HIT1"
+    },
+    {
+      "qa_id": "N001",
+      "lang": "IT",
+      "query_type": "negative",
+      "scorer": "bm25",
+      "margin": 0.0,
+      "has_evidence": false,
+      "unreliable": false,
+      "gold_rank": null,
+      "cat": "NEG"
+    },
+    {
+      "qa_id": "N002",
+      "lang": "EN",
+      "query_type": "negative",
+      "scorer": "bm25",
+      "margin": 0.0,
+      "has_evidence": false,
+      "unreliable": false,
+      "gold_rank": null,
+      "cat": "NEG"
+    },
+    {
+      "qa_id": "N003",
+      "lang": "IT",
+      "query_type": "negative",
+      "scorer": "bm25",
+      "margin": 0.0,
+      "has_evidence": false,
+      "unreliable": false,
+      "gold_rank": null,
+      "cat": "NEG"
+    },
+    {
+      "qa_id": "N004",
+      "lang": "IT",
+      "query_type": "negative",
+      "scorer": "reranker",
+      "margin": 0.2258,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": null,
+      "cat": "NEG"
+    },
+    {
+      "qa_id": "N005",
+      "lang": "EN",
+      "query_type": "negative",
+      "scorer": "reranker",
+      "margin": 0.431,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": null,
+      "cat": "NEG"
+    },
+    {
+      "qa_id": "N006",
+      "lang": "ES",
+      "query_type": "negative",
+      "scorer": "reranker",
+      "margin": 0.0,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": null,
+      "cat": "NEG"
+    },
+    {
+      "qa_id": "N007",
+      "lang": "DE",
+      "query_type": "negative",
+      "scorer": "reranker",
+      "margin": 0.0,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": null,
+      "cat": "NEG"
+    },
+    {
+      "qa_id": "N008",
+      "lang": "FR",
+      "query_type": "negative",
+      "scorer": "reranker",
+      "margin": 0.0478,
+      "has_evidence": true,
+      "unreliable": false,
+      "gold_rank": null,
+      "cat": "NEG"
+    }
+  ]
+}

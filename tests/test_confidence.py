@@ -106,6 +106,10 @@ class TestProprietaGlobali:
         for kw in [{"gate": "BLOCK"}, {"unreliable": True}, {"margin": 0.1}]:
             assert confidence_level(sig(**kw), T).reason.strip()
 
+    def test_soglie_calibrate_v1_sane(self):
+        from src.retrieval.confidence import CALIBRATED_V1
+        assert 0 <= CALIBRATED_V1.tau_lo < CALIBRATED_V1.tau_hi <= 1
+
 
 # --------------------------------------------------------------- extract_signals
 

@@ -29,6 +29,16 @@ class Thresholds:
     tau_lo: float
 
 
+# Soglie calibrate su eval v1 (scripts/calibrate_confidence.py, 2026-07-04).
+# PROVVISORIE: il canale reranker NON e' separabile sul solo margine (POS_HIT1 e
+# POS_MISS si sovrappongono; 13/34 POS_MISS sono confident-wrong). tau_hi=0.90 e'
+# sopra il ceiling dei POS_MISS -> ALTA precision 1.0 (zero falsi-ALTA); tau_lo
+# basso -> BASSA-su-margine solo per retrieval indeciso, il resto -> MEDIA. Il
+# silenzio dei confident-wrong naturali e' rimandato a P3.3 (accordo testo-
+# visione). Da ri-fittare col set validato dal tecnico. Report: docs/p32-*.md.
+CALIBRATED_V1 = Thresholds(tau_hi=0.90, tau_lo=0.0054)
+
+
 @dataclass
 class Signals:
     gate: str                    # "PASS" | "VERIFY" | "BLOCK" (da P3.1)

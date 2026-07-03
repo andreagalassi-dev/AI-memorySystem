@@ -131,4 +131,8 @@ iniettate note; monotonia (margine ↑ non abbassa il livello a parità di resto
 - [ ] `confidence_level` implementa la matrice §5 riga-per-riga; fail-closed.
 - [ ] Auto-confidenza LLM **mai** usata (solo segnali oggettivi).
 - [ ] `A` resta `Optional`/`None` (logica visiva rimandata a P3.3).
-- [ ] Suite verde; commit. *(τ calibrati + misura per-lingua: sub-step §7.)*
+- [x] Suite verde; commit.
+- [x] **τ calibrati + misura "non lo so" per-lingua (§7)** → `docs/p32-nonloso-
+      calibration.md`. Esito: τ_hi 0.90 (ALTA precision 1.0, zero falsi-ALTA),
+      τ_lo 0.0054; margine reranker **misurato non-separabile** → silenzio dei
+      confident-wrong naturali rimandato a P3.3 (come previsto da §F.2/gancio #2).
