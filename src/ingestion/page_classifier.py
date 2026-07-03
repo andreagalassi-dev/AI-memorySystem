@@ -40,6 +40,11 @@ THRESHOLDS = {
     "NTL_CHARS": 50,       # sotto questi chars, con segnale grafico...
     "NTL_IMG": 0.50,       # ...raster pieno o vettoriale (testo-outline CAD):
     "NTL_DRAW": 300,       # scansione/vector-text senza text-layer -> corsia OCR
+    # v2 (P2.8a, punto cieco scoperto dall'eval visiva P2.7):
+    "T_ITEMS_EXTREME": 20000,  # segmenti vettoriali (items nei path): esplosi
+    "T_ITEMS_HEAVY": 4000,     # con pochi oggetti-path grandi (branson p68)
+    "T_BAND_IMG": 0.10,        # banda: raster moderato + testo moderato =
+    "T_BAND_CHARS": 350,       # esploso con didascalia/cover (11/12 nel GT banda)
 }
 
 
@@ -60,11 +65,16 @@ def page_features(page) -> dict:
     import fitz
 
     img_area = sum(abs(fitz.Rect(im["bbox"])) for im in imgs) / area
+    drawings = page.get_drawings()
     return {
         "chars": len("".join(text.split())),
         "n_images": len(imgs),
         "img_area_ratio": round(min(img_area, 1.0), 4),
-        "n_drawings": len(page.get_drawings()),
+        "n_drawings": len(drawings),
+        # v2: SEGMENTI dentro i path (un esploso puo' essere 54 oggetti-path
+        # da migliaia di segmenti: contare gli oggetti sottostima — punto
+        # cieco P2.5 trovato dall'eval visiva P2.7)
+        "n_draw_items": sum(len(d["items"]) for d in drawings),
     }
 
 
@@ -72,10 +82,12 @@ def classify(f: dict, t: dict = THRESHOLDS) -> PageClass:
     """Regole esplicite sulle feature. Pure function, unit-testabile."""
     chars, draw = f["chars"], f["n_drawings"]
     img, nimg = f["img_area_ratio"], f["n_images"]
+    items = f.get("n_draw_items", 0)
 
     text_rich = chars >= t["T_CHARS"]
     graphic_strong = (
         draw >= t["T_DRAW_EXTREME"]
+        or items >= t["T_ITEMS_EXTREME"]
         or (img >= t["T_IMG"] and chars < t["T_CHARS"])
         or nimg >= t["T_NIMG"]
     )
@@ -83,8 +95,9 @@ def classify(f: dict, t: dict = THRESHOLDS) -> PageClass:
                      and (img >= t["NTL_IMG"] or draw >= t["NTL_DRAW"]))
 
     if text_rich:
-        heavy = graphic_strong or draw >= t["T_DRAW_HEAVY"]
-        if heavy and draw >= t["RATIO_DRAW"] * chars:
+        heavy = (graphic_strong or draw >= t["T_DRAW_HEAVY"]
+                 or items >= t["T_ITEMS_HEAVY"])
+        if heavy and max(draw, items / 10) >= t["RATIO_DRAW"] * chars:
             # il disegno domina (wiring/esploso con molte etichette):
             # primaria grafica, ma il text-layer c'e' -> anche Docling
             return PageClass("grafica", True, False, False,
@@ -99,9 +112,17 @@ def classify(f: dict, t: dict = THRESHOLDS) -> PageClass:
 
     graphic_soft = (draw >= t["T_DRAW_SOFT"]
                     or (img >= t["T_IMG_LOW"] and chars < t["T_CHARS_LOW"]))
-    if graphic_strong or graphic_soft:
-        return PageClass("grafica", False, no_text_layer, False,
-                         f"grafica: draw={draw}, img_area={img}, chars={chars}"
+    # v2 — regola di banda (punto cieco P2.5): raster moderato + testo moderato
+    # = esploso con didascalia / cover / tavola con mini-tabella (11/12 nel GT
+    # di banda). dual: il poco testo (mini-tabelle con codici) resta a Docling.
+    band = img >= t["T_BAND_IMG"] and 100 <= chars < t["T_BAND_CHARS"]
+    if graphic_strong or graphic_soft or band:
+        dual = band and chars >= 100
+        return PageClass("grafica", dual, no_text_layer, False,
+                         f"grafica: draw={draw}, items={items}, img_area={img}, "
+                         f"chars={chars}"
+                         + (" [banda raster+testo moderati -> anche Docling]"
+                            if band else "")
                          + (" [senza text-layer -> corsia OCR]" if no_text_layer
                             else ""))
     return PageClass("testuale", False, False, True,

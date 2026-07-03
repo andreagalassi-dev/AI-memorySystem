@@ -4,7 +4,7 @@ construction_agricultural,branson_4520R_parts,22,grafica,0,0,50,
 construction_agricultural,branson_4520R_parts,47,testuale,0,0,399,
 construction_agricultural,branson_4520R_parts,69,grafica,0,0,46,
 construction_agricultural,gehl_v270_parts,137,testuale,0,0,602,
-construction_agricultural,gehl_v270_parts,167,testuale,1,0,158,
+construction_agricultural,gehl_v270_parts,167,grafica,1,0,158,GT-delta: foot valve esploso + tabellina
 construction_agricultural,gehl_v270_parts,94,grafica,0,0,1258,
 construction_agricultural,transtacker_6072_parts,26,grafica,0,0,341,
 construction_agricultural,transtacker_6072_parts,74,grafica,0,0,305,
@@ -20,7 +20,7 @@ corporate_brochures,trumpf_bending_brochure_EN,53,testuale,0,0,2169,
 engines,crusader_marine_L510008,61,testuale,0,0,1129,
 engines,kohler_industrial_tp7120,24,grafica,0,0,122,
 engines,kohler_marine_tp6954,116,testuale,1,0,957,
-engines,kohler_marine_tp6954,14,testuale,1,0,235,
+engines,kohler_marine_tp6954,14,grafica,1,0,235,GT-delta: flywheel + tabella 3 righe
 engines,kohler_marine_tp6954,134,grafica,1,0,216,"corretta dopo feature review: 216 chars = tabella minima, domina l'esploso"
 engines,rotax_912_914_IPC,59,grafica,0,0,189,
 engines,rotax_912iS_IPC,115,testuale,0,0,1090,
@@ -98,3 +98,17 @@ textile,stoll_CMS830C_spareparts,46,testuale,1,0,586,
 textile,stoll_CMS830C_spareparts,71,testuale,1,0,395,
 textile,stoll_CMS830C_spareparts,10,testuale,0,0,86,
 textile,stoll_CMS830C_spareparts,98,testuale,1,0,460,
+textile,stoll_CMS830C_spareparts,58,grafica,1,0,0,GT-banda P2.8a: esploso auxiliary take-down + mini-tabella
+textile,stoll_CMS830C_spareparts,127,grafica,1,0,0,GT-banda: accessori con disegni prodotto + mini-tabella
+textile,stoll_CMS830C_spareparts,92,grafica,1,0,0,GT-banda: stopping device esploso + mini-tabella
+textile,stoll_CMS830C_spareparts,107,grafica,1,0,0,GT-banda: shock stop drawing + mini-tabella
+engines,rotax_912_914_IPC,43,grafica,0,0,0,GT-banda: vacuum pump esploso
+construction_agricultural,transtacker_6072_parts,21,grafica,0,0,0,GT-banda: foto con callout
+original_dataset,DirectKitchen_Forni_Schemi_IT_EN,1,grafica,0,0,0,GT-banda: cover con disegno e checklist modelli
+textile,stoll_CMS830C_spareparts,93,grafica,1,0,0,GT-banda: stopping device destro
+original_dataset,Mamoli_Catalogo_Ricambi_2021_IT_EN,6,grafica,0,0,0,GT-banda: indice fotografico
+engines,rotax_912_914_IPC,117,grafica,0,0,0,GT-banda: flydat sensor set cavi
+engines,kohler_marine_tp6954,66,grafica,1,0,0,GT-banda: oil pressure switch + mini-tabella
+hydraulics,opacmare_catalogo_ricambi_idraulica,191,testuale,1,0,0,GT-banda: blocchi codice+descrizione con foto (11/12 grafiche nella banda)
+construction_agricultural,branson_4520R_parts,68,grafica,1,0,308,GT-delta P2.7: clutch release esploso vettoriale (54 path)
+pumps,iwaki_TC-X031VTN,2,testuale,1,0,724,GT-delta: cross-section + tabella vera (dual)

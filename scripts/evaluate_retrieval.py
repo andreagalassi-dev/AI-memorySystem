@@ -18,6 +18,7 @@ Uso: uv run scripts/evaluate_retrieval.py
 from __future__ import annotations
 
 import json
+import os
 import sys
 from collections import defaultdict
 from datetime import date
@@ -31,11 +32,32 @@ from src.ingestion.embedding import COLLECTION  # noqa: E402
 from src.retrieval.router import classify_query  # noqa: E402
 from src.retrieval.search import STRATEGIES, search  # noqa: E402
 
-EVAL_SET = ROOT / "data" / "eval" / "eval_set_v0.jsonl"
-OUT_JSON = ROOT / "output" / "eval" / "p24_results.json"
-OUT_MD = ROOT / "docs" / "p2-metrics.md"
+EVAL_SET = Path(os.environ.get("EVAL_SET",
+                               ROOT / "data" / "eval" / "eval_set_v0.jsonl"))
+_TAG = EVAL_SET.stem.replace("eval_set_", "")
+OUT_JSON = ROOT / "output" / "eval" / f"results_{_TAG}.json"
+OUT_MD = ROOT / "docs" / "p2-metrics.md"   # scritto solo per il set v0 (P2.4)
 KS = (1, 3, 5, 10)
 LIMIT = 10
+RERANK = os.environ.get("RERANK") == "1"
+
+# stopword minime multi-lingua per il conteggio dell'overlap lessicale
+_STOP = set("il lo la le i gli un una di a da in con su per tra fra del della "
+            "dei delle e o non che mi serve the a an of for to and or with on "
+            "in is are my der die das den dem des und mit für von ein eine "
+            "einer bei auf el la los las de del para con y o un una le les des "
+            "du et ou pour avec da dal dallo alla ai alle nel nella "
+            "che cosa quale quanti quante how many what which vom als "
+            "è e' ha ho al à au aux".split())
+
+
+def content_words(text: str) -> set[str]:
+    """Parole-contenuto: alfabetiche, non stopword, senza cifre (i codici e le
+    misure sono ammessi per contratto)."""
+    import re as _re
+
+    return {w for w in _re.findall(r"[a-zà-ÿäöüß]+", (text or "").lower())
+            if w not in _STOP and len(w) > 2}
 
 
 def load_pairs() -> list[dict]:
@@ -130,6 +152,31 @@ def main() -> int:
           f"({sum(1 for p in pairs if p['query_type'] != 'negative')} positive, "
           f"{sum(1 for p in pairs if p['query_type'] == 'negative')} negative)")
 
+    # ---- overlap lessicale query<->desc target (prova di avversarialita') ----
+    overlaps = []
+    for pair in pairs:
+        if pair["query_type"] in ("negative", "code"):
+            continue
+        target_descs = [p.get("desc") or "" for p in payloads
+                        if any(crit_match(p, c) for c in pair["expected"])]
+        if not target_descs:
+            continue
+        qw = content_words(pair["query"])
+        ov = min(len(qw & content_words(d)) for d in target_descs)
+        overlaps.append({"qa_id": pair["qa_id"], "overlap": ov})
+    ovs = sorted(o["overlap"] for o in overlaps)
+    overlap_stats = {"n": len(ovs),
+                     "mediana": ovs[len(ovs) // 2] if ovs else None,
+                     "max": max(ovs) if ovs else None,
+                     "sopra_1": [o["qa_id"] for o in overlaps if o["overlap"] > 1]}
+    print(f"[eval] overlap lessicale query<->target: mediana="
+          f"{overlap_stats['mediana']} max={overlap_stats['max']} "
+          f"sopra_1={overlap_stats['sopra_1']}")
+
+    import time as _time
+
+    strategies = list(STRATEGIES) + (["routed_rr"] if RERANK else [])
+    latency: dict = defaultdict(list)
     rows: list[dict] = []
     negatives: dict = defaultdict(list)   # (strategy, scala) -> top-1 scores
     positive_top1: dict = defaultdict(list)
@@ -138,8 +185,21 @@ def main() -> int:
     for pair in pairs:
         route = classify_query(pair["query"])
         routed_types[pair["qa_id"]] = route.query_type
-        for strategy in STRATEGIES:
-            hits = search(client, pair["query"], strategy, limit=LIMIT)
+        for strategy in strategies:
+            t0 = _time.time()
+            if strategy == "routed_rr":
+                # reranker SOLO su query non-code (il router decide anche qui)
+                if route.query_type == "code":
+                    hits = search(client, pair["query"], "routed", limit=LIMIT)
+                else:
+                    from src.retrieval.rerank import RERANK_TOPK, rerank
+
+                    base = search(client, pair["query"], "routed",
+                                  limit=RERANK_TOPK)
+                    hits = rerank(pair["query"], base, limit=LIMIT)
+            else:
+                hits = search(client, pair["query"], strategy, limit=LIMIT)
+            latency[strategy].append(_time.time() - t0)
             scale = strategy if strategy != "routed" else (
                 "sparse" if route.query_type == "code" else "rrf")
             top1 = hits[0].score if hits else 0.0
@@ -171,15 +231,26 @@ def main() -> int:
             "separabile": bool(negs and pos and max(negs) < min(pos)),
         }
 
+    lat_stats = {s: round(sorted(v)[len(v) // 2], 3)
+                 for s, v in latency.items() if v}
     OUT_JSON.parent.mkdir(parents=True, exist_ok=True)
     OUT_JSON.write_text(json.dumps({
         "date": str(date.today()), "pairs": len(pairs),
-        "indexed_points": len(payloads),
+        "indexed_points": len(payloads), "eval_set": str(EVAL_SET.name),
         "overall": overall, "per_lang": per_lang, "per_type": per_type,
         "routed_misses": misses, "threshold_analysis": threshold,
+        "overlap_lessicale": overlap_stats, "latenza_mediana_s": lat_stats,
     }, indent=2, ensure_ascii=False), encoding="utf-8")
+    print(f"[eval] latenza mediana per strategia (s): {lat_stats}")
 
-    # ---------------------------------------------------------------- report md
+    # ------------------------------------------------------ report md (solo v0)
+    if _TAG != "v0":
+        for s, g in overall.items():
+            m = g["-"] if "-" in g else list(g.values())[0]
+            print(f"  {s:10s} R@1={m['recall@1']} R@5={m['recall@5']} "
+                  f"MRR={m['MRR']}")
+        print(f"[eval] risultati: {OUT_JSON}")
+        return 0
     n_pos = sum(1 for p in pairs if p["query_type"] != "negative")
     lines = [
         "# P2.4 — Metriche di retrieval (recall@k per lingua) — DoD P2",

@@ -20,6 +20,9 @@ from src.ingestion.embedding import (
 from src.retrieval.router import classify_query
 
 STRATEGIES = ("dense", "sparse", "rrf", "routed")
+# routed_rr (P2.8d, ADOTTATA): routed + cross-encoder BGE-reranker-v2-m3 sui
+# top-20, SOLO per query non-code (misurato: R@1 +0.115, mixed 0.50->0.875,
+# latenza mediana 0.76s dichiarata). E' la strategia di produzione per P3.
 
 
 def _sparse_vec(query: str) -> models.SparseVector:
@@ -68,6 +71,14 @@ def search(client: QdrantClient, query: str, strategy: str, limit: int = 10):
                 query=models.FusionQuery(fusion=models.Fusion.RRF),
                 with_payload=True, limit=limit).points
         return search(client, query, "rrf", limit)
+    if strategy == "routed_rr":
+        from src.retrieval.rerank import RERANK_TOPK, rerank
+
+        route = classify_query(query)
+        if route.query_type == "code":
+            return search(client, query, "routed", limit)
+        base = search(client, query, "routed", limit=RERANK_TOPK)
+        return rerank(query, base, limit=limit)
     raise ValueError(f"strategia sconosciuta: {strategy}")
 
 
