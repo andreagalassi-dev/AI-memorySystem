@@ -1,17 +1,17 @@
 {
   "pdf": 54,
   "pagine": 3247,
-  "secondi": 76.3,
+  "secondi": 76.2,
   "corpus": {
-    "grafica": 831,
-    "dual": 187,
+    "grafica": 931,
+    "dual": 512,
     "no_text_layer": 196,
-    "low_content": 313,
-    "testuale": 2416
+    "low_content": 242,
+    "testuale": 2316
   },
   "route_sizes": {
-    "docling": 2556,
-    "colpali": 878,
+    "docling": 2726,
+    "colpali": 1033,
     "ocr_review": 196
   },
   "per_doc": {
@@ -36,11 +36,11 @@
       "low_content": 2
     },
     "construction_agricultural/gehl_v270_parts.pdf": {
-      "grafica": 111,
-      "dual": 65,
+      "grafica": 112,
+      "dual": 71,
       "no_text_layer": 1,
-      "low_content": 15,
-      "testuale": 115
+      "low_content": 14,
+      "testuale": 114
     },
     "construction_agricultural/panciroli_garmec_BL200.pdf": {
       "testuale": 31,
@@ -50,11 +50,11 @@
       "grafica": 28
     },
     "construction_agricultural/transtacker_6072_parts.pdf": {
-      "grafica": 32,
-      "dual": 13,
+      "grafica": 35,
+      "dual": 16,
       "no_text_layer": 1,
-      "low_content": 21,
-      "testuale": 60
+      "low_content": 19,
+      "testuale": 57
     },
     "construction_agricultural/westermann_kehrmaschine.pdf": {
       "grafica": 6,
@@ -65,63 +65,63 @@
     },
     "corporate_brochures/contexo_automation_brochure.pdf": {
       "grafica": 6,
-      "dual": 1,
+      "dual": 5,
       "no_text_layer": 1,
       "low_content": 0,
       "testuale": 22
     },
     "corporate_brochures/pierce_industrial_catalog.pdf": {
-      "grafica": 8,
-      "dual": 0,
+      "grafica": 9,
+      "dual": 7,
       "no_text_layer": 2,
       "low_content": 0,
-      "testuale": 28
+      "testuale": 27
     },
     "corporate_brochures/trumpf_bending_brochure_EN.pdf": {
-      "grafica": 8,
-      "dual": 0,
+      "grafica": 9,
+      "dual": 7,
       "no_text_layer": 1,
-      "low_content": 2,
-      "testuale": 52
+      "low_content": 1,
+      "testuale": 51
     },
     "engines/crusader_marine_L510008.pdf": {
       "testuale": 38,
-      "dual": 0,
+      "dual": 2,
       "no_text_layer": 1,
       "low_content": 5,
       "grafica": 31
     },
     "engines/kohler_industrial_tp7120.pdf": {
       "testuale": 29,
-      "dual": 5,
+      "dual": 7,
       "no_text_layer": 0,
       "low_content": 6,
       "grafica": 15
     },
     "engines/kohler_marine_tp6954.pdf": {
-      "testuale": 124,
-      "dual": 13,
+      "testuale": 102,
+      "dual": 39,
       "no_text_layer": 0,
-      "low_content": 29,
-      "grafica": 36
+      "low_content": 7,
+      "grafica": 58
     },
     "engines/lycoming_IGO540_PC116.pdf": {
       "grafica": 30,
-      "dual": 0,
+      "dual": 9,
       "no_text_layer": 13,
       "low_content": 0,
       "testuale": 73
     },
     "engines/rotax_912_914_IPC.pdf": {
-      "grafica": 37,
-      "dual": 0,
+      "grafica": 43,
+      "dual": 43,
       "no_text_layer": 0,
-      "low_content": 28,
-      "testuale": 118
+      "low_content": 22,
+      "testuale": 112
     },
     "engines/rotax_912iS_IPC.pdf": {
       "grafica": 29,
-      "dual": 0,
+      "dual": 28,
       "no_text_layer": 0,
       "low_content": 32,
       "testuale": 93
@@ -162,11 +162,11 @@
       "grafica": 6
     },
     "hydraulics/fluid_system_cilindri_oleodinamici.pdf": {
-      "grafica": 8,
-      "dual": 0,
+      "grafica": 9,
+      "dual": 4,
       "no_text_layer": 6,
-      "low_content": 2,
-      "testuale": 59
+      "low_content": 1,
+      "testuale": 58
     },
     "hydraulics/hytek_guida_ricambi_avvolgitubo.pdf": {
       "grafica": 1,
@@ -175,25 +175,25 @@
       "low_content": 0
     },
     "hydraulics/oleodinamica_sangro_catalogo_generale.pdf": {
-      "grafica": 5,
-      "dual": 0,
+      "grafica": 6,
+      "dual": 2,
       "no_text_layer": 1,
-      "low_content": 5,
-      "testuale": 40
+      "low_content": 4,
+      "testuale": 39
     },
     "hydraulics/opacmare_catalogo_ricambi_idraulica.pdf": {
-      "testuale": 262,
-      "dual": 0,
+      "testuale": 248,
+      "dual": 17,
       "no_text_layer": 3,
-      "low_content": 33,
-      "grafica": 10
+      "low_content": 19,
+      "grafica": 24
     },
     "hydraulics/sassinterizzati_cilindri_2025.pdf": {
-      "grafica": 9,
-      "dual": 7,
+      "grafica": 10,
+      "dual": 13,
       "no_text_layer": 3,
       "low_content": 2,
-      "testuale": 57
+      "testuale": 56
     },
     "industrial_cleaning/flow_exploded_2022.pdf": {
       "grafica": 16,
@@ -203,7 +203,7 @@
     },
     "industrial_cleaning/manzoni_comac_spareparts_A.pdf": {
       "grafica": 34,
-      "dual": 0,
+      "dual": 1,
       "no_text_layer": 0,
       "low_content": 5,
       "testuale": 42
@@ -217,49 +217,49 @@
     },
     "industrial_machinery/cassani_concrete_machinery.pdf": {
       "grafica": 10,
-      "dual": 8,
+      "dual": 11,
       "no_text_layer": 0,
       "low_content": 1,
       "testuale": 40
     },
     "industrial_machinery/kaltenbach_steel_processing_2026.pdf": {
       "grafica": 1,
-      "dual": 0,
+      "dual": 2,
       "no_text_layer": 0,
       "low_content": 0,
       "testuale": 10
     },
     "industrial_machinery/nargesa_catalogo_2026.pdf": {
-      "grafica": 2,
-      "dual": 0,
+      "grafica": 3,
+      "dual": 2,
       "no_text_layer": 1,
-      "low_content": 2,
-      "testuale": 149
+      "low_content": 1,
+      "testuale": 148
     },
     "industrial_machinery/nesans_crusher_catalog_2025.pdf": {
-      "grafica": 32,
-      "dual": 0,
+      "grafica": 34,
+      "dual": 17,
       "no_text_layer": 17,
-      "low_content": 3,
-      "testuale": 16
+      "low_content": 1,
+      "testuale": 14
     },
     "original_dataset/DirectKitchen_Forni_Schemi_IT_EN.pdf": {
-      "testuale": 73,
-      "dual": 13,
+      "grafica": 24,
+      "dual": 14,
       "no_text_layer": 9,
-      "low_content": 5,
-      "grafica": 23
+      "low_content": 4,
+      "testuale": 72
     },
     "original_dataset/Mamoli_Catalogo_Ricambi_2021_IT_EN.pdf": {
-      "grafica": 42,
-      "dual": 17,
+      "grafica": 68,
+      "dual": 93,
       "no_text_layer": 1,
-      "low_content": 7,
-      "testuale": 195
+      "low_content": 5,
+      "testuale": 169
     },
     "original_dataset/NordCap_Esploso_Ricambi_DE.pdf": {
       "grafica": 2,
-      "dual": 0,
+      "dual": 1,
       "no_text_layer": 1,
       "low_content": 0,
       "testuale": 3
@@ -273,14 +273,14 @@
     },
     "price_lists/abco_export_price_list_valves.pdf": {
       "grafica": 2,
-      "dual": 1,
+      "dual": 2,
       "no_text_layer": 1,
       "low_content": 3,
       "testuale": 28
     },
     "price_lists/arol_listino_oleodinamica_2024.pdf": {
       "grafica": 3,
-      "dual": 2,
+      "dual": 4,
       "no_text_layer": 0,
       "low_content": 1,
       "testuale": 33
@@ -293,31 +293,31 @@
     },
     "price_lists/pi_pulley_listino_pulegge_2025.pdf": {
       "grafica": 2,
-      "dual": 0,
+      "dual": 1,
       "no_text_layer": 0,
       "low_content": 5,
       "testuale": 34
     },
     "price_lists/smem_motori_elettrici_catalogo_2025.pdf": {
       "grafica": 5,
-      "dual": 3,
+      "dual": 4,
       "no_text_layer": 1,
       "low_content": 1,
       "testuale": 32
     },
     "pumps/edwards_booster_pump_parts.pdf": {
       "grafica": 14,
-      "dual": 0,
+      "dual": 2,
       "no_text_layer": 1,
       "low_content": 0,
       "testuale": 35
     },
     "pumps/hydrogear_Pseries_pump.pdf": {
-      "grafica": 16,
-      "dual": 8,
+      "grafica": 21,
+      "dual": 16,
       "no_text_layer": 0,
-      "low_content": 17,
-      "testuale": 118
+      "low_content": 14,
+      "testuale": 113
     },
     "pumps/iwaki_TC-X031VTN.pdf": {
       "testuale": 3,
@@ -367,24 +367,24 @@
     },
     "textile/rimoldi_327_spareparts.pdf": {
       "grafica": 25,
-      "dual": 0,
+      "dual": 4,
       "no_text_layer": 16,
       "low_content": 0,
       "testuale": 30
     },
     "textile/rimoldi_527_spareparts.pdf": {
       "grafica": 24,
-      "dual": 0,
+      "dual": 11,
       "no_text_layer": 0,
       "low_content": 0,
       "testuale": 28
     },
     "textile/stoll_CMS830C_spareparts.pdf": {
-      "grafica": 16,
-      "dual": 0,
+      "grafica": 30,
+      "dual": 26,
       "no_text_layer": 0,
-      "low_content": 26,
-      "testuale": 130
+      "low_content": 12,
+      "testuale": 116
     }
   }
 }
