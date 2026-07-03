@@ -1,0 +1,69 @@
+{
+  "_doc": "Registro profili di normalizzazione codici per-brand (gate P1 §5). Il profilo 'default' NON normalizza: cleanup sicuro + rilevamento conservativo, normalization_type=default_passthrough. extract_pattern = forma tollerante a spazi/markup usata sull'estrazione; token_pattern = forma canonica usata da router e chunker.",
+  "profiles": {
+    "mamoli": {
+      "long_families": [
+        {
+          "name": "V0-lunga",
+          "extract_pattern": "V0(?:[\\s*_`]*[0-9A-Z]){10}",
+          "token_pattern": "^V0[0-9A-Z]{10}$",
+          "rejoin": true,
+          "reason_rejoin": "famiglia V0: uniti blocchi separati da spazi/markup",
+          "reason_double": "codice-doppio fuso: split via findall"
+        }
+      ],
+      "short_pattern": "^[0-9A-Z][0-9A-Z./-]{1,9}$",
+      "reason_short": "codice corto: trim/markup",
+      "unsafe_numeric": "^\\d{10,11}$",
+      "reason_unsafe": "numerico lungo senza V0: possibile prefisso perso, NON applicato"
+    },
+    "electrolux": {
+      "long_families": [
+        {
+          "name": "0US-pnc",
+          "extract_pattern": "0US[0-9A-Z]{3}",
+          "token_pattern": "^0US[0-9A-Z]{3}$",
+          "rejoin": false,
+          "reason_rejoin": "famiglia 0US: cleanup esatto",
+          "reason_double": "doppio codice 0US in una cella: split"
+        }
+      ],
+      "short_pattern": null,
+      "reason_short": null,
+      "unsafe_numeric": null,
+      "reason_unsafe": null
+    },
+    "delitools": {
+      "long_families": [
+        {
+          "name": "numerico-9",
+          "extract_pattern": "\\d{9}",
+          "token_pattern": "^\\d{9}$",
+          "rejoin": false,
+          "reason_rejoin": "codice numerico DeliTools: cleanup esatto",
+          "reason_double": "doppio codice numerico in una cella: split"
+        }
+      ],
+      "short_pattern": null,
+      "reason_short": null,
+      "unsafe_numeric": null,
+      "reason_unsafe": null
+    },
+    "default": {
+      "long_families": [],
+      "short_pattern": null,
+      "reason_short": null,
+      "unsafe_numeric": null,
+      "reason_unsafe": null,
+      "passthrough": true
+    }
+  },
+  "doc_map": {
+    "Mamoli_*": "mamoli",
+    "MAMOLI_*": "mamoli",
+    "Electrolux_*": "electrolux",
+    "ELECTROLUX_*": "electrolux",
+    "DeliTools_*": "delitools",
+    "DELITOOLS_*": "delitools"
+  }
+}

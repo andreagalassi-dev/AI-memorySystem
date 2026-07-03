@@ -22,11 +22,13 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-# Registro famiglie-codice ad alta confidenza (per-brand; in Fase 2 diventa
-# configurazione a DB per-tenant, vedi p1-gate-decision.md §5).
-CODE_FAMILY_PATTERNS = [
-    re.compile(r"^V0[0-9A-Z]{10}$"),      # Mamoli famiglia lunga
-]
+# Registro famiglie-codice ad alta confidenza: dallo STESSO config del
+# normalizzatore (config/brands.json, gate decision P1 §5) — una sola fonte
+# di verita' tra ingestion e retrieval.
+def _family_patterns() -> list[re.Pattern]:
+    from src.ingestion.brands import all_token_patterns
+
+    return all_token_patterns()
 
 # Parole-segnale che promuovono il token successivo a codice (IT/EN/ES).
 MARKERS = {"codice", "cod", "cod.", "code", "art", "art.", "articolo",
@@ -46,7 +48,7 @@ class QueryRoute:
 
 def _family_match(token: str) -> bool:
     t = token.upper()
-    return any(p.fullmatch(t) for p in CODE_FAMILY_PATTERNS)
+    return any(p.fullmatch(t) for p in _family_patterns())
 
 
 def _codey(token: str) -> bool:

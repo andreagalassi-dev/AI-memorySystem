@@ -35,38 +35,15 @@ def canonical(s: str) -> str:
 
 
 def normalize_cell(cell: str) -> tuple[list[str], list[dict]]:
-    """Ritorna (codici_canonici, log_entries) per una cella tabellare."""
-    clean = base_cleanup(cell)
-    codes: list[str] = []
-    logs: list[dict] = []
+    """Ritorna (codici_canonici, log_entries) per una cella tabellare.
 
-    longs = LONG_CODE.findall(clean)
-    if longs:
-        for m in longs:
-            can = canonical(m)
-            had_split = bool(re.search(r"[\s*_`]", m.strip())) or len(longs) > 1
-            logs.append({
-                "original": cell.strip(), "normalized": can,
-                "type": "safe_rejoin" if had_split else "safe_exact_cleanup",
-                "reason": ("codice-doppio fuso: split via findall" if len(longs) > 1
-                           else "famiglia V0: uniti blocchi separati da spazi/markup"),
-            })
-            codes.append(can)
-        return codes, logs
+    P2.6: wrapper retrocompatibile sul motore a profili (config/brands.json),
+    col profilo 'mamoli' che replica byte-per-byte il comportamento P1.5+.
+    """
+    from src.ingestion.brands import get_profile
+    from src.ingestion.brands import normalize_cell as brands_normalize
 
-    # token corto p060 (gia' esatto nel nativo): solo cleanup
-    if SHORT_CODE.match(clean):
-        logs.append({"original": cell.strip(), "normalized": clean,
-                     "type": "safe_exact_cleanup", "reason": "codice corto: trim/markup"})
-        return [clean], logs
-
-    # candidato prefisso perso: numerico lungo che POTREBBE essere un V0... (rule C/D)
-    only = canonical(clean)
-    if re.fullmatch(r"\d{10,11}", only):
-        logs.append({"original": cell.strip(), "normalized": None,
-                     "type": "unsafe_candidate",
-                     "reason": "numerico lungo senza V0: possibile prefisso perso, NON applicato"})
-    return [], logs
+    return brands_normalize(cell, get_profile("mamoli"))
 
 
 def cells_rows(md: str) -> list[list[str]]:
