@@ -50,6 +50,22 @@ def search(client: QdrantClient, query: str, strategy: str, limit: int = 10):
             with_payload=True, limit=limit).points
     if strategy == "routed":
         route = classify_query(query)
-        inner = "sparse" if route.query_type == "code" else "rrf"
-        return search(client, query, inner, limit)
+        if route.query_type == "code":
+            # SOLO il token-codice al canale lessicale: le parole-marker
+            # ("part number", "codice") matcherebbero migliaia di chunk-testo
+            # sommergendo il token unico (misurato in P2.6: 19.9 vs 15.9).
+            return search(client, route.code_token, "sparse", limit)
+        if route.query_type == "mixed":
+            # ibrida: lessicale sul token-codice, semantica sulla frase intera
+            return client.query_points(
+                COLLECTION,
+                prefetch=[
+                    models.Prefetch(query=embed_dense([query])[0],
+                                    using=DENSE_NAME, limit=limit * 2),
+                    models.Prefetch(query=_sparse_vec(route.code_token),
+                                    using=SPARSE_NAME, limit=limit * 2),
+                ],
+                query=models.FusionQuery(fusion=models.Fusion.RRF),
+                with_payload=True, limit=limit).points
+        return search(client, query, "rrf", limit)
     raise ValueError(f"strategia sconosciuta: {strategy}")

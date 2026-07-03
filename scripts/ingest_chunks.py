@@ -49,7 +49,9 @@ from src.ingestion.embedding import (  # noqa: E402
 CHUNKS_DIR = ROOT / "output" / "spike" / "chunks"
 TABLE_IDS = ["MAMOLI_P231_IT", "MAMOLI_P060_IT",
              "DELITOOLS_EN", "ELECTROLUX_EN", "ELECTROLUX_ES"]
-EXPECTED_TOTAL = 234  # 89+84 (Mamoli P2.2) + 19+21+21 (CSV XLSX P2.4)
+EXPECTED_SPIKE = 234  # 89+84 (Mamoli P2.2) + 19+21+21 (CSV XLSX P2.4)
+# P2.6: chunk del corpus esteso (54 PDF via Docling + profili brand).
+CORPUS_CHUNKS_DIR = ROOT / "output" / "ingestion" / "chunks"
 UPSERT_BATCH = 64
 EXACT_CODE = "V09156800007"   # canale lessicale, worst-case P231
 SHARED_CODE = "11282"         # codice corto ripetuto su piu' blocchi P060
@@ -77,9 +79,20 @@ def main() -> int:
             check("Input chunks.jsonl", False,
                   f"{path} assente: eseguire scripts/chunk_tables.py")
         chunks.extend(json.loads(line) for line in path.open(encoding="utf-8"))
+    n_spike = len(chunks)
+    n_corpus = 0
+    if CORPUS_CHUNKS_DIR.exists():
+        for jl in sorted(CORPUS_CHUNKS_DIR.glob("*.jsonl")):
+            if jl.name.startswith("_"):
+                continue
+            for line in jl.open(encoding="utf-8"):
+                chunks.append(json.loads(line))
+                n_corpus += 1
     ids = [c["chunk_id"] for c in chunks]
-    check("Input chunks.jsonl", len(chunks) == EXPECTED_TOTAL == len(set(ids)),
-          f"{len(chunks)} chunk, {len(set(ids))} chunk_id univoci")
+    check("Input chunks (spike + corpus)",
+          n_spike == EXPECTED_SPIKE and len(ids) == len(set(ids)),
+          f"spike={n_spike} corpus={n_corpus} totale={len(chunks)}, "
+          f"chunk_id univoci={len(set(ids))}")
 
     # -- [2/7] modelli --------------------------------------------------------
     probe = embed_dense(["prova di caricamento"])
