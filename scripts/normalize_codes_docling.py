@@ -1,7 +1,3 @@
-# /// script
-# requires-python = ">=3.11"
-# dependencies = []
-# ///
 """P1.5+ — Normalizzatore DETERMINISTICO dei codici sopra l'output Docling.
 
 Motivazione: Docling (do_ocr=False) legge i codici Mamoli dal testo nativo ma li
@@ -10,10 +6,15 @@ cella ('V0 91920 00001 V0 91925 00001'). Il codice canonico esatto serve al guar
 P3. Qui lo ricomponiamo con regole deterministiche, conservative, AUDITABILI.
 Nessun LLM, nessuna euristica opaca: ogni trasformazione e' classificata e loggata.
 
-Regole (vedi _FINDINGS_normalized.md):
+Debito §1: lo script e' BRAND-AGNOSTICO — il profilo di normalizzazione arriva
+dalle tabelle Postgres dei Profili di Ingestion via brands.resolve(table_id)
+(doc_map a glob), non piu' hardcoded su Mamoli. Richiede il Postgres del
+compose seedato (scripts/seed_ingestion_profiles.py); fail-closed se giu'.
+
+Regole (vedi _FINDINGS_normalized.md; oggi definite nel profilo a DB):
   A cleanup:  trim, rimozione markup (* _ `), <br>/tag, caratteri invisibili.
-  B rejoin:   famiglia-codice lunga Mamoli 'V0'+10 alnum -> uniti (safe_rejoin);
-              findall separa i codici doppi fusi in una cella.
+  B rejoin:   famiglia-codice lunga (es. Mamoli 'V0'+10 alnum) -> uniti
+              (safe_rejoin); findall separa i codici doppi fusi in una cella.
   C prefisso: token puramente numerico lungo ~10-11 compatibile con 'V0...' ->
               NON applicato d'ufficio: classificato unsafe_candidate e solo loggato.
   D safe mode: solo le trasformazioni safe_* entrano nell'output; unsafe solo log.
@@ -38,14 +39,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-# Primitive estratte in P2.2 nel modulo condiviso (comportamento invariato,
-# regressione verificata byte-per-byte sugli output di questo script).
+from src.ingestion.brands import normalize_cell, resolve  # noqa: E402
 from src.ingestion.codes import (  # noqa: E402
     base_cleanup,
     canonical,
     cells_rows,
     detect_fused,
-    normalize_cell,
 )
 
 DOCLING_RAW = ROOT / "output" / "spike" / "docling" / "raw"
@@ -74,6 +73,7 @@ def main() -> int:
         md = md_path.read_text(encoding="utf-8")
         rows = cells_rows(md)
         fused = detect_fused(rows)
+        profile = resolve(tid)  # doc_map a DB: MAMOLI_* -> mamoli
 
         # raw exact: cella (solo cleanup, SENZA rejoin) == codice GT
         gtc = gt_codes(tid)
@@ -87,7 +87,7 @@ def main() -> int:
                 clean = base_cleanup(c)
                 if canonical(clean) in gtc and " " not in clean.strip():
                     raw_exact.add(canonical(clean))
-                codes, logs = normalize_cell(c)
+                codes, logs = normalize_cell(c, profile)
                 entries.extend(logs)
                 for cc in codes:
                     norm_codes.add(canonical(cc))  # match sempre sulla forma canonica
