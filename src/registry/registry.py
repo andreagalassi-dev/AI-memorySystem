@@ -37,6 +37,12 @@ class VersionRecord(NamedTuple):
     superseded_at: datetime | None
 
 
+class BackfillRecord(NamedTuple):
+    version_status: str
+    doc_version: int
+    ruoli: list[Role]
+
+
 class DocumentRecord(NamedTuple):
     document_id: int
     slug: str
@@ -138,6 +144,40 @@ def mark_superseded(conn: psycopg.Connection, *, slug: str, new_doc_stem: str,
         (ver_id, old.version_id))
     conn.commit()
     return RegisterResult(old.document_id, ver_id, created=True)
+
+
+def export_backfill(conn: psycopg.Connection) -> dict[str, BackfillRecord]:
+    """Proiezione per il backfill Qdrant (P4.2): doc_stem -> stato/versione/ruoli.
+
+    Copre TUTTE le versioni (current e superseded): i ruoli sono del
+    documento logico, quindi identici su ogni versione.
+    """
+    rows = conn.execute(
+        "SELECT v.doc_stem, v.version_status, v.version_no, "
+        "       coalesce(array_agg(r.role ORDER BY r.role) "
+        "                FILTER (WHERE r.role IS NOT NULL), '{}') "
+        "FROM document_versions v "
+        "JOIN documents d ON d.id = v.document_id "
+        "LEFT JOIN document_roles r ON r.document_id = d.id "
+        "GROUP BY v.doc_stem, v.version_status, v.version_no").fetchall()
+    return {stem: BackfillRecord(status, ver, [Role(x) for x in roles])
+            for stem, status, ver, roles in rows}
+
+
+def backfill_payload(rec: BackfillRecord) -> dict:
+    """Serializza un record SSOT nelle 3 chiavi ADDITIVE del payload Qdrant.
+
+    Fail-closed: ruoli vuoti o stato fuori vocabolario fermano il backfill
+    (un doc senza ruoli sarebbe invisibile a tutti col filtro RBAC di P4.5,
+    ma un buco qui indica dati SSOT corrotti: meglio fermarsi).
+    """
+    if rec.version_status not in (CURRENT, SUPERSEDED):
+        raise ValueError(f"version_status fuori vocabolario: {rec.version_status!r}")
+    if not rec.ruoli:
+        raise ValueError("record senza ruoli: SSOT incoerente, backfill fermato")
+    return {"version_status": rec.version_status,
+            "doc_version": rec.doc_version,
+            "ruoli_consentiti": [str(r.value) for r in rec.ruoli]}
 
 
 def list_documents(conn: psycopg.Connection) -> list[DocumentRecord]:

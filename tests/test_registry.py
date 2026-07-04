@@ -229,3 +229,40 @@ class TestRegistro:
         self._setup(conn)
         docs = list_documents(conn)
         assert [d.slug for d in docs] == ["mamoli_catalogo"]
+
+    def test_export_backfill_copre_current_e_superseded(self, conn):
+        from src.registry.registry import export_backfill, mark_superseded
+        self._setup(conn)
+        mark_superseded(conn, slug="mamoli_catalogo",
+                        new_doc_stem="mamoli_catalogo_2023", langs=["it", "en"])
+        exp = export_backfill(conn)
+        assert set(exp) == {"mamoli_catalogo_2021", "mamoli_catalogo_2023"}
+        old, new = exp["mamoli_catalogo_2021"], exp["mamoli_catalogo_2023"]
+        assert old.version_status == "superseded" and old.doc_version == 1
+        assert new.version_status == "current" and new.doc_version == 2
+        # i ruoli sono del documento LOGICO: identici su tutte le versioni
+        assert old.ruoli == new.ruoli == [Role.TECNICO]
+
+
+# ------------------------------------------------- payload di backfill (P4.2)
+
+class TestBackfillPayload:
+    def test_serializzazione_additiva(self):
+        from src.registry.registry import BackfillRecord, backfill_payload
+        rec = BackfillRecord(version_status="current", doc_version=1,
+                             ruoli=[Role.COMMERCIALE, Role.TECNICO])
+        p = backfill_payload(rec)
+        assert p == {"version_status": "current", "doc_version": 1,
+                     "ruoli_consentiti": ["commerciale", "tecnico"]}
+        assert all(type(r) is str for r in p["ruoli_consentiti"])  # JSON-safe
+
+    def test_ruoli_vuoti_rifiutati(self):
+        # fail-closed: un doc senza ruoli renderebbe il filtro RBAC un buco
+        from src.registry.registry import BackfillRecord, backfill_payload
+        with pytest.raises(ValueError):
+            backfill_payload(BackfillRecord("current", 1, []))
+
+    def test_status_non_valido_rifiutato(self):
+        from src.registry.registry import BackfillRecord, backfill_payload
+        with pytest.raises(ValueError):
+            backfill_payload(BackfillRecord("attivo", 1, [Role.TECNICO]))
