@@ -15,6 +15,13 @@ sulla query originale; le route 'code'/'mixed' non sono MAI espanse.
 Caricamento: cache di processo + reload_synonyms() (pattern brands.py). Il
 degrado e' gestito dal chiamante (nodo grafo: NON-fatale, come fusion_node):
 qui si solleva RuntimeError con rimedio chiaro.
+
+LIMITE MISURATO (A/B 2026-07-05, adottato con questa riserva): l'espansione
+migliora il recall dei CANDIDATI (naturali R@10 0.465->0.512, IT 0.421->0.500)
+ma R@1 resta fermo: il collo di bottiglia a valle e' il RERANKER, che non
+porta in cima i candidati recuperati (es. W003 arriva a rank 2). TODO futuro:
+lavorare sul ranking (fine-tuning reranker o segnale lessicale nel riordino).
+Regressione singola nota: W046 (DE 'Dichtring'->O-Ring, 10->None).
 """
 
 from __future__ import annotations
