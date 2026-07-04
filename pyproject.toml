@@ -17,6 +17,7 @@ dependencies = [
     "ollama>=0.2",
     "streamlit>=1.33",
     "langgraph>=1.2.7",
+    "psycopg[binary]>=3.2,<4.0",
 ]
 
 [project.optional-dependencies]

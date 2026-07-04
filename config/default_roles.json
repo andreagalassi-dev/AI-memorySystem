@@ -1,0 +1,17 @@
+{
+  "_doc": "P4.1 — ruoli default per categoria (seed registro). Decisione 2026-07-04: tecnico vede tutto; commerciale/amministrazione solo listini e brochure. '_fallback' copre categorie impreviste.",
+  "construction_agricultural": ["tecnico"],
+  "corporate_brochures": ["commerciale", "tecnico", "amministrazione"],
+  "electrical_components": ["tecnico"],
+  "engines": ["tecnico"],
+  "gastronomy": ["tecnico"],
+  "hydraulics": ["tecnico"],
+  "industrial_cleaning": ["tecnico"],
+  "industrial_machinery": ["tecnico"],
+  "original_dataset": ["tecnico"],
+  "other": ["tecnico"],
+  "price_lists": ["commerciale", "tecnico", "amministrazione"],
+  "pumps": ["tecnico"],
+  "textile": ["tecnico"],
+  "_fallback": ["tecnico"]
+}

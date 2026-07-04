@@ -18,6 +18,13 @@ class Settings(BaseSettings):
     qdrant_api_key: str | None = None
     qdrant_timeout_s: float = 5.0
 
+    # --- PostgreSQL (registro versioni P4.1) ---
+    postgres_host: str = "localhost"     # env POSTGRES_HOST; nel container: "postgres"
+    postgres_port: int = 5432
+    postgres_user: str = "aike"
+    postgres_password: str = "aike_dev"  # dev-only; override da .env
+    postgres_db: str = "aike_registry"
+
     # --- Ollama (LLM locale, ragionatore solo-testo P3.4) ---
     ollama_host: str = "http://localhost:11434"  # env OLLAMA_HOST
     ollama_model: str = "qwen2.5:14b"            # 14B default (32B solo piano-B)

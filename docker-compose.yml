@@ -16,6 +16,26 @@ services:
       - aike_net
     restart: unless-stopped
 
+  postgres:
+    image: postgres:17-alpine
+    container_name: aike_postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-aike}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aike_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-aike_registry}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_storage:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-aike} -d $${POSTGRES_DB:-aike_registry}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - aike_net
+    restart: unless-stopped
+
   backend:
     build:
       context: .
@@ -78,3 +98,5 @@ networks:
 
 volumes:
   qdrant_storage:
+  # Named volume esplicito: i dati del registro sopravvivono a stop/rm del container.
+  postgres_storage:
