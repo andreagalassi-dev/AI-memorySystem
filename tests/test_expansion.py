@@ -67,6 +67,17 @@ class TestMatcher:
     def test_case_e_accenti_normalizzati(self, fake_dict):
         assert expand_query("SPINOTTO") == ["piston pin", "kolbenbolzen"]
 
+    def test_guardia_token_code_like(self, fake_dict):
+        # codice fuori registro famiglie (caso W042): MAI diluire il canale
+        # lessicale con l'espansione
+        assert expand_query("il 9S1BG0270 e' una vite di tenuta tonda?") == []
+
+    def test_round_robin_tra_concetti(self, fake_dict):
+        # il cap non deve consumarsi sulle varianti del primo concetto
+        # (caso W046/W003: 'o-ring'/'filtro' tagliati)
+        out = expand_query("vite del spinotto", max_terms=3)
+        assert out == ["screw", "piston pin", "schraube"]
+
 
 class TestNodoGrafo:
     def _mk_deps(self, expand=None, retrieve=None):

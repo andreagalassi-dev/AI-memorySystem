@@ -27,6 +27,13 @@ MAX_TERMS = 8
 _NGRAM_MAX = 3
 _WORD = re.compile(r"[0-9a-zà-ÿäöüß*./-]+")
 
+# Guardia anti-diluizione (misurata su eval: W042 1->None): una query con un
+# token code-like NON va espansa — il router puo' non riconoscere un codice
+# fuori registro famiglie (es. '9S1BG0270') e l'espansione sommergerebbe
+# l'unico segnale lessicale esatto. Stessa definizione conservativa del
+# rilevatore default dei profili brand (una sola fonte di verita').
+from src.ingestion.brands import DEFAULT_CODEY  # noqa: E402
+
 
 def _load_from_db() -> dict:
     import psycopg
@@ -70,9 +77,14 @@ def expand_query(query: str, max_terms: int = MAX_TERMS) -> list[str]:
     """Termini di espansione per la query (deterministici, ordinati, cap).
 
     Longest-match-first: un n-gramma che matcha consuma i suoi token (nessun
-    doppio conteggio del singolo token dentro il multi-parola).
+    doppio conteggio del singolo token dentro il multi-parola). Selezione
+    ROUND-ROBIN tra i concetti colpiti: il cap non deve mai far cadere tutti
+    i termini di un concetto a favore delle sole varianti del primo
+    (misurato su eval: 'o-ring' e 'filtro' tagliati -> W046/W003 persi).
     """
     toks = _tokens(query)
+    if any(DEFAULT_CODEY.match(t.upper()) for t in toks):
+        return []   # possibile codice fuori registro: mai diluirlo
     idx = _index()
     have = set(toks)
 
@@ -90,13 +102,17 @@ def expand_query(query: str, max_terms: int = MAX_TERMS) -> list[str]:
                     matched.append((slug, terms))
                 used[i:i + n] = [True] * n
 
-    out: list[str] = []
+    # candidati per concetto (senza i termini gia' in query), poi round-robin
+    per_concept = []
     for _slug, terms in matched:
-        for t in terms:
+        cand = [t for t in terms if not set(t.split()) <= have]
+        if cand:
+            per_concept.append(cand)
+    out: list[str] = []
+    for rank in range(max(map(len, per_concept), default=0)):
+        for cand in per_concept:
             if len(out) >= max_terms:
                 return out
-            # gia' in query (tutte le sue parole) o gia' emesso -> salta
-            if set(t.split()) <= have or t in out:
-                continue
-            out.append(t)
+            if rank < len(cand) and cand[rank] not in out:
+                out.append(cand[rank])
     return out
