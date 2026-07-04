@@ -1,5 +1,5 @@
 {
-  "_doc": "Registro profili di normalizzazione codici per-brand (gate P1 §5). Il profilo 'default' NON normalizza: cleanup sicuro + rilevamento conservativo, normalization_type=default_passthrough. extract_pattern = forma tollerante a spazi/markup usata sull'estrazione; token_pattern = forma canonica usata da router e chunker.",
+  "_doc": "SEED dei Profili di Ingestion (debito §1): a runtime la fonte di verita' sono le tabelle Postgres (src/registry/ingestion_profiles.py), questo file viene letto SOLO da scripts/seed_ingestion_profiles.py. Il profilo 'default' NON normalizza: cleanup sicuro + rilevamento conservativo, normalization_type=default_passthrough. extract_pattern = forma tollerante a spazi/markup usata sull'estrazione; token_pattern = forma canonica usata da router e chunker.",
   "profiles": {
     "mamoli": {
       "long_families": [

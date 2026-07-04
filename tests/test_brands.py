@@ -1,9 +1,18 @@
-"""P2.6 — Test del registro profili brand (config/brands.json)."""
+"""P2.6 — Test del registro profili brand (debito §1: fonte Postgres).
+
+Richiedono il Postgres del compose SEEDATO (scripts/seed_ingestion_profiles.py):
+dal debito §1 i profili vivono a DB, fail-closed senza fallback JSON.
+"""
 
 from __future__ import annotations
 
-from src.ingestion.brands import get_profile, normalize_cell, resolve
+import pytest
+
+from src.ingestion.brands import get_profile, normalize_cell, reload_profiles, resolve
 from src.retrieval.router import classify_query
+from tests.conftest import needs_pg
+
+pytestmark = needs_pg
 
 
 class TestResolve:
@@ -62,3 +71,48 @@ class TestRouterDaConfig:
         assert (r.query_type, r.code_token) == ("mixed", "0USBX4")
         r = classify_query("V09156800007")
         assert r.query_type == "code"
+
+
+class TestFonteDB:
+    """Debito §1: profili da Postgres, fail-closed, cache invalidabile."""
+
+    @pytest.fixture(autouse=True)
+    def _cache_pulita(self):
+        reload_profiles()
+        yield
+        reload_profiles()
+
+    def test_fail_closed_senza_postgres(self, monkeypatch):
+        import psycopg
+
+        from src.backend.clients import postgres_client
+
+        def _giu():
+            raise psycopg.OperationalError("connection refused")
+
+        monkeypatch.setattr(postgres_client, "get_pg_conn", _giu)
+        with pytest.raises(RuntimeError, match="Fail-closed"):
+            get_profile("mamoli")
+
+    def test_profilo_nuovo_visibile_dopo_reload(self, monkeypatch):
+        from src.ingestion import brands
+        cfg = {
+            "profiles": {
+                "default": {"long_families": [], "short_pattern": None,
+                            "reason_short": None, "unsafe_numeric": None,
+                            "reason_unsafe": None, "passthrough": True},
+                "bosch": {"long_families": [
+                    {"name": "F-lunga", "extract_pattern": r"F(?:[\s*_`]*\d){9}",
+                     "token_pattern": r"^F\d{9}$", "rejoin": False,
+                     "reason_rejoin": "bosch: cleanup", "reason_double": "split"}],
+                    "short_pattern": None, "reason_short": None,
+                    "unsafe_numeric": None, "reason_unsafe": None,
+                    "passthrough": False},
+            },
+            "doc_map": {"Bosch_*": "bosch"},
+        }
+        monkeypatch.setattr(brands, "_load_from_db", lambda: cfg)
+        reload_profiles()
+        assert resolve("Bosch_Catalogo_2026")["_name"] == "bosch"
+        codes, _ = normalize_cell("F 000 026 341", get_profile("bosch"))
+        assert codes == ["F000026341"]
