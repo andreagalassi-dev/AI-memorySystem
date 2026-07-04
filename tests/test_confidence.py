@@ -16,6 +16,7 @@ from src.retrieval.confidence import (
     compute_margin,
     confidence_level,
     extract_signals,
+    group_scores,
 )
 
 T = Thresholds(tau_hi=0.5, tau_lo=0.2)
@@ -53,6 +54,42 @@ class TestMargine:
     def test_clamp(self):
         # s2 negativo -> margine > 1 -> clamp a 1.0
         assert compute_margin([5.0, -5.0]) == 1.0
+
+
+# ------------------------------------- group-by codice (debito §3, duplicati)
+
+class TestGroupScores:
+    def test_duplicati_stesso_codice_fusi(self):
+        # caso 0USBX4: righe bilingui a score identico -> 1 gruppo -> margine 1.0
+        gs = group_scores([("0USBX4", 15.925), ("0USBX4", 15.925)])
+        assert gs == [15.925]
+        assert compute_margin(gs) == 1.0
+
+    def test_max_per_gruppo(self):
+        gs = group_scores([("A1", 10.0), ("A1", 4.0), ("B2", 8.0)])
+        assert sorted(gs, reverse=True) == [10.0, 8.0]
+
+    def test_codici_diversi_non_fusi(self):
+        # l'ambiguita' VERA (due codici distinti a pari score) resta misurata
+        gs = group_scores([("A1", 10.0), ("B2", 10.0)])
+        assert compute_margin(gs) == 0.0
+
+    def test_senza_codice_gruppi_singleton(self):
+        # due no-code identici: margine 0 come oggi (rifiuto conservativo)
+        gs = group_scores([(None, 5.0), (None, 5.0)])
+        assert len(gs) == 2 and compute_margin(gs) == 0.0
+
+    def test_misto_code_e_nocode(self):
+        gs = group_scores([("A1", 10.0), (None, 6.0), ("A1", 9.0), (None, 6.0)])
+        assert sorted(gs, reverse=True) == [10.0, 6.0, 6.0]
+
+    def test_codice_canonico_unifica_le_forme(self):
+        # stessa definizione del guardrail: 'V0 9156' e 'v09156' sono lo stesso
+        gs = group_scores([("V0 9156", 7.0), ("v09156", 7.0)])
+        assert gs == [7.0]
+
+    def test_vuoto(self):
+        assert group_scores([]) == []
 
 
 # ------------------------------------------------- confidence_level (matrice §5)

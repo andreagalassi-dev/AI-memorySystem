@@ -16,7 +16,8 @@ from typing import Callable, NamedTuple, TypedDict
 from langgraph.graph import END, START, StateGraph
 
 from src.common.roles import Role, parse_role
-from src.retrieval.confidence import Signals, Thresholds, compute_margin, confidence_level
+from src.retrieval.confidence import (Signals, Thresholds, compute_margin,
+                                      confidence_level, group_scores)
 from src.retrieval.guardrail import check_answer
 from src.retrieval.router import classify_query
 from src.retrieval.synthesis import REFUSAL, extract_citations, strip_citations
@@ -145,16 +146,21 @@ def retrieval_node(state: GraphState, deps: Deps) -> dict:
 
 def confidence_node(state: GraphState, deps: Deps) -> dict:
     ev = state.get("evidence") or []
-    scores = [e.score for e in ev]
     is_code = state.get("route") == "code"
     has_ev = (bool(ev) and ev[0].score > 0) if is_code else bool(ev)
     top = ev[0] if ev else None
     unreliable = bool(top and (top.status == "degraded" or "ocr_source" in top.warnings))
-    margin = compute_margin(scores)
+    # Debito §3 — margine sui GRUPPI-codice (max per gruppo): i duplicati
+    # intra-doc dello stesso codice non sono ambiguita'. Solo il segnale
+    # margine: evidence/citazioni/sintesi restano sugli hit originali.
+    grouped = group_scores([(e.code, e.score) for e in ev])
+    margin = compute_margin(grouped)
     rep = confidence_level(
         Signals("PASS", has_ev, margin, unreliable, agreement=None), deps.thresholds)
     return {"margin": margin, "has_evidence": has_ev, "unreliable": unreliable,
-            "level": rep.level.value, "audit": _audit(state, f"confidence: {rep.reason}")}
+            "level": rep.level.value,
+            "audit": _audit(state, f"confidence: {rep.reason} "
+                                   f"({len(grouped)} gruppi-codice da {len(ev)} hit)")}
 
 
 def fusion_node(state: GraphState, deps: Deps) -> dict:

@@ -78,6 +78,23 @@ class TestNodi:
         st = {"query": "x", "route": "natural", "evidence": []}
         assert confidence_node(st, make_deps())["level"] == "BASSA"
 
+    def test_confidence_duplicati_stesso_codice_non_ambigui(self):
+        # debito §3 (caso 0USBX4): stesso codice su piu' righe a score identico
+        # -> 1 gruppo -> margine 1.0, niente rifiuto per falsa ambiguita'
+        dup = EV_CODE._replace(desc="PISTON PIN (DE)")
+        st = {"query": "codice 877615", "route": "code",
+              "evidence": [EV_CODE, dup]}
+        out = confidence_node(st, make_deps())
+        assert out["margin"] == 1.0 and out["level"] != "BASSA"
+        assert "1 gruppi-codice da 2 hit" in out["audit"][-1]
+
+    def test_confidence_codici_diversi_pari_score_restano_ambigui(self):
+        # ambiguita' VERA: due codici DIVERSI a pari punteggio -> margine 0
+        st = {"query": "anello", "route": "natural",
+              "evidence": [EV_CODE, EV2._replace(score=9.0)]}
+        out = confidence_node(st, make_deps())
+        assert out["margin"] == 0.0 and out["level"] == "BASSA"
+
 
 # --------------------------------------------------------------- fail-closed rete
 
