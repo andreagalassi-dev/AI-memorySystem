@@ -50,13 +50,21 @@ def access_filter(version_status: str, role: Role) -> models.Filter:
 
 
 def search(client: QdrantClient, query: str, strategy: str, limit: int = 10,
-           query_filter: models.Filter | None = None):
+           query_filter: models.Filter | None = None,
+           extra_terms: list[str] | None = None):
     """Ritorna la lista di ScoredPoint per la strategia richiesta.
 
     `query_filter` (P4.4, additivo) limita i CANDIDATI senza toccare lo
     scoring: nelle strategie ibride va dentro OGNI prefetch (e' li' che si
     generano i candidati), oltre che sull'outer query.
+
+    `extra_terms` (debito §2, additivo): termini della Query Expansion,
+    concatenati SOLO nel testo del canale sparse (BM25: bag-of-terms, la
+    concatenazione E' l'OR) delle strategie rrf/routed-natural. Il canale
+    dense resta sulla query originale; 'code'/'mixed'/sparse-diretta li
+    IGNORANO (mai inquinare la ricerca esatta dei codici).
     """
+    sparse_text = (f"{query} {' '.join(extra_terms)}" if extra_terms else query)
     if strategy == "sparse":
         return client.query_points(
             COLLECTION, query=_sparse_vec(query), using=SPARSE_NAME,
@@ -72,7 +80,7 @@ def search(client: QdrantClient, query: str, strategy: str, limit: int = 10,
                 models.Prefetch(query=embed_dense([query])[0],
                                 using=DENSE_NAME, limit=limit * 2,
                                 filter=query_filter),
-                models.Prefetch(query=_sparse_vec(query),
+                models.Prefetch(query=_sparse_vec(sparse_text),
                                 using=SPARSE_NAME, limit=limit * 2,
                                 filter=query_filter),
             ],
@@ -100,7 +108,9 @@ def search(client: QdrantClient, query: str, strategy: str, limit: int = 10,
                 ],
                 query=models.FusionQuery(fusion=models.Fusion.RRF),
                 query_filter=query_filter, with_payload=True, limit=limit).points
-        return search(client, query, "rrf", limit, query_filter=query_filter)
+        # natural: unica route dove l'espansione entra (scope v1 debito §2)
+        return search(client, query, "rrf", limit, query_filter=query_filter,
+                      extra_terms=extra_terms)
     if strategy == "routed_rr":
         from src.retrieval.rerank import RERANK_TOPK, rerank
 
@@ -108,7 +118,9 @@ def search(client: QdrantClient, query: str, strategy: str, limit: int = 10,
         if route.query_type == "code":
             return search(client, query, "routed", limit, query_filter=query_filter)
         base = search(client, query, "routed", limit=RERANK_TOPK,
-                      query_filter=query_filter)
+                      query_filter=query_filter, extra_terms=extra_terms)
+        # reranker sulla query ORIGINALE: l'espansione serve al recall dei
+        # candidati, il punteggio resta sulla domanda vera dell'utente
         return rerank(query, base, limit=limit)
     raise ValueError(f"strategia sconosciuta: {strategy}")
 
