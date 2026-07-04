@@ -55,6 +55,26 @@ class ConfidenceReport:
     reason: str
 
 
+def group_scores(items: Sequence[tuple[str | None, float]]) -> list[float]:
+    """Debito §3 — max score per gruppo-codice (duplicati intra-doc).
+
+    Lo stesso codice su piu' righe (varianti colore, coppie bilingui) produce
+    hit a score identico e margine 0.0 -> rifiuto per falsa ambiguita'. Qui i
+    punteggi si raggruppano per codice CANONICO (stessa primitiva del
+    guardrail: una sola definizione di "stesso codice") prendendo il MASSIMO
+    del gruppo: il margine a valle misura l'ambiguita' TRA codici diversi.
+    Chunk senza codice = gruppo singleton (nessuna euristica fuzzy sulla
+    descrizione: comportamento odierno, conservativo e auditabile).
+    """
+    from src.ingestion.codes import canonical
+
+    groups: dict[object, float] = {}
+    for i, (code, score) in enumerate(items):
+        key = canonical(code) if code and canonical(code) else ("_nocode", i)
+        groups[key] = max(groups.get(key, score), score)
+    return list(groups.values())
+
+
 def compute_margin(scores: Sequence[float]) -> float:
     """Margine relativo (s1-s2)/s1 sui punteggi (non-negativi) del canale.
 
@@ -117,7 +137,9 @@ def extract_signals(unified: dict, guardrail_report) -> Signals:
     del guardrail. Nessun LLM. `agreement` resta None in P3.2 (P3.3)."""
     hits = unified.get("text_hits") or []
     is_code = unified.get("route") == "code"
-    scores = [h.score for h in hits]
+    # debito §3: margine sui gruppi-codice, come confidence_node
+    keyed = [((getattr(h, "payload", None) or {}).get("code"), h.score)
+             for h in hits]
     top = hits[0] if hits else None
 
     if is_code:
@@ -134,7 +156,7 @@ def extract_signals(unified: dict, guardrail_report) -> Signals:
     return Signals(
         gate=guardrail_report.gate,
         has_evidence=has_evidence,
-        margin=compute_margin(scores),
+        margin=compute_margin(group_scores(keyed)),
         unreliable=unreliable,
         agreement=None,
     )
