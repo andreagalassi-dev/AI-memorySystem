@@ -53,6 +53,7 @@ class GraphState(TypedDict, total=False):
     route: str
     code_token: str | None
     route_reason: str
+    expansion_terms: list[str]
     evidence: list[Evidence]
     margin: float
     has_evidence: bool
@@ -72,13 +73,18 @@ class GraphState(TypedDict, total=False):
 
 @dataclass
 class Deps:
-    retrieve: Callable[[str], list[Evidence]]
+    # retrieve/retrieve_superseded: chiamate con (query) oppure, se il nodo
+    # expansion ha prodotto termini (debito §2), con (query, expansion_terms).
+    # Con expand=None il contratto resta quello P3.5/P4.4 a un argomento.
+    retrieve: Callable[..., list[Evidence]]
     synthesize: Callable[[str, list[Evidence]], str]
     catalog_lookup: Callable[[str], bool]
     thresholds: Thresholds
     cross_probe: Callable[[str], list[tuple[str, int]]] | None = None
     # P4.4 — cascade fallback sul SOSTITUITO; None = comportamento P3.5
-    retrieve_superseded: Callable[[str], list[Evidence]] | None = None
+    retrieve_superseded: Callable[..., list[Evidence]] | None = None
+    # Debito §2 — Query Expansion (solo route natural); None = nodo no-op
+    expand: Callable[[str], list[str]] | None = None
 
 
 def _audit(state: GraphState, msg: str) -> list[str]:
@@ -102,9 +108,35 @@ def router_node(state: GraphState, deps: Deps) -> dict:
             "audit": _audit(state, f"router[{role.value}]: {r.reason}")}
 
 
+def expansion_node(state: GraphState, deps: Deps) -> dict:
+    """Debito §2 — Query Expansion, SOLO route natural, NON-fatale.
+
+    Precedente: fusion_node. L'espansione e' ottimizzazione di recall, non di
+    correttezza: se il dizionario non e' caricabile si degrada al comportamento
+    senza espansione, con riga di audit (mai bloccare la risposta per questo).
+    La query in stato NON viene mai riscritta: sintesi, guardrail e reranker
+    vedono la domanda originale dell'utente."""
+    if deps.expand is None or state.get("route") != "natural":
+        return {}
+    try:
+        terms = deps.expand(state["query"])
+    except Exception as exc:
+        return {"expansion_terms": [],
+                "audit": _audit(state, f"expansion NON-FATALE fallita: {exc}")}
+    return {"expansion_terms": terms,
+            "audit": _audit(state, f"expansion: +{len(terms)} termini {terms}"
+                                   if terms else "expansion: nessun termine")}
+
+
+def _retrieve_with_terms(fn: Callable, state: GraphState) -> list[Evidence]:
+    """Contratto Deps: (query, terms) solo se l'espansione ha prodotto termini."""
+    terms = state.get("expansion_terms") or []
+    return fn(state["query"], terms) if terms else fn(state["query"])
+
+
 def retrieval_node(state: GraphState, deps: Deps) -> dict:
     try:
-        ev = deps.retrieve(state["query"])
+        ev = _retrieve_with_terms(deps.retrieve, state)
         return {"evidence": ev, "audit": _audit(state, f"retrieval: {len(ev)} hit")}
     except Exception as exc:  # fail-closed: Qdrant giu'/timeout
         return {"system_error": True, "level": "BASSA",
@@ -165,7 +197,7 @@ def fallback_node(state: GraphState, deps: Deps) -> dict:
     Le evidence trovate SOVRASCRIVONO quelle povere del current: mai
     contesto misto v1/v2 all'LLM. Fail-closed come retrieval_node."""
     try:
-        ev = deps.retrieve_superseded(state["query"])
+        ev = _retrieve_with_terms(deps.retrieve_superseded, state)
         return {"evidence": ev, "obsolete_warning": True, "fallback_done": True,
                 "audit": _audit(state, f"fallback su SOSTITUITO: {len(ev)} hit")}
     except Exception as exc:
@@ -215,7 +247,7 @@ def finalize_node(state: GraphState, deps: Deps) -> dict:
 # ------------------------------------------------------------------- grafo
 
 def _after_router(state: GraphState) -> str:
-    return "finalize" if state.get("access_error") else "retrieval"
+    return "finalize" if state.get("access_error") else "expansion"
 
 
 def _after_retrieval(state: GraphState) -> str:
@@ -246,6 +278,7 @@ def build_graph(deps: Deps):
 
     g = StateGraph(GraphState)
     g.add_node("router", n(router_node))
+    g.add_node("expansion", n(expansion_node))
     g.add_node("retrieval", n(retrieval_node))
     g.add_node("confidence", n(confidence_node))
     g.add_node("fallback", n(fallback_node))
@@ -257,7 +290,8 @@ def build_graph(deps: Deps):
 
     g.add_edge(START, "router")
     g.add_conditional_edges("router", _after_router,
-                            {"finalize": "finalize", "retrieval": "retrieval"})
+                            {"finalize": "finalize", "expansion": "expansion"})
+    g.add_edge("expansion", "retrieval")
     g.add_conditional_edges("retrieval", _after_retrieval,
                             {"finalize": "finalize", "confidence": "confidence"})
     has_fb = deps.retrieve_superseded is not None
@@ -314,14 +348,17 @@ def _default_deps(role: Role) -> Deps:
         # sull'obsoleto resta filtrato per ruolo
         vf = access_filter(version_status, role)
 
-        def retrieve(query: str) -> list[Evidence]:
+        def retrieve(query: str, extra_terms: list[str] | None = None) -> list[Evidence]:
             route = classify_query(query)
             if route.query_type == "code":
                 hits = search(qc, query, "routed", limit=10, query_filter=vf)
                 return [_to_ev(h, h.score) for h in hits]
             # natural/mixed: reranker SIGMOID come score di produzione (P3.2 §3)
+            # (l'espansione debito §2 entra solo nel canale sparse via search;
+            #  il reranker resta sulla query originale)
             import torch
-            base = search(qc, query, "routed", limit=RERANK_TOPK, query_filter=vf)
+            base = search(qc, query, "routed", limit=RERANK_TOPK, query_filter=vf,
+                          extra_terms=extra_terms)
             if not base:
                 return []
             tok, model, device = _reranker()
@@ -347,6 +384,9 @@ def _default_deps(role: Role) -> Deps:
     def synthesize(query: str, ev: list[Evidence]) -> str:
         return _synth(oc, query, [e._asdict() for e in ev], model=None)
 
+    from src.retrieval.expansion import expand_query
+
     return Deps(retrieve=_retrieve("current"), synthesize=synthesize,
                 catalog_lookup=catalog_lookup, thresholds=CALIBRATED_V1,
-                retrieve_superseded=_retrieve("superseded"))
+                retrieve_superseded=_retrieve("superseded"),
+                expand=expand_query)
