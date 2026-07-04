@@ -22,6 +22,21 @@ needs_pg = pytest.mark.skipif(
 )
 
 
+def _qdrant_available() -> bool:
+    try:
+        from src.backend.clients.qdrant_client import get_qdrant_client
+        get_qdrant_client().get_collections()
+        return True
+    except Exception:
+        return False
+
+
+needs_qdrant = pytest.mark.skipif(
+    not _qdrant_available(),
+    reason="richiede Qdrant del compose (docker compose up -d qdrant)",
+)
+
+
 @pytest.fixture()
 def conn():
     """Connessione su schema temporaneo: il registro reale non viene toccato."""

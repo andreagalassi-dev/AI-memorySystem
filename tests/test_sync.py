@@ -45,19 +45,7 @@ class TestStemsToPatch:
 
 # ------------------------------------------------ integrazione Qdrant
 
-def _qdrant_available() -> bool:
-    try:
-        from src.backend.clients.qdrant_client import get_qdrant_client
-        get_qdrant_client().get_collections()
-        return True
-    except Exception:
-        return False
-
-
-needs_qdrant = pytest.mark.skipif(
-    not _qdrant_available(),
-    reason="richiede Qdrant del compose (docker compose up -d qdrant)",
-)
+from tests.conftest import needs_qdrant  # noqa: E402
 
 TEST_COLLS = ("test_sync_tmp_a", "test_sync_tmp_b")
 

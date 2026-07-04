@@ -38,6 +38,10 @@ class Evidence(NamedTuple):
     status: str | None
     warnings: list[str]
     score: float
+    # P4.4 — additivi CON default: le costruzioni posizionali a 12 campi
+    # (P3.5) restano valide. version_status: "current" | "superseded".
+    version_status: str | None = None
+    doc_version: int | None = None
 
 
 class GraphState(TypedDict, total=False):
@@ -55,6 +59,8 @@ class GraphState(TypedDict, total=False):
     citations: list[tuple[str, int]]
     guardrail_gate: str
     system_error: bool
+    obsolete_warning: bool
+    fallback_done: bool
     final_answer: str
     final_level: str
     audit: list[str]
@@ -67,6 +73,8 @@ class Deps:
     catalog_lookup: Callable[[str], bool]
     thresholds: Thresholds
     cross_probe: Callable[[str], list[tuple[str, int]]] | None = None
+    # P4.4 — cascade fallback sul SOSTITUITO; None = comportamento P3.5
+    retrieve_superseded: Callable[[str], list[Evidence]] | None = None
 
 
 def _audit(state: GraphState, msg: str) -> list[str]:
@@ -138,6 +146,20 @@ def guardrail_node(state: GraphState, deps: Deps) -> dict:
             "audit": _audit(state, f"guardrail: {rep.reason}")}
 
 
+def fallback_node(state: GraphState, deps: Deps) -> dict:
+    """P4.4 — Cascade fallback sul SOSTITUITO (solo se current -> BASSA).
+
+    Le evidence trovate SOVRASCRIVONO quelle povere del current: mai
+    contesto misto v1/v2 all'LLM. Fail-closed come retrieval_node."""
+    try:
+        ev = deps.retrieve_superseded(state["query"])
+        return {"evidence": ev, "obsolete_warning": True, "fallback_done": True,
+                "audit": _audit(state, f"fallback su SOSTITUITO: {len(ev)} hit")}
+    except Exception as exc:
+        return {"system_error": True, "level": "BASSA", "fallback_done": True,
+                "audit": _audit(state, f"Sistema non disponibile (fallback): {exc}")}
+
+
 def refuse_node(state: GraphState, deps: Deps) -> dict:
     return {"answer": REFUSAL, "audit": _audit(state, "livello BASSA -> rifiuto")}
 
@@ -156,9 +178,18 @@ def reconcile(state: GraphState) -> dict:
     if gate == "BLOCK":
         return {"final_answer": BLOCK_MSG, "final_level": "BASSA"}
     if gate == "VERIFY":
-        return {"final_answer": f"{answer_text}\n(verifica consigliata)",
-                "final_level": "MEDIA"}
-    return {"final_answer": answer_text, "final_level": state.get("level", "MEDIA")}
+        out = {"final_answer": f"{answer_text}\n(verifica consigliata)",
+               "final_level": "MEDIA"}
+    else:
+        out = {"final_answer": answer_text, "final_level": state.get("level", "MEDIA")}
+    # P4.4 — SPEC §E: risposta da fonte sostituita -> avviso esplicito e
+    # mai ALTA (cap a MEDIA, come il gate VERIFY: correttezza-prima)
+    if state.get("obsolete_warning"):
+        out["final_answer"] += ("\nATTENZIONE: risposta basata su documentazione "
+                                "SOSTITUITA (obsoleta). Verificare la versione corrente.")
+        if out["final_level"] == "ALTA":
+            out["final_level"] = "MEDIA"
+    return out
 
 
 def finalize_node(state: GraphState, deps: Deps) -> dict:
@@ -172,8 +203,17 @@ def _after_retrieval(state: GraphState) -> str:
     return "finalize" if state.get("system_error") else "confidence"
 
 
-def _after_confidence(state: GraphState) -> str:
-    return "refuse" if state.get("level") == "BASSA" else "fusion"
+def _after_confidence(state: GraphState, has_fallback: bool = False) -> str:
+    if state.get("level") != "BASSA":
+        return "fusion"
+    # P4.4 — cascade: BASSA sulla via current -> UNA sola discesa sul sostituito
+    if has_fallback and not state.get("fallback_done"):
+        return "fallback"
+    return "refuse"
+
+
+def _after_fallback(state: GraphState) -> str:
+    return "finalize" if state.get("system_error") else "confidence"
 
 
 def _after_synthesis(state: GraphState) -> str:
@@ -189,6 +229,7 @@ def build_graph(deps: Deps):
     g.add_node("router", n(router_node))
     g.add_node("retrieval", n(retrieval_node))
     g.add_node("confidence", n(confidence_node))
+    g.add_node("fallback", n(fallback_node))
     g.add_node("fusion", n(fusion_node))
     g.add_node("synthesis", n(synthesis_node))
     g.add_node("guardrail", n(guardrail_node))
@@ -199,8 +240,13 @@ def build_graph(deps: Deps):
     g.add_edge("router", "retrieval")
     g.add_conditional_edges("retrieval", _after_retrieval,
                             {"finalize": "finalize", "confidence": "confidence"})
-    g.add_conditional_edges("confidence", _after_confidence,
-                            {"refuse": "refuse", "fusion": "fusion"})
+    has_fb = deps.retrieve_superseded is not None
+    g.add_conditional_edges("confidence",
+                            lambda s: _after_confidence(s, has_fallback=has_fb),
+                            {"refuse": "refuse", "fusion": "fusion",
+                             "fallback": "fallback"})
+    g.add_conditional_edges("fallback", _after_fallback,
+                            {"finalize": "finalize", "confidence": "confidence"})
     g.add_edge("fusion", "synthesis")
     g.add_conditional_edges("synthesis", _after_synthesis,
                             {"finalize": "finalize", "guardrail": "guardrail"})
@@ -223,7 +269,7 @@ def _default_deps() -> Deps:
     from src.backend.clients.qdrant_client import get_qdrant_client
     from src.retrieval.confidence import CALIBRATED_V1
     from src.retrieval.rerank import RERANK_TOPK, _reranker
-    from src.retrieval.search import search
+    from src.retrieval.search import search, version_filter
     from src.retrieval.synthesis import synthesize as _synth
 
     qc = get_qdrant_client()
@@ -233,28 +279,38 @@ def _default_deps() -> Deps:
         p = hit.payload
         return Evidence(p.get("doc"), p.get("page"), p.get("lang"), p.get("code"),
                         p.get("desc"), p.get("text"), p.get("qty"), p.get("price"),
-                        p.get("type"), p.get("status"), p.get("warnings") or [], score)
+                        p.get("type"), p.get("status"), p.get("warnings") or [], score,
+                        p.get("version_status"), p.get("doc_version"))
 
-    def retrieve(query: str) -> list[Evidence]:
-        route = classify_query(query)
-        if route.query_type == "code":
-            hits = search(qc, query, "routed", limit=10)
-            return [_to_ev(h, h.score) for h in hits]
-        # natural/mixed: reranker SIGMOID come score di produzione (P3.2 §3)
-        import torch
-        base = search(qc, query, "routed", limit=RERANK_TOPK)
-        if not base:
-            return []
-        tok, model, device = _reranker()
-        pairs = [(query, h.payload.get("text") or h.payload.get("desc") or "") for h in base]
-        batch = tok(pairs, padding=True, truncation=True, max_length=512,
-                    return_tensors="pt").to(device)
-        with torch.no_grad():
-            probs = torch.sigmoid(model(**batch).logits.squeeze(-1).float()).cpu().tolist()
-        if not isinstance(probs, list):
-            probs = [probs]
-        ranked = sorted(zip(probs, base), key=lambda t: -t[0])
-        return [_to_ev(h, s) for s, h in ranked[:10]]
+    def _retrieve(version_status: str):
+        # P4.4 — stessa logica routed_rr su scope diversi: "current" per la
+        # via primaria, "superseded" per il cascade fallback (SPEC §E)
+        vf = version_filter(version_status)
+
+        def retrieve(query: str) -> list[Evidence]:
+            route = classify_query(query)
+            if route.query_type == "code":
+                hits = search(qc, query, "routed", limit=10, query_filter=vf)
+                return [_to_ev(h, h.score) for h in hits]
+            # natural/mixed: reranker SIGMOID come score di produzione (P3.2 §3)
+            import torch
+            base = search(qc, query, "routed", limit=RERANK_TOPK, query_filter=vf)
+            if not base:
+                return []
+            tok, model, device = _reranker()
+            pairs = [(query, h.payload.get("text") or h.payload.get("desc") or "")
+                     for h in base]
+            batch = tok(pairs, padding=True, truncation=True, max_length=512,
+                        return_tensors="pt").to(device)
+            with torch.no_grad():
+                probs = torch.sigmoid(
+                    model(**batch).logits.squeeze(-1).float()).cpu().tolist()
+            if not isinstance(probs, list):
+                probs = [probs]
+            ranked = sorted(zip(probs, base), key=lambda t: -t[0])
+            return [_to_ev(h, s) for s, h in ranked[:10]]
+
+        return retrieve
 
     def catalog_lookup(key: str) -> bool:
         r = qc.count("aike_chunks", exact=True, count_filter=models.Filter(
@@ -264,5 +320,6 @@ def _default_deps() -> Deps:
     def synthesize(query: str, ev: list[Evidence]) -> str:
         return _synth(oc, query, [e._asdict() for e in ev], model=None)
 
-    return Deps(retrieve=retrieve, synthesize=synthesize,
-                catalog_lookup=catalog_lookup, thresholds=CALIBRATED_V1)
+    return Deps(retrieve=_retrieve("current"), synthesize=synthesize,
+                catalog_lookup=catalog_lookup, thresholds=CALIBRATED_V1,
+                retrieve_superseded=_retrieve("superseded"))

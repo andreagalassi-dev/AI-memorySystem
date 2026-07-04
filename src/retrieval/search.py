@@ -30,54 +30,72 @@ def _sparse_vec(query: str) -> models.SparseVector:
     return models.SparseVector(indices=q.indices.tolist(), values=q.values.tolist())
 
 
-def search(client: QdrantClient, query: str, strategy: str, limit: int = 10):
-    """Ritorna la lista di ScoredPoint per la strategia richiesta."""
+def version_filter(status: str) -> models.Filter:
+    """P4.4 — Filtro sul payload `version_status` (indicizzato in P4.2)."""
+    return models.Filter(must=[models.FieldCondition(
+        key="version_status", match=models.MatchValue(value=status))])
+
+
+def search(client: QdrantClient, query: str, strategy: str, limit: int = 10,
+           query_filter: models.Filter | None = None):
+    """Ritorna la lista di ScoredPoint per la strategia richiesta.
+
+    `query_filter` (P4.4, additivo) limita i CANDIDATI senza toccare lo
+    scoring: nelle strategie ibride va dentro OGNI prefetch (e' li' che si
+    generano i candidati), oltre che sull'outer query.
+    """
     if strategy == "sparse":
         return client.query_points(
             COLLECTION, query=_sparse_vec(query), using=SPARSE_NAME,
-            with_payload=True, limit=limit).points
+            query_filter=query_filter, with_payload=True, limit=limit).points
     if strategy == "dense":
         return client.query_points(
             COLLECTION, query=embed_dense([query])[0], using=DENSE_NAME,
-            with_payload=True, limit=limit).points
+            query_filter=query_filter, with_payload=True, limit=limit).points
     if strategy == "rrf":
         return client.query_points(
             COLLECTION,
             prefetch=[
                 models.Prefetch(query=embed_dense([query])[0],
-                                using=DENSE_NAME, limit=limit * 2),
+                                using=DENSE_NAME, limit=limit * 2,
+                                filter=query_filter),
                 models.Prefetch(query=_sparse_vec(query),
-                                using=SPARSE_NAME, limit=limit * 2),
+                                using=SPARSE_NAME, limit=limit * 2,
+                                filter=query_filter),
             ],
             query=models.FusionQuery(fusion=models.Fusion.RRF),
-            with_payload=True, limit=limit).points
+            query_filter=query_filter, with_payload=True, limit=limit).points
     if strategy == "routed":
         route = classify_query(query)
         if route.query_type == "code":
             # SOLO il token-codice al canale lessicale: le parole-marker
             # ("part number", "codice") matcherebbero migliaia di chunk-testo
             # sommergendo il token unico (misurato in P2.6: 19.9 vs 15.9).
-            return search(client, route.code_token, "sparse", limit)
+            return search(client, route.code_token, "sparse", limit,
+                          query_filter=query_filter)
         if route.query_type == "mixed":
             # ibrida: lessicale sul token-codice, semantica sulla frase intera
             return client.query_points(
                 COLLECTION,
                 prefetch=[
                     models.Prefetch(query=embed_dense([query])[0],
-                                    using=DENSE_NAME, limit=limit * 2),
+                                    using=DENSE_NAME, limit=limit * 2,
+                                    filter=query_filter),
                     models.Prefetch(query=_sparse_vec(route.code_token),
-                                    using=SPARSE_NAME, limit=limit * 2),
+                                    using=SPARSE_NAME, limit=limit * 2,
+                                    filter=query_filter),
                 ],
                 query=models.FusionQuery(fusion=models.Fusion.RRF),
-                with_payload=True, limit=limit).points
-        return search(client, query, "rrf", limit)
+                query_filter=query_filter, with_payload=True, limit=limit).points
+        return search(client, query, "rrf", limit, query_filter=query_filter)
     if strategy == "routed_rr":
         from src.retrieval.rerank import RERANK_TOPK, rerank
 
         route = classify_query(query)
         if route.query_type == "code":
-            return search(client, query, "routed", limit)
-        base = search(client, query, "routed", limit=RERANK_TOPK)
+            return search(client, query, "routed", limit, query_filter=query_filter)
+        base = search(client, query, "routed", limit=RERANK_TOPK,
+                      query_filter=query_filter)
         return rerank(query, base, limit=limit)
     raise ValueError(f"strategia sconosciuta: {strategy}")
 
