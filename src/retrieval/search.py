@@ -17,6 +17,7 @@ from src.ingestion.embedding import (
     embed_dense,
     embed_sparse_query,
 )
+from src.common.roles import Role
 from src.retrieval.router import classify_query
 
 STRATEGIES = ("dense", "sparse", "rrf", "routed")
@@ -34,6 +35,18 @@ def version_filter(status: str) -> models.Filter:
     """P4.4 — Filtro sul payload `version_status` (indicizzato in P4.2)."""
     return models.Filter(must=[models.FieldCondition(
         key="version_status", match=models.MatchValue(value=status))])
+
+
+def access_filter(version_status: str, role: Role) -> models.Filter:
+    """P4.5 — AND(versione, ruolo): MatchValue su `ruoli_consentiti` (lista
+    keyword indicizzata in P4.2) = "l'array contiene il ruolo". Il tipo Role
+    e' l'unico ammesso: la validazione a monte e' gia' avvenuta."""
+    return models.Filter(must=[
+        models.FieldCondition(key="version_status",
+                              match=models.MatchValue(value=version_status)),
+        models.FieldCondition(key="ruoli_consentiti",
+                              match=models.MatchValue(value=role.value)),
+    ])
 
 
 def search(client: QdrantClient, query: str, strategy: str, limit: int = 10,

@@ -15,12 +15,14 @@ from typing import Callable, NamedTuple, TypedDict
 
 from langgraph.graph import END, START, StateGraph
 
+from src.common.roles import Role, parse_role
 from src.retrieval.confidence import Signals, Thresholds, compute_margin, confidence_level
 from src.retrieval.guardrail import check_answer
 from src.retrieval.router import classify_query
 from src.retrieval.synthesis import REFUSAL, extract_citations, strip_citations
 
 SYS_UNAVAIL = "Sistema non disponibile. Riprova più tardi."
+ACCESS_MSG = "Richiesta rifiutata: ruolo mancante o non valido."
 BLOCK_MSG = ("Verifica manuale: la risposta contiene un codice non confermato "
              "dall'evidenza recuperata.")
 
@@ -46,6 +48,8 @@ class Evidence(NamedTuple):
 
 class GraphState(TypedDict, total=False):
     query: str
+    role: str
+    access_error: bool
     route: str
     code_token: str | None
     route_reason: str
@@ -84,9 +88,18 @@ def _audit(state: GraphState, msg: str) -> list[str]:
 # ------------------------------------------------------------------- nodi
 
 def router_node(state: GraphState, deps: Deps) -> dict:
+    # P4.5 — difesa in profondita': il grafo e' fail-closed anche su invoke
+    # DIRETTO senza passare da answer(); mai retrieval/LLM senza ruolo valido
+    try:
+        role = parse_role(state.get("role"))
+    except (TypeError, ValueError):
+        return {"access_error": True, "level": "BASSA",
+                "audit": _audit(state, "ingresso: ruolo mancante o non valido "
+                                       f"({state.get('role')!r})")}
     r = classify_query(state["query"])
     return {"route": r.query_type, "code_token": r.code_token,
-            "route_reason": r.reason, "audit": _audit(state, f"router: {r.reason}")}
+            "route_reason": r.reason,
+            "audit": _audit(state, f"router[{role.value}]: {r.reason}")}
 
 
 def retrieval_node(state: GraphState, deps: Deps) -> dict:
@@ -165,7 +178,9 @@ def refuse_node(state: GraphState, deps: Deps) -> dict:
 
 
 def reconcile(state: GraphState) -> dict:
-    """Riconciliazione finale pura: system_error / rifiuto / guardrail x livello."""
+    """Riconciliazione finale pura: accesso / system_error / rifiuto / guardrail."""
+    if state.get("access_error"):
+        return {"final_answer": ACCESS_MSG, "final_level": "BASSA"}
     if state.get("system_error"):
         return {"final_answer": SYS_UNAVAIL, "final_level": "BASSA"}
     if state.get("level") == "BASSA":
@@ -198,6 +213,10 @@ def finalize_node(state: GraphState, deps: Deps) -> dict:
 
 
 # ------------------------------------------------------------------- grafo
+
+def _after_router(state: GraphState) -> str:
+    return "finalize" if state.get("access_error") else "retrieval"
+
 
 def _after_retrieval(state: GraphState) -> str:
     return "finalize" if state.get("system_error") else "confidence"
@@ -237,7 +256,8 @@ def build_graph(deps: Deps):
     g.add_node("finalize", n(finalize_node))
 
     g.add_edge(START, "router")
-    g.add_edge("router", "retrieval")
+    g.add_conditional_edges("router", _after_router,
+                            {"finalize": "finalize", "retrieval": "retrieval"})
     g.add_conditional_edges("retrieval", _after_retrieval,
                             {"finalize": "finalize", "confidence": "confidence"})
     has_fb = deps.retrieve_superseded is not None
@@ -256,12 +276,18 @@ def build_graph(deps: Deps):
     return g.compile()
 
 
-def answer(query: str, deps: Deps | None = None) -> dict:
-    """Entry point: esegue il grafo. Con deps=None usa i client reali."""
-    return build_graph(deps or _default_deps()).invoke({"query": query})
+def answer(query: str, role: Role | str, deps: Deps | None = None) -> dict:
+    """Entry point: esegue il grafo. Con deps=None usa i client reali.
+
+    P4.5 — `role` OBBLIGATORIO e tipizzato (SPEC §F.3): TypeError su
+    None/non-str, ValueError su ruoli fuori vocabolario. Mai default.
+    """
+    validated = parse_role(role)
+    return build_graph(deps or _default_deps(validated)).invoke(
+        {"query": query, "role": validated.value})
 
 
-def _default_deps() -> Deps:
+def _default_deps(role: Role) -> Deps:
     """Wiring di produzione: Qdrant (routed_rr) + Ollama. Import lazy."""
     from qdrant_client import models
 
@@ -269,7 +295,7 @@ def _default_deps() -> Deps:
     from src.backend.clients.qdrant_client import get_qdrant_client
     from src.retrieval.confidence import CALIBRATED_V1
     from src.retrieval.rerank import RERANK_TOPK, _reranker
-    from src.retrieval.search import search, version_filter
+    from src.retrieval.search import access_filter, search
     from src.retrieval.synthesis import synthesize as _synth
 
     qc = get_qdrant_client()
@@ -283,9 +309,10 @@ def _default_deps() -> Deps:
                         p.get("version_status"), p.get("doc_version"))
 
     def _retrieve(version_status: str):
-        # P4.4 — stessa logica routed_rr su scope diversi: "current" per la
-        # via primaria, "superseded" per il cascade fallback (SPEC §E)
-        vf = version_filter(version_status)
+        # P4.4/P4.5 — stessa logica routed_rr su scope diversi, SEMPRE dentro
+        # il perimetro del ruolo: AND(versione, ruolo) — anche il fallback
+        # sull'obsoleto resta filtrato per ruolo
+        vf = access_filter(version_status, role)
 
         def retrieve(query: str) -> list[Evidence]:
             route = classify_query(query)

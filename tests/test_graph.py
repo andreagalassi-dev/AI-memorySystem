@@ -100,7 +100,8 @@ class TestFailClosed:
 
 class TestEndToEnd:
     def _run(self, deps, query="che codice ha lo spinotto?"):
-        return build_graph(deps).invoke({"query": query})
+        # P4.5: il grafo esige un ruolo valido nello stato (fail-closed)
+        return build_graph(deps).invoke({"query": query, "role": "tecnico"})
 
     def test_percorso_normale_risponde_con_fonte(self):
         r = self._run(make_deps())

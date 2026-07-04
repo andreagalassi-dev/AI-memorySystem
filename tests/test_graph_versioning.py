@@ -95,7 +95,8 @@ class TestReconcileObsoleto:
 
 class TestCascadeEndToEnd:
     def _run(self, deps, query="che codice ha la guarnizione valvola?"):
-        return build_graph(deps).invoke({"query": query})
+        # P4.5: il grafo esige un ruolo valido nello stato (fail-closed)
+        return build_graph(deps).invoke({"query": query, "role": "tecnico"})
 
     def test_current_vuoto_fallback_risponde_con_avviso(self):
         r = self._run(make_deps(retrieve_superseded=lambda q: [EV_OLD, EV_OLD2],
