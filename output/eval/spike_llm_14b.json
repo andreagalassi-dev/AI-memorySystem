@@ -1,0 +1,130 @@
+{
+  "model": "qwen2.5:14b",
+  "summary": {
+    "n_real": 7,
+    "n_empty": 2,
+    "no_codici_allucinati": 6,
+    "citazione_ok": 7,
+    "rifiuto_ok_su_vuota": 2,
+    "latenza_mediana_s": 6.24
+  },
+  "rows": [
+    {
+      "qa_id": "W002",
+      "lang": "IT",
+      "empty_evidence": false,
+      "latency_s": 6.24,
+      "is_refusal": true,
+      "n_cites": 0,
+      "gate_no_codici_allucinati": true,
+      "gate_citazione": true,
+      "gate_rifiuto": true,
+      "query": "boccola in plastica del trinciaerba Panciroli",
+      "output": "Non ho evidenza sufficiente per rispondere."
+    },
+    {
+      "qa_id": "W009",
+      "lang": "IT",
+      "empty_evidence": false,
+      "latency_s": 7.86,
+      "is_refusal": false,
+      "n_cites": 1,
+      "gate_no_codici_allucinati": true,
+      "gate_citazione": true,
+      "gate_rifiuto": true,
+      "query": "il kit KV02-1SMT7ANS va bene per una casa singola?",
+      "output": "Il documento indica che KV02-1SMT7ANS è un \"KIT IP MONOFAMIL\" (doc ave_listino_materiale_elettrico_2023, pag. 1), il che suggerisce che sia adatto per una casa singola. Non ci sono informazioni aggiuntive disponibili in <evidenza> per questa domanda specifica."
+    },
+    {
+      "qa_id": "W014",
+      "lang": "IT",
+      "empty_evidence": false,
+      "latency_s": 4.96,
+      "is_refusal": true,
+      "n_cites": 0,
+      "gate_no_codici_allucinati": true,
+      "gate_citazione": true,
+      "gate_rifiuto": true,
+      "query": "dado flangiato del gruppo mandrino del rasaerba",
+      "output": "Non ho evidenza sufficiente per rispondere."
+    },
+    {
+      "qa_id": "C001",
+      "lang": "IT",
+      "empty_evidence": false,
+      "latency_s": 6.84,
+      "is_refusal": false,
+      "n_cites": 1,
+      "gate_no_codici_allucinati": true,
+      "gate_citazione": true,
+      "gate_rifiuto": true,
+      "query": "V09156800007",
+      "output": "Il codice V09156800007 corrisponde a \"Accessori Fissaggio deviato/re/diverter Fixing Accessories\" con un prezzo di 15,00 EUR (Mamoli_Catalogo_Ricambi_2021_IT_EN.pdf, pag. 231)."
+    },
+    {
+      "qa_id": "C008",
+      "lang": "EN",
+      "empty_evidence": false,
+      "latency_s": 8.07,
+      "is_refusal": false,
+      "n_cites": 1,
+      "gate_no_codici_allucinati": true,
+      "gate_citazione": true,
+      "gate_rifiuto": true,
+      "query": "pair of replacement handles for the mixer",
+      "output": "20001L — Coppia maniglie/Pair of handles (qty 2, prezzo 83,50) (Mamoli_Catalogo_Ricambi_2021_IT_EN, pag. 205)."
+    },
+    {
+      "qa_id": "W030",
+      "lang": "EN",
+      "empty_evidence": false,
+      "latency_s": 4.66,
+      "is_refusal": false,
+      "n_cites": 1,
+      "gate_no_codici_allucinati": false,
+      "gate_citazione": true,
+      "gate_rifiuto": true,
+      "query": "DPM4000",
+      "output": "DPM4000 è il massimo valore indicato nel documento, con una quantità massima di 1500 (qty 65000) (cassani_concrete_machinery, pag. 49)."
+    },
+    {
+      "qa_id": "W040",
+      "lang": "EN",
+      "empty_evidence": false,
+      "latency_s": 3.12,
+      "is_refusal": false,
+      "n_cites": 1,
+      "gate_no_codici_allucinati": true,
+      "gate_citazione": true,
+      "gate_rifiuto": true,
+      "query": "part 71910",
+      "output": "Part 71910 is related to product improvement. (lycoming_IGO540_PC116, pag. 88)"
+    },
+    {
+      "qa_id": "W002",
+      "lang": "IT",
+      "empty_evidence": true,
+      "latency_s": 1.24,
+      "is_refusal": true,
+      "n_cites": 0,
+      "gate_no_codici_allucinati": true,
+      "gate_citazione": true,
+      "gate_rifiuto": true,
+      "query": "boccola in plastica del trinciaerba Panciroli",
+      "output": "Non ho evidenza sufficiente per rispondere."
+    },
+    {
+      "qa_id": "C001",
+      "lang": "IT",
+      "empty_evidence": true,
+      "latency_s": 1.24,
+      "is_refusal": true,
+      "n_cites": 0,
+      "gate_no_codici_allucinati": true,
+      "gate_citazione": true,
+      "gate_rifiuto": true,
+      "query": "V09156800007",
+      "output": "Non ho evidenza sufficiente per rispondere."
+    }
+  ]
+}
