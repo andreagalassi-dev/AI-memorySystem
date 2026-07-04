@@ -1,11 +1,15 @@
 """P2.6 — Registro profili brand: normalizzazione codici a CONFIGURAZIONE.
 
 Chiude il debito della gate decision P1 §5: le regole di famiglia-codice non
-vivono piu' hardcoded in Python ma in `config/brands.json` (per-brand; in Fase
-2 diventera' tabella a DB per-tenant). Il profilo `default` e' il guardrail
-anti rabbit-hole: NON normalizza (nessun rejoin, nessuna regex inventata),
-fa solo cleanup sicuro + rilevamento conservativo del token-codice, e marca
-tutto `default_passthrough`.
+vivono hardcoded in Python. Dal debito tecnico §1 (post-P5) la fonte di verita'
+sono le tabelle Postgres dei Profili di Ingestion (src/registry/
+ingestion_profiles.py); config/brands.json resta SOLO come seed
+(scripts/seed_ingestion_profiles.py). FAIL-CLOSED: DB irraggiungibile o
+profili non seedati -> errore chiaro, nessun fallback su JSON stantio
+(principio SPEC: mai sbagliato in silenzio). Il profilo `default` e' il
+guardrail anti rabbit-hole: NON normalizza (nessun rejoin, nessuna regex
+inventata), fa solo cleanup sicuro + rilevamento conservativo del
+token-codice, e marca tutto `default_passthrough`.
 
 Lo stesso registro alimenta il router (famiglie Tier A) e il chunker
 (rilevamento colonna-codice): una sola fonte di verita'.
@@ -14,23 +18,48 @@ Lo stesso registro alimenta il router (famiglie Tier A) e il chunker
 from __future__ import annotations
 
 import fnmatch
-import json
 import re
 from functools import lru_cache
-from pathlib import Path
 
 from src.ingestion.codes import base_cleanup, canonical
-
-CONFIG_PATH = Path(__file__).resolve().parent.parent.parent / "config" / "brands.json"
 
 # Rilevamento CONSERVATIVO del profilo default: token singolo con cifre+lettere
 # (len>=4) o solo cifre (len>=5). Niente virgole (prezzi), niente spazi.
 DEFAULT_CODEY = re.compile(r"^(?=.{4,})(?:(?=.*\d)(?=.*[A-Z])[0-9A-Z][0-9A-Z./-]*|\d{5,})$")
 
 
+def _load_from_db() -> dict:
+    import psycopg
+
+    from src.backend.clients.postgres_client import get_pg_conn
+    from src.registry.ingestion_profiles import load_profiles
+    try:
+        with get_pg_conn() as conn:
+            cfg = load_profiles(conn)
+    except psycopg.errors.UndefinedTable as e:
+        raise RuntimeError(
+            "Tabelle dei Profili di Ingestion assenti: eseguire "
+            "`uv run scripts/seed_ingestion_profiles.py`") from e
+    except psycopg.OperationalError as e:
+        raise RuntimeError(
+            "Profili di ingestion non caricabili: Postgres irraggiungibile "
+            "(docker compose up -d postgres). Fail-closed: nessun fallback "
+            "su config/brands.json") from e
+    if "default" not in cfg["profiles"]:
+        raise RuntimeError(
+            "Profilo 'default' assente a DB: eseguire "
+            "`uv run scripts/seed_ingestion_profiles.py`")
+    return cfg
+
+
+def reload_profiles() -> None:
+    """Invalida la cache di processo (test, futura UI admin dei profili)."""
+    _config.cache_clear()
+
+
 @lru_cache(maxsize=1)
 def _config() -> dict:
-    cfg = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
+    cfg = _load_from_db()
     for name, p in cfg["profiles"].items():
         for fam in p.get("long_families", []):
             fam["_extract"] = re.compile(fam["extract_pattern"])

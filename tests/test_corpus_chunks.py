@@ -1,10 +1,16 @@
-"""P2.6 — Test del chunking generalizzato e del rilevatore lingua."""
+"""P2.6 — Test del chunking generalizzato e del rilevatore lingua.
+
+Debito §1: i profili arrivano da Postgres (seedato) -> marker needs_pg.
+"""
 
 from __future__ import annotations
 
 from src.ingestion.brands import get_profile
 from src.ingestion.corpus_chunks import chunk_page
 from src.ingestion.lang_detect import detect_lang
+from tests.conftest import needs_pg
+
+pytestmark = needs_pg
 
 
 def run(md: str, profile="default", doc="testdoc", page=1, lang="EN"):
