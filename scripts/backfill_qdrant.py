@@ -34,26 +34,16 @@ from src.backend.clients.qdrant_client import get_qdrant_client  # noqa: E402
 from src.common.roles import Role  # noqa: E402
 from src.ingestion.embedding import COLLECTION, DENSE_NAME, embed_dense  # noqa: E402
 from src.registry.registry import backfill_payload, export_backfill  # noqa: E402
+from src.registry.sync import NEW_KEYS, facet_docs, sync_collection  # noqa: E402
 from src.retrieval.visual import VISUAL_COLLECTION  # noqa: E402
 
 COLLECTIONS = (COLLECTION, VISUAL_COLLECTION)
-NEW_KEYS = ("version_status", "doc_version", "ruoli_consentiti")
 SMOKE_QUERY = "codice ricambio cilindro"  # riferimento arbitrario ma FISSO
 
 
 def die(msg: str) -> None:
     print(f"  ERRORE: {msg}")
     sys.exit(1)
-
-
-def doc_filter(stem: str) -> models.Filter:
-    return models.Filter(must=[models.FieldCondition(
-        key="doc", match=models.MatchValue(value=stem))])
-
-
-def facet_docs(qc, coll: str) -> set[str]:
-    r = qc.facet(coll, key="doc", limit=1000, exact=True)
-    return {h.value for h in r.hits}
 
 
 def count(qc, coll: str, key: str, value) -> int:
@@ -114,17 +104,15 @@ def main() -> None:
     n_points = {coll: qc.count(coll, exact=True).count for coll in COLLECTIONS}
     print(f"  punti: {n_points} | smoke dense: {top_before}")
 
-    print("[4/6] patch additiva + indici keyword")
+    print("[4/6] riconciliazione selettiva + indici keyword")
     for coll in COLLECTIONS:
-        present = facet_docs(qc, coll)
-        for stem in sorted(present):
-            qc.set_payload(coll, payload=payloads[stem],
-                           points=doc_filter(stem), wait=True)
+        rep = sync_collection(qc, coll, export)  # patcha SOLO gli stem divergenti
         for key in ("version_status", "ruoli_consentiti"):
             qc.create_payload_index(coll, field_name=key,
                                     field_schema=models.PayloadSchemaType.KEYWORD,
                                     wait=True)
-        print(f"  {coll}: {len(present)} stems patchati, indici creati")
+        print(f"  {coll}: {len(rep.patched)} patchati, {rep.skipped} gia' "
+              f"allineati, indici ok")
 
     print("[5/6] verifiche dati (attesi calcolati dal registro)")
     for coll in COLLECTIONS:

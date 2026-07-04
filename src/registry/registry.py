@@ -180,6 +180,43 @@ def backfill_payload(rec: BackfillRecord) -> dict:
             "ruoli_consentiti": [str(r.value) for r in rec.ruoli]}
 
 
+class SupersedeReport(NamedTuple):
+    phase1: str            # "switched" | "already-done"
+    sync_reports: list
+    warnings: list[str]
+
+
+def supersede_document(conn: psycopg.Connection, *, slug: str, new_doc_stem: str,
+                       langs: list[str], sync) -> SupersedeReport:
+    """Flusso "nuova versione", rilanciabile ALLA CIECA dopo qualsiasi crash.
+
+    Fase 1 (verita', atomica): mark_superseded su Postgres — con guardia di
+    idempotenza: se new_doc_stem e' gia' la current dello slug, la fase e'
+    gia' avvenuta (crash post-commit) e NON si crea una v3.
+    Fase 2 (proiezione, convergente): sync(export) riconcilia Qdrant dallo
+    stato SSOT; rieseguirla su stato gia' allineato e' un no-op.
+    """
+    existing = get_version_by_stem(conn, new_doc_stem)
+    if existing is None:
+        mark_superseded(conn, slug=slug, new_doc_stem=new_doc_stem, langs=langs)
+        phase1 = "switched"
+    else:
+        owner = conn.execute("SELECT slug FROM documents WHERE id = %s",
+                             (existing.document_id,)).fetchone()[0]
+        if owner != slug or existing.version_status != CURRENT:
+            raise ValueError(
+                f"stato incoerente: {new_doc_stem!r} e' {existing.version_status} "
+                f"di {owner!r}, non current di {slug!r} — switch rifiutato")
+        phase1 = "already-done"  # crash post-commit: si riparte dalla sync
+
+    reports = sync(export_backfill(conn))
+    warnings = [f"{new_doc_stem}: registrato current ma senza punti in "
+                f"{r.collection} — ingerire il documento e rilanciare la sync"
+                for r in reports if new_doc_stem in r.missing_stems]
+    return SupersedeReport(phase1=phase1, sync_reports=list(reports),
+                           warnings=warnings)
+
+
 def list_documents(conn: psycopg.Connection) -> list[DocumentRecord]:
     rows = conn.execute(
         "SELECT d.id, d.slug, d.category, v.doc_stem FROM documents d "
