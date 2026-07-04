@@ -1,0 +1,2075 @@
+{
+  "date": "2026-07-04",
+  "eval_set": "eval_set_v1.jsonl",
+  "topk": 3,
+  "delta_scelto": null,
+  "results": [
+    {
+      "delta": 0,
+      "promozioni": 2,
+      "buone": 1,
+      "cattive": 1,
+      "promossi": [
+        [
+          "W009",
+          "POS_HIT1",
+          [
+            "ave_listino_materiale_elettrico_2023",
+            1
+          ]
+        ],
+        [
+          "W014",
+          "POS_MISS",
+          [
+            "manzoni_comac_spareparts_B",
+            24
+          ]
+        ]
+      ],
+      "alta_precision": 0.933,
+      "alta_n": 15,
+      "per_lang": {
+        "IT": {
+          "buone": 1,
+          "cattive": 1
+        }
+      }
+    },
+    {
+      "delta": 1,
+      "promozioni": 4,
+      "buone": 1,
+      "cattive": 3,
+      "promossi": [
+        [
+          "W009",
+          "POS_HIT1",
+          [
+            "ave_listino_materiale_elettrico_2023",
+            1
+          ]
+        ],
+        [
+          "W014",
+          "POS_MISS",
+          [
+            "manzoni_comac_spareparts_B",
+            24
+          ]
+        ],
+        [
+          "W020",
+          "POS_MISS",
+          [
+            "ave_listino_materiale_elettrico_2023",
+            2
+          ]
+        ],
+        [
+          "C008",
+          "POS_MISS",
+          [
+            "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+            203
+          ]
+        ]
+      ],
+      "alta_precision": 0.824,
+      "alta_n": 17,
+      "per_lang": {
+        "EN": {
+          "buone": 0,
+          "cattive": 1
+        },
+        "IT": {
+          "buone": 1,
+          "cattive": 2
+        }
+      }
+    },
+    {
+      "delta": 2,
+      "promozioni": 4,
+      "buone": 1,
+      "cattive": 3,
+      "promossi": [
+        [
+          "W009",
+          "POS_HIT1",
+          [
+            "ave_listino_materiale_elettrico_2023",
+            1
+          ]
+        ],
+        [
+          "W014",
+          "POS_MISS",
+          [
+            "manzoni_comac_spareparts_B",
+            24
+          ]
+        ],
+        [
+          "W020",
+          "POS_MISS",
+          [
+            "ave_listino_materiale_elettrico_2023",
+            2
+          ]
+        ],
+        [
+          "C008",
+          "POS_MISS",
+          [
+            "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+            203
+          ]
+        ]
+      ],
+      "alta_precision": 0.824,
+      "alta_n": 17,
+      "per_lang": {
+        "EN": {
+          "buone": 0,
+          "cattive": 1
+        },
+        "IT": {
+          "buone": 1,
+          "cattive": 2
+        }
+      }
+    }
+  ],
+  "rows": [
+    {
+      "qa_id": "W001",
+      "lang": "IT",
+      "cat": "POS_MISS",
+      "base_level": "MEDIA",
+      "margin": 0.6363,
+      "text_top": [
+        "pi_pulley_listino_pulegge_2025",
+        3
+      ],
+      "visual_dp": [
+        [
+          "smem_motori_elettrici_catalogo_2025",
+          31
+        ],
+        [
+          "kbs_gastrotechnik_1717",
+          5
+        ],
+        [
+          "manzoni_comac_spareparts_A",
+          24
+        ],
+        [
+          "manzoni_comac_spareparts_A",
+          18
+        ],
+        [
+          "rimoldi_327_spareparts",
+          7
+        ]
+      ]
+    },
+    {
+      "qa_id": "W002",
+      "lang": "IT",
+      "cat": "POS_MISS",
+      "base_level": "MEDIA",
+      "margin": 0.7304,
+      "text_top": [
+        "manzoni_comac_spareparts_B",
+        24
+      ],
+      "visual_dp": [
+        [
+          "panciroli_garmec_BL200",
+          49
+        ],
+        [
+          "panciroli_garmec_BL200",
+          14
+        ],
+        [
+          "panciroli_garmec_BL200",
+          22
+        ],
+        [
+          "panciroli_garmec_BL200",
+          10
+        ],
+        [
+          "panciroli_garmec_BL200",
+          12
+        ]
+      ]
+    },
+    {
+      "qa_id": "W003",
+      "lang": "IT",
+      "cat": "POS_MISS",
+      "base_level": "MEDIA",
+      "margin": 0.7587,
+      "text_top": [
+        "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+        224
+      ],
+      "visual_dp": [
+        [
+          "sassinterizzati_cilindri_2025",
+          62
+        ],
+        [
+          "sassinterizzati_cilindri_2025",
+          51
+        ],
+        [
+          "sassinterizzati_cilindri_2025",
+          56
+        ],
+        [
+          "fluid_system_cilindri_oleodinamici",
+          20
+        ],
+        [
+          "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+          88
+        ]
+      ]
+    },
+    {
+      "qa_id": "W004",
+      "lang": "IT",
+      "cat": "POS_MISS",
+      "base_level": "MEDIA",
+      "margin": 0.7104,
+      "text_top": [
+        "smem_motori_elettrici_catalogo_2025",
+        7
+      ],
+      "visual_dp": [
+        [
+          "smem_motori_elettrici_catalogo_2025",
+          31
+        ],
+        [
+          "smem_motori_elettrici_catalogo_2025",
+          23
+        ],
+        [
+          "smem_motori_elettrici_catalogo_2025",
+          16
+        ],
+        [
+          "smem_motori_elettrici_catalogo_2025",
+          18
+        ],
+        [
+          "fluid_system_cilindri_oleodinamici",
+          20
+        ]
+      ]
+    },
+    {
+      "qa_id": "W005",
+      "lang": "IT",
+      "cat": "POS_MISS",
+      "base_level": "MEDIA",
+      "margin": 0.5047,
+      "text_top": [
+        "ave_listino_materiale_elettrico_2023",
+        1
+      ],
+      "visual_dp": [
+        [
+          "smem_motori_elettrici_catalogo_2025",
+          33
+        ],
+        [
+          "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+          103
+        ],
+        [
+          "kbs_gastrotechnik_ready700",
+          3
+        ],
+        [
+          "kbs_gastrotechnik_ready700",
+          6
+        ],
+        [
+          "arol_listino_oleodinamica_2024",
+          7
+        ]
+      ]
+    },
+    {
+      "qa_id": "W006",
+      "lang": "IT",
+      "cat": "POS_HIT1",
+      "base_level": "ALTA",
+      "margin": 0.9936,
+      "text_top": [
+        "Silca_TriaxPro_Ricambi_Multilingua",
+        3
+      ],
+      "visual_dp": []
+    },
+    {
+      "qa_id": "W007",
+      "lang": "IT",
+      "cat": "POS_MISS",
+      "base_level": "MEDIA",
+      "margin": 0.0343,
+      "text_top": [
+        "manzoni_comac_spareparts_A",
+        33
+      ],
+      "visual_dp": [
+        [
+          "manzoni_comac_spareparts_B",
+          29
+        ],
+        [
+          "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+          101
+        ],
+        [
+          "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+          103
+        ],
+        [
+          "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+          23
+        ],
+        [
+          "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+          106
+        ]
+      ]
+    },
+    {
+      "qa_id": "W008",
+      "lang": "IT",
+      "cat": "POS_MISS",
+      "base_level": "MEDIA",
+      "margin": 0.8258,
+      "text_top": [
+        "fluid_system_cilindri_oleodinamici",
+        63
+      ],
+      "visual_dp": [
+        [
+          "sassinterizzati_cilindri_2025",
+          50
+        ],
+        [
+          "gehl_v270_parts",
+          208
+        ],
+        [
+          "sassinterizzati_cilindri_2025",
+          8
+        ],
+        [
+          "crusader_marine_L510008",
+          20
+        ],
+        [
+          "branson_4520R_parts",
+          145
+        ]
+      ]
+    },
+    {
+      "qa_id": "W009",
+      "lang": "IT",
+      "cat": "POS_HIT1",
+      "base_level": "MEDIA",
+      "margin": 0.6831,
+      "text_top": [
+        "ave_listino_materiale_elettrico_2023",
+        1
+      ],
+      "visual_dp": [
+        [
+          "ave_listino_materiale_elettrico_2023",
+          1
+        ],
+        [
+          "gehl_v270_parts",
+          192
+        ],
+        [
+          "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+          98
+        ],
+        [
+          "hytek_guida_ricambi_avvolgitubo",
+          1
+        ],
+        [
+          "nesans_crusher_catalog_2025",
+          13
+        ]
+      ]
+    },
+    {
+      "qa_id": "W010",
+      "lang": "IT",
+      "cat": "POS_MISS",
+      "base_level": "MEDIA",
+      "margin": 0.0975,
+      "text_top": [
+        "fluid_system_cilindri_oleodinamici",
+        18
+      ],
+      "visual_dp": [
+        [
+          "smem_motori_elettrici_catalogo_2025",
+          31
+        ],
+        [
+          "smem_motori_elettrici_catalogo_2025",
+          23
+        ],
+        [
+          "kbs_gastrotechnik_ready700",
+          3
+        ],
+        [
+          "kbs_gastrotechnik_ready700",
+          6
+        ],
+        [
+          "sassinterizzati_cilindri_2025",
+          9
+        ]
+      ]
+    },
+    {
+      "qa_id": "W011",
+      "lang": "IT",
+      "cat": "POS_MISS",
+      "base_level": "MEDIA",
+      "margin": 0.8889,
+      "text_top": [
+        "castelgarden_tcp102_parts",
+        34
+      ],
+      "visual_dp": [
+        [
+          "westermann_kehrmaschine",
+          1
+        ],
+        [
+          "westermann_kehrmaschine",
+          6
+        ],
+        [
+          "westermann_kehrmaschine",
+          8
+        ],
+        [
+          "westermann_kehrmaschine",
+          10
+        ],
+        [
+          "westermann_kehrmaschine",
+          4
+        ]
+      ]
+    },
+    {
+      "qa_id": "W012",
+      "lang": "IT",
+      "cat": "POS_HIT1",
+      "base_level": "MEDIA",
+      "margin": 0.1137,
+      "text_top": [
+        "benassi_t623_flail_mower",
+        27
+      ],
+      "visual_dp": [
+        [
+          "benassi_t623_flail_mower",
+          1
+        ],
+        [
+          "benassi_t623_flail_mower",
+          20
+        ],
+        [
+          "benassi_t623_flail_mower",
+          4
+        ],
+        [
+          "benassi_t623_flail_mower",
+          22
+        ],
+        [
+          "benassi_t623_flail_mower",
+          8
+        ]
+      ]
+    },
+    {
+      "qa_id": "W013",
+      "lang": "IT",
+      "cat": "POS_HIT1",
+      "base_level": "MEDIA",
+      "margin": 0.351,
+      "text_top": [
+        "pi_pulley_listino_pulegge_2025",
+        29
+      ],
+      "visual_dp": [
+        [
+          "gehl_v270_parts",
+          203
+        ],
+        [
+          "lycoming_IGO540_PC116",
+          7
+        ],
+        [
+          "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+          221
+        ],
+        [
+          "flow_exploded_2022",
+          15
+        ],
+        [
+          "kbs_gastrotechnik_cal_truhe",
+          3
+        ]
+      ]
+    },
+    {
+      "qa_id": "W014",
+      "lang": "IT",
+      "cat": "POS_MISS",
+      "base_level": "MEDIA",
+      "margin": 0.7734,
+      "text_top": [
+        "manzoni_comac_spareparts_B",
+        24
+      ],
+      "visual_dp": [
+        [
+          "manzoni_comac_spareparts_B",
+          24
+        ],
+        [
+          "manzoni_comac_spareparts_A",
+          28
+        ],
+        [
+          "manzoni_comac_spareparts_A",
+          30
+        ],
+        [
+          "sassinterizzati_cilindri_2025",
+          56
+        ],
+        [
+          "manzoni_comac_spareparts_A",
+          22
+        ]
+      ]
+    },
+    {
+      "qa_id": "W015",
+      "lang": "IT",
+      "cat": "POS_HIT1",
+      "base_level": "MEDIA",
+      "margin": 0.5054,
+      "text_top": [
+        "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+        143
+      ],
+      "visual_dp": [
+        [
+          "manzoni_comac_spareparts_B",
+          24
+        ],
+        [
+          "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+          90
+        ],
+        [
+          "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+          33
+        ],
+        [
+          "sassinterizzati_cilindri_2025",
+          51
+        ],
+        [
+          "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+          102
+        ]
+      ]
+    },
+    {
+      "qa_id": "W016",
+      "lang": "IT",
+      "cat": "POS_HIT1",
+      "base_level": "ALTA",
+      "margin": 1.0,
+      "text_top": [
+        "sassinterizzati_cilindri_2025",
+        62
+      ],
+      "visual_dp": []
+    },
+    {
+      "qa_id": "W017",
+      "lang": "IT",
+      "cat": "POS_HIT1",
+      "base_level": "BASSA",
+      "margin": 0.0054,
+      "text_top": [
+        "manzoni_comac_spareparts_A",
+        17
+      ],
+      "visual_dp": []
+    },
+    {
+      "qa_id": "W018",
+      "lang": "IT",
+      "cat": "POS_MISS",
+      "base_level": "MEDIA",
+      "margin": 0.2589,
+      "text_top": [
+        "cassani_concrete_machinery",
+        26
+      ],
+      "visual_dp": [
+        [
+          "Silca_TriaxPro_Ricambi_Multilingua",
+          2
+        ]
+      ]
+    },
+    {
+      "qa_id": "W019",
+      "lang": "IT",
+      "cat": "POS_MISS",
+      "base_level": "MEDIA",
+      "margin": 0.1245,
+      "text_top": [
+        "manzoni_comac_spareparts_B",
+        23
+      ],
+      "visual_dp": [
+        [
+          "manzoni_comac_spareparts_A",
+          44
+        ],
+        [
+          "smem_motori_elettrici_catalogo_2025",
+          23
+        ],
+        [
+          "rimoldi_327_spareparts",
+          35
+        ],
+        [
+          "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+          34
+        ],
+        [
+          "smem_motori_elettrici_catalogo_2025",
+          31
+        ]
+      ]
+    },
+    {
+      "qa_id": "W020",
+      "lang": "IT",
+      "cat": "POS_MISS",
+      "base_level": "MEDIA",
+      "margin": 0.4869,
+      "text_top": [
+        "ave_listino_materiale_elettrico_2023",
+        2
+      ],
+      "visual_dp": [
+        [
+          "ave_listino_materiale_elettrico_2023",
+          1
+        ],
+        [
+          "DirectKitchen_Forni_Schemi_IT_EN",
+          74
+        ],
+        [
+          "kbs_gastrotechnik_ready700",
+          6
+        ],
+        [
+          "DirectKitchen_Forni_Schemi_IT_EN",
+          70
+        ],
+        [
+          "kbs_gastrotechnik_ready700",
+          3
+        ]
+      ]
+    },
+    {
+      "qa_id": "W021",
+      "lang": "IT",
+      "cat": "POS_HIT1",
+      "base_level": "ALTA",
+      "margin": 1.0,
+      "text_top": [
+        "arol_listino_oleodinamica_2024",
+        15
+      ],
+      "visual_dp": []
+    },
+    {
+      "qa_id": "W022",
+      "lang": "IT",
+      "cat": "POS_MISS",
+      "base_level": "MEDIA",
+      "margin": 0.7694,
+      "text_top": [
+        "castelgarden_tcp102_parts",
+        9
+      ],
+      "visual_dp": [
+        [
+          "westermann_kehrmaschine",
+          1
+        ],
+        [
+          "westermann_kehrmaschine",
+          6
+        ],
+        [
+          "westermann_kehrmaschine",
+          2
+        ],
+        [
+          "westermann_kehrmaschine",
+          8
+        ],
+        [
+          "westermann_kehrmaschine",
+          4
+        ]
+      ]
+    },
+    {
+      "qa_id": "W023",
+      "lang": "IT",
+      "cat": "POS_MISS",
+      "base_level": "MEDIA",
+      "margin": 0.159,
+      "text_top": [
+        "sassinterizzati_cilindri_2025",
+        14
+      ],
+      "visual_dp": [
+        [
+          "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+          202
+        ],
+        [
+          "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+          6
+        ],
+        [
+          "smem_motori_elettrici_catalogo_2025",
+          23
+        ],
+        [
+          "DirectKitchen_Forni_Schemi_IT_EN",
+          74
+        ],
+        [
+          "oleodinamica_sangro_catalogo_generale",
+          21
+        ]
+      ]
+    },
+    {
+      "qa_id": "W024",
+      "lang": "EN",
+      "cat": "POS_HIT1",
+      "base_level": "BASSA",
+      "margin": 0.0027,
+      "text_top": [
+        "abco_export_price_list_valves",
+        10
+      ],
+      "visual_dp": []
+    },
+    {
+      "qa_id": "W025",
+      "lang": "EN",
+      "cat": "POS_MISS",
+      "base_level": "MEDIA",
+      "margin": 0.1993,
+      "text_top": [
+        "kohler_marine_tp6954",
+        55
+      ],
+      "visual_dp": [
+        [
+          "kohler_marine_tp6954",
+          71
+        ],
+        [
+          "kohler_marine_tp6954",
+          39
+        ],
+        [
+          "kohler_marine_tp6954",
+          153
+        ],
+        [
+          "kohler_industrial_tp7120",
+          38
+        ],
+        [
+          "kohler_industrial_tp7120",
+          28
+        ]
+      ]
+    },
+    {
+      "qa_id": "W026",
+      "lang": "EN",
+      "cat": "POS_MISS",
+      "base_level": "BASSA",
+      "margin": 0.0026,
+      "text_top": [
+        "iwaki_TC-X031VTN",
+        3
+      ],
+      "visual_dp": []
+    },
+    {
+      "qa_id": "W027",
+      "lang": "IT",
+      "cat": "POS_MISS",
+      "base_level": "MEDIA",
+      "margin": 0.1319,
+      "text_top": [
+        "NordCap_Esploso_Ricambi_DE",
+        4
+      ],
+      "visual_dp": [
+        [
+          "hytek_guida_ricambi_avvolgitubo",
+          1
+        ]
+      ]
+    },
+    {
+      "qa_id": "W028",
+      "lang": "EN",
+      "cat": "POS_MISS",
+      "base_level": "MEDIA",
+      "margin": 0.1825,
+      "text_top": [
+        "lycoming_IGO540_PC116",
+        21
+      ],
+      "visual_dp": [
+        [
+          "transtacker_6072_parts",
+          38
+        ],
+        [
+          "gehl_v270_parts",
+          190
+        ],
+        [
+          "gehl_v270_parts",
+          182
+        ],
+        [
+          "transtacker_6072_parts",
+          26
+        ],
+        [
+          "gehl_v270_parts",
+          167
+        ]
+      ]
+    },
+    {
+      "qa_id": "W029",
+      "lang": "EN",
+      "cat": "POS_MISS",
+      "base_level": "BASSA",
+      "margin": 0.0,
+      "text_top": [
+        "kohler_marine_tp6954",
+        38
+      ],
+      "visual_dp": []
+    },
+    {
+      "qa_id": "W030",
+      "lang": "EN",
+      "cat": "POS_HIT1",
+      "base_level": "ALTA",
+      "margin": 1.0,
+      "text_top": [
+        "cassani_concrete_machinery",
+        49
+      ],
+      "visual_dp": []
+    },
+    {
+      "qa_id": "W031",
+      "lang": "EN",
+      "cat": "POS_HIT1",
+      "base_level": "ALTA",
+      "margin": 0.9899,
+      "text_top": [
+        "rotax_912iS_IPC",
+        60
+      ],
+      "visual_dp": []
+    },
+    {
+      "qa_id": "W032",
+      "lang": "EN",
+      "cat": "POS_HIT1",
+      "base_level": "MEDIA",
+      "margin": 0.166,
+      "text_top": [
+        "nargesa_catalogo_2026",
+        38
+      ],
+      "visual_dp": [
+        [
+          "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+          36
+        ],
+        [
+          "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+          33
+        ],
+        [
+          "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+          118
+        ],
+        [
+          "kbs_gastrotechnik_4055041",
+          4
+        ],
+        [
+          "manzoni_comac_spareparts_B",
+          35
+        ]
+      ]
+    },
+    {
+      "qa_id": "W033",
+      "lang": "IT",
+      "cat": "POS_MISS",
+      "base_level": "MEDIA",
+      "margin": 0.2765,
+      "text_top": [
+        "opacmare_catalogo_ricambi_idraulica",
+        53
+      ],
+      "visual_dp": [
+        [
+          "hytek_guida_ricambi_avvolgitubo",
+          1
+        ]
+      ]
+    },
+    {
+      "qa_id": "W034",
+      "lang": "EN",
+      "cat": "POS_HIT1",
+      "base_level": "MEDIA",
+      "margin": 0.008,
+      "text_top": [
+        "pierce_industrial_catalog",
+        10
+      ],
+      "visual_dp": [
+        [
+          "DirectKitchen_Forni_Schemi_IT_EN",
+          93
+        ],
+        [
+          "DirectKitchen_Forni_Schemi_IT_EN",
+          91
+        ],
+        [
+          "kohler_industrial_tp7120",
+          20
+        ],
+        [
+          "kbs_gastrotechnik_ready700",
+          6
+        ],
+        [
+          "branson_4520R_parts",
+          82
+        ]
+      ]
+    },
+    {
+      "qa_id": "W035",
+      "lang": "EN",
+      "cat": "POS_HIT1",
+      "base_level": "ALTA",
+      "margin": 1.0,
+      "text_top": [
+        "oleodinamica_sangro_catalogo_generale",
+        35
+      ],
+      "visual_dp": []
+    },
+    {
+      "qa_id": "W036",
+      "lang": "EN",
+      "cat": "POS_MISS",
+      "base_level": "MEDIA",
+      "margin": 0.1343,
+      "text_top": [
+        "hydrogear_Pseries_pump",
+        104
+      ],
+      "visual_dp": [
+        [
+          "kohler_marine_tp6954",
+          81
+        ],
+        [
+          "kohler_industrial_tp7120",
+          38
+        ],
+        [
+          "kohler_marine_tp6954",
+          153
+        ],
+        [
+          "kohler_marine_tp6954",
+          108
+        ],
+        [
+          "kohler_marine_tp6954",
+          115
+        ]
+      ]
+    },
+    {
+      "qa_id": "W037",
+      "lang": "EN",
+      "cat": "POS_HIT1",
+      "base_level": "ALTA",
+      "margin": 1.0,
+      "text_top": [
+        "yts_pump_D200STN-A",
+        3
+      ],
+      "visual_dp": []
+    },
+    {
+      "qa_id": "W038",
+      "lang": "EN",
+      "cat": "POS_HIT1",
+      "base_level": "ALTA",
+      "margin": 1.0,
+      "text_top": [
+        "iwaki_TC-X101SH-NPT",
+        3
+      ],
+      "visual_dp": []
+    },
+    {
+      "qa_id": "W039",
+      "lang": "IT",
+      "cat": "POS_MISS",
+      "base_level": "MEDIA",
+      "margin": 0.6816,
+      "text_top": [
+        "gehl_v270_parts",
+        180
+      ],
+      "visual_dp": [
+        [
+          "gehl_v270_parts",
+          1
+        ],
+        [
+          "gehl_v270_parts",
+          76
+        ],
+        [
+          "gehl_v270_parts",
+          192
+        ],
+        [
+          "gehl_v270_parts",
+          72
+        ],
+        [
+          "gehl_v270_parts",
+          122
+        ]
+      ]
+    },
+    {
+      "qa_id": "W040",
+      "lang": "EN",
+      "cat": "POS_HIT1",
+      "base_level": "ALTA",
+      "margin": 1.0,
+      "text_top": [
+        "lycoming_IGO540_PC116",
+        88
+      ],
+      "visual_dp": []
+    },
+    {
+      "qa_id": "W041",
+      "lang": "IT",
+      "cat": "POS_HIT1",
+      "base_level": "MEDIA",
+      "margin": 0.8846,
+      "text_top": [
+        "yts_pump_D200STN-A",
+        2
+      ],
+      "visual_dp": [
+        [
+          "iwaki_TC-X101SH-NPT",
+          2
+        ],
+        [
+          "iwaki_TC-X252PH-NPT",
+          2
+        ],
+        [
+          "iwaki_TC-X500PH-FLA",
+          2
+        ],
+        [
+          "iwaki_TC-X501VT-FLA",
+          2
+        ],
+        [
+          "iwaki_TC-X031VTN",
+          2
+        ]
+      ]
+    },
+    {
+      "qa_id": "W042",
+      "lang": "IT",
+      "cat": "POS_HIT1",
+      "base_level": "ALTA",
+      "margin": 0.9887,
+      "text_top": [
+        "iwaki_TC-X501VT-FLA",
+        4
+      ],
+      "visual_dp": []
+    },
+    {
+      "qa_id": "W043",
+      "lang": "IT",
+      "cat": "POS_MISS",
+      "base_level": "MEDIA",
+      "margin": 0.0585,
+      "text_top": [
+        "DirectKitchen_Forni_Schemi_IT_EN",
+        13
+      ],
+      "visual_dp": [
+        [
+          "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+          4
+        ],
+        [
+          "sassinterizzati_cilindri_2025",
+          9
+        ],
+        [
+          "smem_motori_elettrici_catalogo_2025",
+          31
+        ],
+        [
+          "gehl_v270_parts",
+          172
+        ],
+        [
+          "DirectKitchen_Forni_Schemi_IT_EN",
+          60
+        ]
+      ]
+    },
+    {
+      "qa_id": "W044",
+      "lang": "IT",
+      "cat": "POS_MISS",
+      "base_level": "MEDIA",
+      "margin": 0.1097,
+      "text_top": [
+        "opacmare_catalogo_ricambi_idraulica",
+        21
+      ],
+      "visual_dp": [
+        [
+          "manzoni_comac_spareparts_B",
+          41
+        ],
+        [
+          "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+          46
+        ],
+        [
+          "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+          47
+        ],
+        [
+          "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+          185
+        ],
+        [
+          "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+          87
+        ]
+      ]
+    },
+    {
+      "qa_id": "W045",
+      "lang": "IT",
+      "cat": "POS_MISS",
+      "base_level": "BASSA",
+      "margin": 0.0,
+      "text_top": [
+        "fluid_system_cilindri_oleodinamici",
+        18
+      ],
+      "visual_dp": []
+    },
+    {
+      "qa_id": "W046",
+      "lang": "DE",
+      "cat": "POS_MISS",
+      "base_level": "MEDIA",
+      "margin": 0.4054,
+      "text_top": [
+        "kohler_marine_tp6954",
+        154
+      ],
+      "visual_dp": [
+        [
+          "Silca_TriaxPro_Ricambi_Multilingua",
+          2
+        ],
+        [
+          "gehl_v270_parts",
+          186
+        ],
+        [
+          "smem_motori_elettrici_catalogo_2025",
+          23
+        ],
+        [
+          "kbs_gastrotechnik_4055041",
+          4
+        ],
+        [
+          "gehl_v270_parts",
+          183
+        ]
+      ]
+    },
+    {
+      "qa_id": "W047",
+      "lang": "DE",
+      "cat": "POS_HIT1",
+      "base_level": "BASSA",
+      "margin": 0.0,
+      "text_top": [
+        "kbs_gastrotechnik_1717",
+        13
+      ],
+      "visual_dp": []
+    },
+    {
+      "qa_id": "W048",
+      "lang": "DE",
+      "cat": "POS_MISS",
+      "base_level": "MEDIA",
+      "margin": 0.4272,
+      "text_top": [
+        "DirectKitchen_Forni_Schemi_IT_EN",
+        23
+      ],
+      "visual_dp": [
+        [
+          "kbs_gastrotechnik_ready700",
+          3
+        ],
+        [
+          "kbs_gastrotechnik_ready700",
+          6
+        ],
+        [
+          "DirectKitchen_Forni_Schemi_IT_EN",
+          1
+        ],
+        [
+          "kbs_gastrotechnik_1717",
+          5
+        ],
+        [
+          "gehl_v270_parts",
+          108
+        ]
+      ]
+    },
+    {
+      "qa_id": "W049",
+      "lang": "DE",
+      "cat": "POS_MISS",
+      "base_level": "MEDIA",
+      "margin": 0.5546,
+      "text_top": [
+        "gehl_v270_parts",
+        75
+      ],
+      "visual_dp": [
+        [
+          "sassinterizzati_cilindri_2025",
+          8
+        ],
+        [
+          "kbs_gastrotechnik_4055041",
+          4
+        ],
+        [
+          "opacmare_catalogo_ricambi_idraulica",
+          40
+        ],
+        [
+          "fluid_system_cilindri_oleodinamici",
+          43
+        ],
+        [
+          "stoll_CMS830C_spareparts",
+          95
+        ]
+      ]
+    },
+    {
+      "qa_id": "W050",
+      "lang": "DE",
+      "cat": "POS_HIT1",
+      "base_level": "MEDIA",
+      "margin": 0.0072,
+      "text_top": [
+        "kbs_gastrotechnik_20322006",
+        13
+      ],
+      "visual_dp": [
+        [
+          "sassinterizzati_cilindri_2025",
+          62
+        ],
+        [
+          "gehl_v270_parts",
+          102
+        ],
+        [
+          "DirectKitchen_Forni_Schemi_IT_EN",
+          60
+        ],
+        [
+          "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+          216
+        ],
+        [
+          "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+          118
+        ]
+      ]
+    },
+    {
+      "qa_id": "W051",
+      "lang": "DE",
+      "cat": "POS_HIT1",
+      "base_level": "ALTA",
+      "margin": 1.0,
+      "text_top": [
+        "kbs_gastrotechnik_1717",
+        18
+      ],
+      "visual_dp": []
+    },
+    {
+      "qa_id": "W052",
+      "lang": "DE",
+      "cat": "POS_HIT1",
+      "base_level": "MEDIA",
+      "margin": 0.6739,
+      "text_top": [
+        "NordCap_Esploso_Ricambi_DE",
+        4
+      ],
+      "visual_dp": [
+        [
+          "kbs_gastrotechnik_20322006",
+          10
+        ],
+        [
+          "manzoni_comac_spareparts_B",
+          34
+        ],
+        [
+          "kbs_gastrotechnik_1717",
+          9
+        ],
+        [
+          "gehl_v270_parts",
+          66
+        ],
+        [
+          "kbs_gastrotechnik_20322006",
+          6
+        ]
+      ]
+    },
+    {
+      "qa_id": "W053",
+      "lang": "DE",
+      "cat": "POS_HIT1",
+      "base_level": "MEDIA",
+      "margin": 0.066,
+      "text_top": [
+        "kbs_gastrotechnik_20322006",
+        12
+      ],
+      "visual_dp": [
+        [
+          "nesans_crusher_catalog_2025",
+          33
+        ],
+        [
+          "rotax_912_914_IPC",
+          27
+        ],
+        [
+          "kbs_gastrotechnik_4055041",
+          3
+        ],
+        [
+          "kbs_gastrotechnik_4055041",
+          5
+        ],
+        [
+          "kaltenbach_steel_processing_2026",
+          10
+        ]
+      ]
+    },
+    {
+      "qa_id": "W054",
+      "lang": "DE",
+      "cat": "POS_HIT1",
+      "base_level": "ALTA",
+      "margin": 0.9981,
+      "text_top": [
+        "kbs_gastrotechnik_1717",
+        19
+      ],
+      "visual_dp": []
+    },
+    {
+      "qa_id": "W055",
+      "lang": "FR",
+      "cat": "POS_HIT1",
+      "base_level": "BASSA",
+      "margin": 0.0017,
+      "text_top": [
+        "opacmare_catalogo_ricambi_idraulica",
+        238
+      ],
+      "visual_dp": []
+    },
+    {
+      "qa_id": "W056",
+      "lang": "FR",
+      "cat": "POS_HIT1",
+      "base_level": "MEDIA",
+      "margin": 0.5502,
+      "text_top": [
+        "opacmare_catalogo_ricambi_idraulica",
+        107
+      ],
+      "visual_dp": [
+        [
+          "opacmare_catalogo_ricambi_idraulica",
+          196
+        ],
+        [
+          "manzoni_comac_spareparts_A",
+          26
+        ],
+        [
+          "stoll_CMS830C_spareparts",
+          25
+        ],
+        [
+          "transtacker_6072_parts",
+          58
+        ],
+        [
+          "opacmare_catalogo_ricambi_idraulica",
+          72
+        ]
+      ]
+    },
+    {
+      "qa_id": "W057",
+      "lang": "FR",
+      "cat": "POS_HIT1",
+      "base_level": "MEDIA",
+      "margin": 0.6149,
+      "text_top": [
+        "opacmare_catalogo_ricambi_idraulica",
+        81
+      ],
+      "visual_dp": [
+        [
+          "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+          50
+        ],
+        [
+          "gehl_v270_parts",
+          205
+        ],
+        [
+          "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+          21
+        ],
+        [
+          "nesans_crusher_catalog_2025",
+          40
+        ],
+        [
+          "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+          9
+        ]
+      ]
+    },
+    {
+      "qa_id": "W058",
+      "lang": "IT",
+      "cat": "POS_MISS",
+      "base_level": "MEDIA",
+      "margin": 0.584,
+      "text_top": [
+        "fluid_system_cilindri_oleodinamici",
+        63
+      ],
+      "visual_dp": [
+        [
+          "opacmare_catalogo_ricambi_idraulica",
+          244
+        ],
+        [
+          "sassinterizzati_cilindri_2025",
+          8
+        ],
+        [
+          "DirectKitchen_Forni_Schemi_IT_EN",
+          74
+        ],
+        [
+          "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+          42
+        ],
+        [
+          "fluid_system_cilindri_oleodinamici",
+          20
+        ]
+      ]
+    },
+    {
+      "qa_id": "C001",
+      "lang": "IT",
+      "cat": "POS_HIT1",
+      "base_level": "MEDIA",
+      "margin": 1.0,
+      "text_top": [
+        "Mamoli_Catalogo_Ricambi_2021_IT_EN.pdf",
+        231
+      ],
+      "visual_dp": [
+        [
+          "nesans_crusher_catalog_2025",
+          13
+        ],
+        [
+          "DirectKitchen_Forni_Schemi_IT_EN",
+          79
+        ],
+        [
+          "edwards_booster_pump_parts",
+          33
+        ],
+        [
+          "nesans_crusher_catalog_2025",
+          16
+        ],
+        [
+          "rotax_912iS_IPC",
+          13
+        ]
+      ]
+    },
+    {
+      "qa_id": "C002",
+      "lang": "IT",
+      "cat": "POS_MISS",
+      "base_level": "BASSA",
+      "margin": 0.0,
+      "text_top": [
+        "lycoming_IGO540_PC116",
+        93
+      ],
+      "visual_dp": []
+    },
+    {
+      "qa_id": "C003",
+      "lang": "EN",
+      "cat": "POS_HIT1",
+      "base_level": "BASSA",
+      "margin": 0.0,
+      "text_top": [
+        "Electrolux_Distinta_Ricambi.xlsx",
+        0
+      ],
+      "visual_dp": []
+    },
+    {
+      "qa_id": "C004",
+      "lang": "IT",
+      "cat": "POS_HIT1",
+      "base_level": "ALTA",
+      "margin": 0.9922,
+      "text_top": [
+        "Mamoli_Catalogo_Ricambi_2021_IT_EN.pdf",
+        231
+      ],
+      "visual_dp": []
+    },
+    {
+      "qa_id": "C005",
+      "lang": "IT",
+      "cat": "POS_HIT1",
+      "base_level": "MEDIA",
+      "margin": 0.461,
+      "text_top": [
+        "Mamoli_Catalogo_Ricambi_2021_IT_EN.pdf",
+        231
+      ],
+      "visual_dp": [
+        [
+          "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+          4
+        ],
+        [
+          "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+          5
+        ],
+        [
+          "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+          46
+        ],
+        [
+          "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+          40
+        ],
+        [
+          "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+          43
+        ]
+      ]
+    },
+    {
+      "qa_id": "C006",
+      "lang": "IT",
+      "cat": "POS_MISS",
+      "base_level": "MEDIA",
+      "margin": 0.0963,
+      "text_top": [
+        "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+        115
+      ],
+      "visual_dp": [
+        [
+          "kbs_gastrotechnik_ready700",
+          7
+        ],
+        [
+          "kbs_gastrotechnik_ready700",
+          4
+        ],
+        [
+          "rimoldi_527_spareparts",
+          1
+        ],
+        [
+          "kbs_gastrotechnik_ready700",
+          6
+        ],
+        [
+          "kbs_gastrotechnik_ready700",
+          3
+        ]
+      ]
+    },
+    {
+      "qa_id": "C007",
+      "lang": "IT",
+      "cat": "POS_MISS",
+      "base_level": "BASSA",
+      "margin": 0.0035,
+      "text_top": [
+        "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+        27
+      ],
+      "visual_dp": []
+    },
+    {
+      "qa_id": "C008",
+      "lang": "EN",
+      "cat": "POS_MISS",
+      "base_level": "MEDIA",
+      "margin": 0.0665,
+      "text_top": [
+        "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+        203
+      ],
+      "visual_dp": [
+        [
+          "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+          202
+        ],
+        [
+          "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+          6
+        ],
+        [
+          "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+          33
+        ],
+        [
+          "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+          124
+        ],
+        [
+          "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+          35
+        ]
+      ]
+    },
+    {
+      "qa_id": "C009",
+      "lang": "ES",
+      "cat": "POS_HIT1",
+      "base_level": "MEDIA",
+      "margin": 0.0325,
+      "text_top": [
+        "Electrolux_Distinta_Ricambi.xlsx",
+        0
+      ],
+      "visual_dp": [
+        [
+          "kbs_gastrotechnik_cal_truhe",
+          2
+        ],
+        [
+          "smem_motori_elettrici_catalogo_2025",
+          31
+        ],
+        [
+          "kbs_gastrotechnik_20322006",
+          3
+        ],
+        [
+          "opacmare_catalogo_ricambi_idraulica",
+          213
+        ],
+        [
+          "kbs_gastrotechnik_4055041",
+          2
+        ]
+      ]
+    },
+    {
+      "qa_id": "C010",
+      "lang": "ES",
+      "cat": "POS_MISS",
+      "base_level": "MEDIA",
+      "margin": 0.7362,
+      "text_top": [
+        "DirectKitchen_Forni_Schemi_IT_EN",
+        35
+      ],
+      "visual_dp": [
+        [
+          "kbs_gastrotechnik_ready700",
+          6
+        ],
+        [
+          "kbs_gastrotechnik_ready700",
+          3
+        ],
+        [
+          "DirectKitchen_Forni_Schemi_IT_EN",
+          74
+        ],
+        [
+          "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+          216
+        ],
+        [
+          "hydrogear_Pseries_pump",
+          72
+        ]
+      ]
+    },
+    {
+      "qa_id": "C011",
+      "lang": "ES",
+      "cat": "POS_HIT1",
+      "base_level": "MEDIA",
+      "margin": 0.4783,
+      "text_top": [
+        "Electrolux_Distinta_Ricambi.xlsx",
+        0
+      ],
+      "visual_dp": [
+        [
+          "kbs_gastrotechnik_cal_truhe",
+          2
+        ],
+        [
+          "DirectKitchen_Forni_Schemi_IT_EN",
+          73
+        ],
+        [
+          "DirectKitchen_Forni_Schemi_IT_EN",
+          79
+        ],
+        [
+          "smem_motori_elettrici_catalogo_2025",
+          31
+        ],
+        [
+          "kohler_marine_tp6954",
+          110
+        ]
+      ]
+    },
+    {
+      "qa_id": "C012",
+      "lang": "ES",
+      "cat": "POS_HIT1",
+      "base_level": "MEDIA",
+      "margin": 0.1315,
+      "text_top": [
+        "Electrolux_Distinta_Ricambi.xlsx",
+        0
+      ],
+      "visual_dp": [
+        [
+          "transtacker_6072_parts",
+          36
+        ],
+        [
+          "transtacker_6072_parts",
+          46
+        ],
+        [
+          "transtacker_6072_parts",
+          58
+        ],
+        [
+          "transtacker_6072_parts",
+          14
+        ],
+        [
+          "transtacker_6072_parts",
+          32
+        ]
+      ]
+    },
+    {
+      "qa_id": "N001",
+      "lang": "IT",
+      "cat": "NEG",
+      "base_level": "BASSA",
+      "margin": 0.0,
+      "text_top": null,
+      "visual_dp": []
+    },
+    {
+      "qa_id": "N002",
+      "lang": "EN",
+      "cat": "NEG",
+      "base_level": "BASSA",
+      "margin": 0.0,
+      "text_top": null,
+      "visual_dp": []
+    },
+    {
+      "qa_id": "N003",
+      "lang": "IT",
+      "cat": "NEG",
+      "base_level": "BASSA",
+      "margin": 0.0,
+      "text_top": null,
+      "visual_dp": []
+    },
+    {
+      "qa_id": "N004",
+      "lang": "IT",
+      "cat": "NEG",
+      "base_level": "MEDIA",
+      "margin": 0.2258,
+      "text_top": [
+        "opacmare_catalogo_ricambi_idraulica",
+        146
+      ],
+      "visual_dp": [
+        [
+          "opacmare_catalogo_ricambi_idraulica",
+          268
+        ],
+        [
+          "opacmare_catalogo_ricambi_idraulica",
+          132
+        ],
+        [
+          "smem_motori_elettrici_catalogo_2025",
+          23
+        ],
+        [
+          "manzoni_comac_spareparts_B",
+          39
+        ],
+        [
+          "DirectKitchen_Forni_Schemi_IT_EN",
+          74
+        ]
+      ]
+    },
+    {
+      "qa_id": "N005",
+      "lang": "EN",
+      "cat": "NEG",
+      "base_level": "MEDIA",
+      "margin": 0.431,
+      "text_top": [
+        "DirectKitchen_Forni_Schemi_IT_EN",
+        12
+      ],
+      "visual_dp": [
+        [
+          "kbs_gastrotechnik_cal_truhe",
+          2
+        ],
+        [
+          "kbs_gastrotechnik_4055041",
+          2
+        ],
+        [
+          "DirectKitchen_Forni_Schemi_IT_EN",
+          79
+        ],
+        [
+          "gehl_v270_parts",
+          178
+        ],
+        [
+          "kbs_gastrotechnik_20322006",
+          7
+        ]
+      ]
+    },
+    {
+      "qa_id": "N006",
+      "lang": "ES",
+      "cat": "NEG",
+      "base_level": "BASSA",
+      "margin": 0.0,
+      "text_top": [
+        "pi_pulley_listino_pulegge_2025",
+        11
+      ],
+      "visual_dp": []
+    },
+    {
+      "qa_id": "N007",
+      "lang": "DE",
+      "cat": "NEG",
+      "base_level": "BASSA",
+      "margin": 0.0,
+      "text_top": [
+        "kbs_gastrotechnik_20322006",
+        11
+      ],
+      "visual_dp": []
+    },
+    {
+      "qa_id": "N008",
+      "lang": "FR",
+      "cat": "NEG",
+      "base_level": "MEDIA",
+      "margin": 0.0478,
+      "text_top": [
+        "DirectKitchen_Forni_Schemi_IT_EN",
+        44
+      ],
+      "visual_dp": [
+        [
+          "kbs_gastrotechnik_20322006",
+          3
+        ],
+        [
+          "manzoni_comac_spareparts_B",
+          41
+        ],
+        [
+          "kohler_marine_tp6954",
+          119
+        ],
+        [
+          "gehl_v270_parts",
+          178
+        ],
+        [
+          "panciroli_garmec_BL200",
+          8
+        ]
+      ]
+    }
+  ]
+}

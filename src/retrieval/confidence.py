@@ -98,6 +98,11 @@ def confidence_level(signals: Signals, thresholds: Thresholds) -> ConfidenceRepo
         return ConfidenceReport(Level.ALTA, s,
                                 f"margine {s.margin:.2f} >= tau_hi {t.tau_hi} e "
                                 "nessun disaccordo visivo -> alta")
+    # NB: la promozione cross-modale MEDIA->ALTA e' stata MISURATA non sicura in
+    # P3.3 (docs/p33-fusion-calibration.md): l'accordo testo-visione non
+    # distingue una doppia-conferma corretta da un doppio-errore sullo stesso
+    # doc (caso W014) -> falso-ALTA a ogni delta. NON adottata: l'accordo resta
+    # diagnostico, non promuove. ALTA precision 1.0 preservata.
     if s.margin >= t.tau_lo or s.agreement == "agree":
         why = (f"margine {s.margin:.2f} >= tau_lo {t.tau_lo}"
                if s.margin >= t.tau_lo else "accordo testo-visione")
