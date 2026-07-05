@@ -314,12 +314,20 @@ def _merge_pair(pending: RawRecord, cur: RawRecord) -> RawRecord | None:
 
 
 def chunk_table(table_id: str, md_text: str, meta: dict,
-                norm_map: dict[str, dict] | None = None) -> dict:
+                norm_map: dict[str, dict] | None = None,
+                repaired: list[dict] | None = None) -> dict:
     """Chunking difensivo di un markdown tabellare normalizzato.
+
+    `repaired`: ancore del pass di riparazione del normalizzatore (debito §4,
+    repaired_codes.jsonl: normalized/original/reason/row_index). Diventano
+    chunk indicizzabili di categoria 'repaired': SOLO codice+citazione (la riga
+    e' mangled per definizione: nessun campo ricostruito, mai indovinare) e
+    warning 'fuzzy_code' -> il calcolatore di confidenza li cappa a MEDIA.
 
     Ritorna {"chunks": [Chunk], "rejects": [Reject], "report": {...}}.
     """
     norm_map = norm_map or {}
+    repaired = repaired or []
     rows = cells_rows(md_text)
     chunks: list[Chunk] = []
     rejects: list[Reject] = []
@@ -479,6 +487,25 @@ def chunk_table(table_id: str, md_text: str, meta: dict,
             source_cells=rec.source_cells,
         ))
 
+    # --- 4b. chunk 'repaired' dalle ancore del normalizzatore (debito §4) --------
+    emitted = {c.code for c in chunks}
+    for entry in repaired:
+        code = entry["normalized"]
+        if code in emitted:
+            continue  # collisione impossibile per contratto del repair, difesa
+        emitted.add(code)
+        chunks.append(Chunk(
+            chunk_id=f"{table_id}/rep/r{entry['row_index']:03d}/{code}",
+            text=f"{meta['doc']} pagina {meta['page']} | codice {code}",
+            code=code, code_raw=entry.get("original"),
+            normalization_type="fuzzy_repaired",
+            pos=None, desc=None, qty=None, price=None,
+            doc=meta["doc"], page=meta["page"], lang=meta["lang"],
+            table_index=0, row_index=entry["row_index"], segment="repaired",
+            status="repaired", warnings=["fuzzy_code"],
+            source_cells=[entry.get("original", "")],
+        ))
+
     # --- 5. report ----------------------------------------------------------------
     reasons: dict[str, int] = {}
     for r in rejects:
@@ -496,7 +523,8 @@ def chunk_table(table_id: str, md_text: str, meta: dict,
                    "ok": sum(1 for c in chunks if c.status == "ok"),
                    "recovered_multirow": sum(1 for c in chunks
                                              if c.status == "recovered_multirow"),
-                   "degraded": sum(1 for c in chunks if c.status == "degraded")},
+                   "degraded": sum(1 for c in chunks if c.status == "degraded"),
+                   "repaired": sum(1 for c in chunks if c.status == "repaired")},
         "rejects": reasons,
         "reject_codes": sorted({cd for r in rejects for cd in r.codes_involved}),
         "chunk_warnings": warn_counts,

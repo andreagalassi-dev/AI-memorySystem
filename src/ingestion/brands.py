@@ -75,6 +75,8 @@ def _config() -> dict:
         for fam in p.get("long_families", []):
             fam["_extract"] = re.compile(fam["extract_pattern"])
             fam["_token"] = re.compile(fam["token_pattern"])
+            if fam.get("restore_run"):
+                fam["_restore_run"] = re.compile(fam["restore_run"])
         if p.get("short_pattern"):
             p["_short"] = re.compile(p["short_pattern"])
         if p.get("unsafe_numeric"):
@@ -166,7 +168,8 @@ def normalize_cell(cell: str, profile: dict) -> tuple[list[str], list[dict]]:
 # a MEDIA. Decisioni utente 2026-07-05: OFF di default, per-profilo a DB;
 # mappa confusable chiusa; collision check obbligatorio.
 
-def fuzzy_cell(cell: str, profile: dict) -> tuple[str | None, dict | None]:
+def fuzzy_cell(cell: str, profile: dict,
+               families: set[str] | None = None) -> tuple[str | None, dict | None]:
     """Confusable 1-char SOLO sul prefisso letterale di famiglia (O<->0, ...).
 
     Con alfabeti permissivi ([0-9A-Z]) una sostituzione a meta' token non e'
@@ -179,6 +182,13 @@ def fuzzy_cell(cell: str, profile: dict) -> tuple[str | None, dict | None]:
     per il pass safe come per questo). Token gia' validi mai toccati (V012
     non puo' diventare V013: '2'->'3' non e' nella mappa chiusa). Famiglie
     senza restore_prefix: nessuna riparazione. Collision check al chiamante.
+
+    `families`: se non None, ripara SOLO le famiglie elencate (per nome).
+    Gate anti-fabbricazione del chunker corpus: una famiglia va riparata solo
+    dove e' dimostrabilmente presente (codici safe della stessa famiglia
+    sulla pagina), altrimenti su layout estranei — es. pagine listino Mamoli
+    coi codici zero-heavy non-V0 — il restore inventa codici. None = tutte
+    (comportamento del normalizzatore sulle tabelle GT, invariato).
     """
     if not profile.get("fuzzy_repair"):
         return None, None
@@ -189,6 +199,8 @@ def fuzzy_cell(cell: str, profile: dict) -> tuple[str | None, dict | None]:
     if any(f["_token"].fullmatch(can) for f in fams):
         return None, None          # gia' valido: mai alterare
     for fam in fams:
+        if families is not None and fam["name"] not in families:
+            continue
         pref = fam.get("restore_prefix")
         if not pref or len(can) <= len(pref):
             continue
@@ -207,44 +219,80 @@ def fuzzy_cell(cell: str, profile: dict) -> tuple[str | None, dict | None]:
     return None, None
 
 
-def repair_row(cells: list[str], profile: dict,
-               known: set[str]) -> tuple[list[str], list[dict]]:
+def repair_row(cells: list[str], profile: dict, known: set[str],
+               families: set[str] | None = None) -> tuple[list[str], list[dict]]:
     """Riparazione a livello di RIGA sulle tabelle fuse (debito §4).
 
     Docling puo' spezzare un codice tra celle adiacenti col prezzo in mezzo
     ('V0 92750 68,00' | '00001') o perdere il prefisso di famiglia
-    ('94094 00000'). Sulla riga piatta coi prezzi MASCHERATI:
-      A) row-rejoin: regex di famiglia sui frammenti ricomposti;
+    ('94094 00000'). Coi prezzi MASCHERATI:
+      A) row-rejoin: regex di famiglia su FINESTRE DI 2 CELLE ADIACENTI —
+         non sull'intera riga: sulle righe multi-record (4 record/riga nelle
+         pagine listino) la riga piatta salda frammenti di record DIVERSI
+         fabbricando codici; i casi di split misurati (P231 r30) stanno in
+         una coppia adiacente.
       B) prefix-restore: prefisso di famiglia (config a DB) su run numerici
-         orfani, solo se il risultato matcha la forma canonica.
+         orfani DENTRO UNA SINGOLA CELLA, con tre vincoli anti-fabbricazione:
+           1. il run deve avere la forma STAMPATA della famiglia
+              (restore_run a DB, es. '^\\d{5} \\d{5}$' Mamoli): senza,
+              si saldano numero-modello + frammento + qty ('6500 00001 1');
+           2. mai run coi gruppi tutti identici ('00001 00001'): e' l'eco
+              delle colonne-quantita' di record affiancati, non un codice;
+           3. i match delle regex di famiglia sono mascherati prima della
+              ricerca: un run sotto-finestra di un codice gia' estraibile
+              ('V00 3215 00001' -> '3215 00001') non e' orfano.
+         Tutti i casi misurati (P231 r45/r50, corpus p228/p230) stanno in
+         una cella singola.
     `known` = codici gia' estratti in modo safe nella pagina: un candidato che
     collide NON viene emesso (era gia' visibile) e nessuna riparazione puo'
     coincidere con un codice esistente per errore.
+    `families` = gate anti-fabbricazione per-famiglia (vedi fuzzy_cell).
     """
     if not profile.get("fuzzy_repair"):
         return [], []
-    flat = PRICE.sub(" ", base_cleanup(" ".join(cells)))
+    clean = [PRICE.sub(" ", base_cleanup(c)) for c in cells]
+    windows = [" ".join(clean[i:i + 2]) for i in range(len(clean))]
     out: list[str] = []
     logs: list[dict] = []
 
-    def add(code: str, reason: str) -> None:
+    def add(code: str, window: str, reason: str) -> None:
         if code in known or code in out:
             return
         out.append(code)
-        logs.append({"original": flat[:120], "normalized": code,
+        logs.append({"original": window[:120], "normalized": code,
                      "type": "fuzzy_repaired", "reason": reason})
 
-    for fam in profile.get("long_families", []):
-        for m in fam["_extract"].findall(flat):
-            add(canonical(m),
-                f"row-rejoin ({fam['name']}): frammenti ricomposti a livello "
-                "riga, prezzi mascherati (cap MEDIA)")
-        pref = fam.get("restore_prefix")
-        if pref:
-            for run in DIGIT_RUN.finditer(flat):
+    # A) row-rejoin su finestre di 2 celle adiacenti
+    for window in windows:
+        for fam in profile.get("long_families", []):
+            if families is not None and fam["name"] not in families:
+                continue
+            for m in fam["_extract"].findall(window):
+                add(canonical(m), window,
+                    f"row-rejoin ({fam['name']}): frammenti ricomposti su "
+                    "celle adiacenti, prezzi mascherati (cap MEDIA)")
+
+    # B) prefix-restore su celle singole, coi vincoli del docstring
+    for cell in clean:
+        masked = cell
+        for fam in profile.get("long_families", []):
+            masked = fam["_extract"].sub(" ", masked)
+        for fam in profile.get("long_families", []):
+            if families is not None and fam["name"] not in families:
+                continue
+            pref = fam.get("restore_prefix")
+            if not pref:
+                continue
+            for run in DIGIT_RUN.finditer(masked):
+                groups = run.group().split()
+                if len(groups) > 1 and len(set(groups)) == 1:
+                    continue      # eco di colonna, non un codice
+                rr = fam.get("_restore_run")
+                if rr and not rr.fullmatch(" ".join(groups)):
+                    continue      # non ha la forma stampata della famiglia
                 cand = pref + canonical(run.group())
                 if fam["_token"].fullmatch(cand):
-                    add(cand,
+                    add(cand, cell,
                         f"prefix-restore ({fam['name']}): prefisso {pref!r} "
                         "restaurato su run numerico orfano (cap MEDIA)")
     return out, logs

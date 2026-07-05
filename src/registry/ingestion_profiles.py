@@ -22,12 +22,13 @@ import psycopg
 SCHEMA_PATH = Path(__file__).with_name("ingestion_schema.sql")
 
 _PROFILE_REGEX_FIELDS = ("short_pattern", "unsafe_numeric")
-_FAMILY_REGEX_FIELDS = ("extract_pattern", "token_pattern")
+_FAMILY_REGEX_FIELDS = ("extract_pattern", "token_pattern", "restore_run")
 
 _PROFILE_COLS = ("short_pattern", "reason_short", "unsafe_numeric",
                  "reason_unsafe", "passthrough", "fuzzy_repair")
 _FAMILY_COLS = ("extract_pattern", "token_pattern", "rejoin",
-                "reason_rejoin", "reason_double", "restore_prefix")
+                "reason_rejoin", "reason_double", "restore_prefix",
+                "restore_run")
 
 
 def init_schema(conn: psycopg.Connection) -> None:
@@ -71,6 +72,7 @@ def canonical_profile(profile: dict) -> dict:
                 "reason_rejoin": fam.get("reason_rejoin"),
                 "reason_double": fam.get("reason_double"),
                 "restore_prefix": fam.get("restore_prefix"),
+                "restore_run": fam.get("restore_run"),
             }
             for fam in profile.get("long_families", [])
         ],
@@ -114,9 +116,9 @@ def load_profiles(conn: psycopg.Connection) -> dict:
             "passthrough": passthrough, "fuzzy_repair": fuzzy,
         }
     for (pid, fname, extract, token, rejoin, r_rejoin, r_double,
-         r_prefix) in conn.execute(
+         r_prefix, r_run) in conn.execute(
         "SELECT profile_id, name, extract_pattern, token_pattern, rejoin, "
-        "reason_rejoin, reason_double, restore_prefix "
+        "reason_rejoin, reason_double, restore_prefix, restore_run "
         "FROM ingestion_code_families ORDER BY position, id"
     ):
         if pid in ids:  # famiglie di profili disattivati: ignorate
@@ -124,6 +126,7 @@ def load_profiles(conn: psycopg.Connection) -> dict:
                 "name": fname, "extract_pattern": extract, "token_pattern": token,
                 "rejoin": rejoin, "reason_rejoin": r_rejoin,
                 "reason_double": r_double, "restore_prefix": r_prefix,
+                "restore_run": r_run,
             })
     doc_map = {glob: prof for glob, prof in conn.execute(
         "SELECT d.glob_pattern, p.name FROM ingestion_doc_map d "
@@ -162,8 +165,8 @@ def upsert_profile(conn: psycopg.Connection, name: str, profile: dict) -> int:
         conn.execute(
             "INSERT INTO ingestion_code_families (profile_id, name, "
             "extract_pattern, token_pattern, rejoin, reason_rejoin, "
-            "reason_double, restore_prefix, position) "
-            "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) "
+            "reason_double, restore_prefix, restore_run, position) "
+            "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) "
             "ON CONFLICT (profile_id, name) DO UPDATE SET "
             "extract_pattern = EXCLUDED.extract_pattern, "
             "token_pattern = EXCLUDED.token_pattern, "
@@ -171,6 +174,7 @@ def upsert_profile(conn: psycopg.Connection, name: str, profile: dict) -> int:
             "reason_rejoin = EXCLUDED.reason_rejoin, "
             "reason_double = EXCLUDED.reason_double, "
             "restore_prefix = EXCLUDED.restore_prefix, "
+            "restore_run = EXCLUDED.restore_run, "
             "position = EXCLUDED.position",
             (pid, fam["name"], *(fam[c] for c in _FAMILY_COLS), pos),
         )

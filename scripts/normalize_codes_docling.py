@@ -105,16 +105,23 @@ def main() -> int:
         # sul prefisso. DOPO il pass safe completo (collision set a livello
         # pagina), PRIMA degli output (i log riparati vanno nel CSV).
         # MAI mescolate coi safe: tipo fuzzy_repaired, metrica separata.
+        # Il chunker non puo' ricostruire l'ancora da solo: il pass safe puo'
+        # aver GIA' distrutto i frammenti nel md normalizzato (es. P231 r50:
+        # '94094 00000' orfano scartato dalla cella). Quindi l'ancora di riga
+        # esce da qui, in repaired_codes.jsonl, insieme al log.
         repaired: set[str] = set()
-        for r in rows:
+        repaired_entries: list[dict] = []
+        for ri, r in enumerate(rows, start=1):
             r_codes, r_logs = repair_row(r, profile, known=norm_codes | repaired)
             repaired.update(r_codes)
             entries.extend(r_logs)
+            repaired_entries.extend(dict(lg, row_index=ri) for lg in r_logs)
             for c in r:
                 fc, fl = fuzzy_cell(c, profile)
                 if fc and fc not in norm_codes | repaired:
                     repaired.add(fc)
                     entries.append(fl)
+                    repaired_entries.append(dict(fl, row_index=ri))
 
         # scrivi output normalizzato
         d = OUT / tid
@@ -127,6 +134,12 @@ def main() -> int:
             w = csv.DictWriter(fh, fieldnames=["original", "normalized", "type", "reason"])
             w.writeheader()
             w.writerows([e for e in entries if e["normalized"]])
+        # ancore per il chunker (follow-up debito §4): solo se ci sono riparati,
+        # cosi' le tabelle senza riparazioni restano byte-identiche su disco
+        if repaired_entries:
+            with (d / "repaired_codes.jsonl").open("w", encoding="utf-8") as fh:
+                for e in repaired_entries:
+                    fh.write(json.dumps(e, ensure_ascii=False) + "\n")
 
         raw_hit = len(gtc & raw_exact)
         norm_hit = len(gtc & norm_codes)

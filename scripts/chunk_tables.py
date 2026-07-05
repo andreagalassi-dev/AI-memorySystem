@@ -58,6 +58,14 @@ def load_norm_map(table_id: str) -> dict[str, dict]:
     return norm_map
 
 
+def load_repaired(table_id: str) -> list[dict]:
+    """Ancore del pass di riparazione (debito §4); assente = nessun riparato."""
+    path = NORM / table_id / "repaired_codes.jsonl"
+    if not path.exists():
+        return []
+    return [json.loads(line) for line in path.open(encoding="utf-8")]
+
+
 def reconcile(norm_map: dict, chunks: list, rejects: list) -> dict:
     """Riconciliazione bidirezionale chunker <-> audit CSV di P1."""
     csv_values = set(norm_map)
@@ -96,7 +104,8 @@ def main() -> int:
                   f"(rigenerare con normalize_codes_docling.py)")
             return 1
         norm_map = load_norm_map(tid)
-        res = chunk_table(tid, md_path.read_text(encoding="utf-8"), meta, norm_map)
+        res = chunk_table(tid, md_path.read_text(encoding="utf-8"), meta, norm_map,
+                          repaired=load_repaired(tid))
         chunks, rejects, report = res["chunks"], res["rejects"], res["report"]
 
         d = OUT / tid
@@ -116,7 +125,8 @@ def main() -> int:
         ch = report["chunks"]
         print(f"[chunk] {tid}: blocchi={report['blocks']} chunks={ch['total']} "
               f"(ok={ch['ok']} recovered={ch['recovered_multirow']} "
-              f"degraded={ch['degraded']}) rejects={report['rejects'] or '{}'}")
+              f"degraded={ch['degraded']} repaired={ch['repaired']}) "
+              f"rejects={report['rejects'] or '{}'}")
         print(f"        riconciliazione CSV: valori={rec['csv_values']} "
               f"inventati={rec['invented_codes'] or 'nessuno'} "
               f"non-spiegati={rec['unaccounted_values'] or 'nessuno'}")

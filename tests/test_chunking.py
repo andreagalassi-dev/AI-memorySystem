@@ -278,6 +278,30 @@ class TestChunkTableSintetici:
             assert long_tokens == [c.code]  # un solo codice V0 per chunk
 
 
+class TestChunkRiparati:
+    """Debito §4 follow-up: ancore del normalizzatore -> chunk 'repaired'."""
+
+    MD = ("| POS | CODICE/CODE | DESCRIZIONE/DESCRIPTION | CONF | Euro |\n"
+          "| 1 | V09156800007 | pezzo | 1 | 10,00 |\n")
+    REP = [{"normalized": "V09275000001", "original": "V0 92750 68,00 00001",
+            "type": "fuzzy_repaired", "reason": "row-rejoin", "row_index": 2}]
+
+    def test_emesso_con_warning_e_senza_campi(self):
+        res = chunk_table("TEST", self.MD, META, repaired=self.REP)
+        rep = [c for c in res["chunks"] if c.status == "repaired"]
+        assert len(rep) == 1 and rep[0].code == "V09275000001"
+        assert rep[0].warnings == ["fuzzy_code"]
+        assert rep[0].desc is None and rep[0].qty is None and rep[0].price is None
+        assert "V09275000001" in rep[0].text
+        assert res["report"]["chunks"]["repaired"] == 1
+
+    def test_collisione_con_chunk_safe_mai_duplicata(self):
+        collide = [dict(self.REP[0], normalized="V09156800007")]
+        res = chunk_table("TEST", self.MD, META, repaired=collide)
+        assert [c.code for c in res["chunks"]] == ["V09156800007"]
+        assert res["report"]["chunks"]["repaired"] == 0
+
+
 # ------------------------------------------------------------------ integrazione
 
 
@@ -289,8 +313,11 @@ def _load(table_id: str, page: int):
         for row in csv.DictReader(fh):
             norm_map.setdefault(row["normalized"],
                                 {"original": row["original"], "type": row["type"]})
+    rep_path = NORM / table_id / "repaired_codes.jsonl"
+    repaired = ([json.loads(line) for line in rep_path.open(encoding="utf-8")]
+                if rep_path.exists() else [])
     gt = list(csv.DictReader((GT_DIR / table_id / "expected.csv").open(encoding="utf-8")))
-    return chunk_table(table_id, md, meta, norm_map), norm_map, gt
+    return chunk_table(table_id, md, meta, norm_map, repaired=repaired), norm_map, gt
 
 
 needs_data = pytest.mark.skipif(
@@ -337,28 +364,43 @@ class TestIntegrazioneP231:
             (NORM / "_code_accuracy.json").read_text(encoding="utf-8")
         )["MAMOLI_P231_IT"]
         still_missing = set(acc["still_missing"])
-        # debito §4: codici recuperati dal pass fuzzy_repair del normalizzatore
-        # (tracciati in acc['repaired'], cap MEDIA); il chunker non li indicizza
-        # ancora — integrazione = follow-up dichiarato del debito §4
+        # debito §4 (follow-up chiuso): i codici riparati dal normalizzatore
+        # sono ora chunk di categoria 'repaired' (cap MEDIA via fuzzy_code)
         repaired = set(acc.get("repaired", []))
-        # ogni codice GT: indicizzato, o in un reject, o perdita Docling gia'
-        # documentata nel gate P1, o RIPARATO — mai sparito senza traccia
-        unexplained = gt_codes - chunk_codes - reject_codes - still_missing - repaired
+        assert repaired <= chunk_codes, "riparati non indicizzati dal chunker"
+        # ogni codice GT: indicizzato (anche come riparato), o in un reject, o
+        # perdita Docling gia' documentata nel gate P1 — mai sparito senza traccia
+        unexplained = gt_codes - chunk_codes - reject_codes - still_missing
         assert not unexplained
-        # 94 GT - 3 riparati (ex perdite Docling) - 2 riga fusa
-        assert len(chunk_codes) == 89
+        # 94 GT - 2 riga fusa (i 3 ex perdite Docling ora sono chunk riparati)
+        assert len(chunk_codes) == 92
         assert not chunk_codes & still_missing
 
     def test_conteggi_e_reject_attesi(self, res):
         result, _, _ = res
         rep = result["report"]
         assert rep["blocks"] == 1
-        assert rep["chunks"] == {"total": 89, "ok": 85,
-                                 "recovered_multirow": 0, "degraded": 4}
+        assert rep["chunks"] == {"total": 92, "ok": 85,
+                                 "recovered_multirow": 0, "degraded": 4,
+                                 "repaired": 3}
         assert rep["rejects"] == {"code_fragment_spillover": 1, "no_valid_code": 1,
                                   "fused_multi_record_row": 1, "family_mismatch": 1}
         assert set(rep["reject_codes"]) == {"00001", "V09192000001",
                                             "V09192500001", "V092750"}
+
+    def test_chunk_riparati_cappati_e_senza_campi(self, res):
+        """Debito §4 follow-up: i riparati sono indicizzati ma mai spacciabili
+        per dati safe: warning fuzzy_code (cap MEDIA a valle), nessun campo
+        ricostruito dalla riga mangled, audit trail nel code_raw."""
+        result, _, _ = res
+        rep = [c for c in result["chunks"] if c.status == "repaired"]
+        assert {c.code for c in rep} == {"V09275000001", "V09409100007",
+                                         "V09409400000"}
+        for c in rep:
+            assert "fuzzy_code" in c.warnings
+            assert c.normalization_type == "fuzzy_repaired"
+            assert (c.pos, c.desc, c.qty, c.price) == (None, None, None, None)
+            assert c.code_raw  # tracciabilita' verso la riga sorgente
 
     def test_invariante_C_codice_atomico(self, res):
         result, _, _ = res

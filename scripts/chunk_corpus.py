@@ -84,15 +84,21 @@ def main() -> int:
                 # P3 deve poter degradare questi chunk a "verifica manuale"
                 for c in res["chunks"]:
                     c.warnings.append("ocr_source")
-                    c.status = "degraded"
+                    if c.status != "repaired":  # 'repaired' resta tracciabile
+                        c.status = "degraded"
             doc_chunks.extend(res["chunks"])
             doc_rejects.extend(res["rejects"])
 
-        # guardia verificata anche a valle (difesa in profondita')
+        # guardia verificata anche a valle (difesa in profondita'); i chunk
+        # 'repaired' (debito §4) sono ESENTI per costruzione — il loro codice
+        # e' la correzione di un glifo/split assente dal sorgente — ma devono
+        # portare il warning fuzzy_code che li cappa a MEDIA
         for c in doc_chunks:
-            if c.code:
+            if c.code and c.status != "repaired":
                 page_md = (doc_dir / f"p{c.page:04d}.md").read_text(encoding="utf-8")
                 assert canonical(c.code) in canonical(page_md), c.chunk_id
+            elif c.status == "repaired":
+                assert "fuzzy_code" in c.warnings, c.chunk_id
 
         with (OUT / f"{stem}.jsonl").open("w", encoding="utf-8") as fh:
             for c in doc_chunks:
@@ -100,6 +106,7 @@ def main() -> int:
         all_rejects.extend(doc_rejects)
         counts = Counter(c.type for c in doc_chunks)
         counts["with_code"] = sum(1 for c in doc_chunks if c.code)
+        counts["repaired"] = sum(1 for c in doc_chunks if c.status == "repaired")
         report[stem] = {"cat": cat, "lang": lang, "profile": profile["_name"],
                         "pages": len(pages), "chunks": dict(counts),
                         "rejects": dict(Counter(r["reason"] for r in doc_rejects))}
@@ -115,7 +122,8 @@ def main() -> int:
 
     print(f"[corpus-chunk] documenti={len(report)} "
           f"table_row={totals['table_row']} text={totals['text']} "
-          f"con_codice={totals['with_code']} rejects={totals['rejects']}")
+          f"con_codice={totals['with_code']} riparati={totals['repaired']} "
+          f"rejects={totals['rejects']}")
     reasons = Counter(r["reason"] for r in all_rejects)
     print(f"[corpus-chunk] reject per motivo: {dict(reasons) or '{}'}")
     langs = Counter(v["lang"] for v in report.values())

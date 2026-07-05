@@ -13,6 +13,14 @@ Due tipi di chunk per pagina:
 GUARDIA UNIVERSALE (senza GT): ogni `code` emesso deve comparire in forma
 canonica nel testo canonico della pagina sorgente -> altrimenti reject
 `code_not_in_source`. Nessun codice puo' essere fabbricato dall'estrazione.
+
+ECCEZIONE DICHIARATA (debito §4, follow-up): i codici del pass di riparazione
+(`repair_row`/`fuzzy_cell`, gate per-profilo `fuzzy_repair` a DB) per
+costruzione NON compaiono nel sorgente — sono la correzione di un glifo/split
+OCR provabilmente errato. Vengono emessi come chunk `status='repaired'` con
+warning `fuzzy_code`: il calcolatore di confidenza a valle li cappa a MEDIA
+(mai un falso ALTA) e il guardrail li vede come dato strutturato citabile.
+Solo codice + citazione: nessun campo ricostruito dalla riga mangled.
 """
 
 from __future__ import annotations
@@ -20,7 +28,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 
-from src.ingestion.brands import normalize_cell
+from src.ingestion.brands import fuzzy_cell, normalize_cell, repair_row
 from src.ingestion.codes import base_cleanup, canonical
 from src.ingestion.chunking import QTY_RE, PRICE_RE
 
@@ -28,6 +36,9 @@ MAX_TEXT_CHUNK = 800
 MIN_TEXT_CHUNK = 40
 CODE_COL_SHARE = 0.5
 CODE_COL_MIN_HITS = 2
+# gate anti-fabbricazione del repair pass: una famiglia si ripara solo dove
+# e' dimostrabilmente presente (>= N codici safe della famiglia sulla pagina)
+REPAIR_FAMILY_MIN_HITS = 2
 
 
 @dataclass
@@ -172,6 +183,42 @@ def chunk_page(doc: str, cat: str, page: int, md: str, profile: dict,
                 qty=qty, price=price, doc=doc, page=page, lang=lang, cat=cat,
                 status="degraded" if warnings else "ok", warnings=warnings,
                 source_cells=[c for c in row if c.strip()]))
+
+    # ------- pass di riparazione ultima-ratio (debito §4, gate per-profilo) ----
+    if profile.get("fuzzy_repair"):
+        # collision set = tutto cio' che il pass safe ha reso visibile sulla
+        # pagina (stesso contratto del normalizzatore): una riparazione non
+        # puo' mai coincidere con un codice gia' estraibile
+        known: set[str] = set()
+        for matrix in blocks:
+            for row in matrix:
+                for cell in row:
+                    known.update(normalize_cell(cell, profile)[0])
+        # gate anti-fabbricazione: ripara SOLO le famiglie gia' presenti sulla
+        # pagina con >= REPAIR_FAMILY_MIN_HITS codici safe. Su layout estranei
+        # (es. pagine listino Mamoli zero-heavy, codici non-V0) il restore
+        # inventerebbe codici: senza famiglia provata, nessuna riparazione.
+        allowed = {fam["name"] for fam in profile.get("long_families", [])
+                   if sum(bool(fam["_token"].fullmatch(c)) for c in known)
+                   >= REPAIR_FAMILY_MIN_HITS}
+        for ti, matrix in enumerate(blocks, start=1) if allowed else []:
+            for ri, row in enumerate(matrix):
+                r_codes, _ = repair_row(row, profile, known=known,
+                                        families=allowed)
+                for cell in row:
+                    fc, _ = fuzzy_cell(cell, profile, families=allowed)
+                    if fc and fc not in known and fc not in r_codes:
+                        r_codes.append(fc)
+                for k, code in enumerate(r_codes):
+                    known.add(code)
+                    chunks.append(CorpusChunk(
+                        chunk_id=f"{doc}/p{page:04d}/t{ti}/r{ri:03d}/rep{k}",
+                        type="table_row",
+                        text=f"{doc} pagina {page} | codice {code}",
+                        code=code, pos=None, desc=None, qty=None, price=None,
+                        doc=doc, page=page, lang=lang, cat=cat,
+                        status="repaired", warnings=["fuzzy_code"],
+                        source_cells=[c for c in row if c.strip()]))
 
     # ------- testo libero -> paragrafi (mai spezzare a meta' riga/token) -------
     paras, buf = [], []

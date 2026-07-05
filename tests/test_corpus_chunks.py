@@ -64,6 +64,65 @@ class TestTableRow:
         assert any("table_without_code_column" in c.warnings for c in res["chunks"])
 
 
+class TestRepairPass:
+    """Debito §4 follow-up: il chunker di produzione indicizza i riparati.
+
+    Prima della fix una riga col codice rotto dall'OCR spariva in silenzio
+    (nessun chunk, nessun reject: normalize_cell non trova codici). Ora, sui
+    profili con fuzzy_repair a DB, il pass di riparazione la recupera come
+    chunk 'repaired' con warning fuzzy_code (cap MEDIA), esente dichiarato
+    dalla guardia code_not_in_source.
+    """
+
+    MD_PREFIX_LOST = ("| V0 91568 00007 | pezzo | 1 |\n"
+                      "| V0 91569 00001 | altro | 2 |\n"
+                      "| 91570 00002 | rotto | 3 |\n")
+
+    def test_prefix_restore_indicizzato_con_cap(self):
+        res = run(self.MD_PREFIX_LOST, profile="mamoli")
+        rep = [c for c in res["chunks"] if c.status == "repaired"]
+        assert [c.code for c in rep] == ["V09157000002"]
+        assert rep[0].warnings == ["fuzzy_code"]
+        assert (rep[0].desc, rep[0].qty, rep[0].price) == (None, None, None)
+        # i safe della stessa tabella restano intatti e non cappati
+        safe = [c.code for c in res["chunks"] if c.status != "repaired" and c.code]
+        assert safe == ["V09156800007", "V09156900001"]
+        # nessun reject: la riga non era visibile nemmeno come scarto
+        assert res["rejects"] == []
+
+    def test_row_rejoin_codice_spezzato_dal_prezzo(self):
+        md = ("| V0 91568 00007 | pezzo | 1 |\n"
+              "| V0 91569 00001 | altro | 2 |\n"
+              "| V0 92750 68,00 | 00001 | maniglia |\n")
+        res = run(md, profile="mamoli")
+        rep = [c for c in res["chunks"] if c.status == "repaired"]
+        assert [c.code for c in rep] == ["V09275000001"]
+
+    def test_collisione_con_safe_mai_emessa(self):
+        # il run orfano ricomposto coincide con un codice gia' visibile:
+        # nessuna riparazione (era gia' estraibile, non e' un recupero)
+        md = ("| V0 91568 00007 | pezzo | 1 |\n"
+              "| V0 91569 00001 | altro | 2 |\n"
+              "| 91568 00007 | eco della prima | 1 |\n")
+        res = run(md, profile="mamoli")
+        assert not [c for c in res["chunks"] if c.status == "repaired"]
+
+    def test_gate_per_profilo_off_nessuna_riparazione(self):
+        res = run(self.MD_PREFIX_LOST, profile="default")
+        assert not [c for c in res["chunks"] if c.status == "repaired"]
+
+    def test_gate_famiglia_assente_niente_fabbricazione(self):
+        # layout "listino" Mamoli: codici zero-heavy NON della famiglia V0.
+        # Senza codici V0 safe sulla pagina, il prefix-restore sui run
+        # numerici orfani inventerebbe codici (es. V00000000000): il gate
+        # anti-fabbricazione deve tenere il repair pass spento.
+        md = ("| 0000000 1B 007 | MoviMento U-tS-K | 2 | 92,00 |\n"
+              "| 0000000 1D 007 | MoviMento MaMoil | 2 | 74,00 |\n"
+              "| 000 0000000 4F 000 0000000 | GUarnizione | 30 | 24,00 |\n")
+        res = run(md, profile="mamoli")
+        assert not [c for c in res["chunks"] if c.status == "repaired"]
+
+
 class TestTesto:
     def test_paragrafi_e_minimo(self):
         md = ("Intro breve.\n\n" + ("Questa e' una frase del manuale. " * 10)

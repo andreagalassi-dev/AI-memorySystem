@@ -53,3 +53,10 @@ ALTER TABLE ingestion_profiles
 -- (es. 'V0' Mamoli: '94094 00000' -> V09409400000). NULL = mai.
 ALTER TABLE ingestion_code_families
     ADD COLUMN IF NOT EXISTS restore_prefix text;
+-- restore_run: forma STAMPATA (regex ancorata, spazi singoli) che un run
+-- numerico orfano deve avere per il prefix-restore (es. '^\d{5} \d{5}$'
+-- Mamoli). Conoscenza di brand come restore_prefix: senza questo vincolo,
+-- sulle righe multi-record il restore salda numero-modello+frammento+qty
+-- ('6500 00001 1') fabbricando codici. NULL = nessun vincolo di forma.
+ALTER TABLE ingestion_code_families
+    ADD COLUMN IF NOT EXISTS restore_run text;

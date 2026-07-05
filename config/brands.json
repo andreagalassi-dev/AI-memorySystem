@@ -10,7 +10,8 @@
           "rejoin": true,
           "reason_rejoin": "famiglia V0: uniti blocchi separati da spazi/markup",
           "reason_double": "codice-doppio fuso: split via findall",
-          "restore_prefix": "V0"
+          "restore_prefix": "V0",
+          "restore_run": "^\\d{5} \\d{5}$"
         }
       ],
       "short_pattern": "^[0-9A-Z][0-9A-Z./-]{1,9}$",

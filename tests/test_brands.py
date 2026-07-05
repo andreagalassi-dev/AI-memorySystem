@@ -134,6 +134,39 @@ class TestRepairUltimaRatio:
         assert repair_row(cells, get_profile("mamoli"),
                           known={"V09170700001"}) == ([], [])
 
+    def test_no_saldatura_tra_record_lontani(self):
+        # riga multi-record (pagine listino): 'V0' orfano in una cella e cifre
+        # di un ALTRO record celle piu' in la' non si saldano mai (finestra=2)
+        from src.ingestion.brands import repair_row
+        cells = ["V0 16,00", "P laCCHetta", "1", "x",
+                 "d eviatore", "19913 00001"]
+        codes, _ = repair_row(cells, get_profile("mamoli"), known=set())
+        assert codes == ["V01991300001"]        # restore in-cella: legittimo,
+        # nessun codice saldato 'V0'+cifre attraverso 3+ celle
+
+    def test_restore_rifiuta_forma_non_stampata(self):
+        # 'numero-modello + frammento + qty' ('6500 00001 1', misurato p228):
+        # non ha la forma stampata 5+5 -> mai restaurato
+        from src.ingestion.brands import repair_row
+        cells = ["B oCCHettoni e GHiera /t ailPieCeS and nUt 6500 00001 1"]
+        assert repair_row(cells, get_profile("mamoli"), known=set()) == ([], [])
+
+    def test_restore_rifiuta_eco_di_colonna(self):
+        # '00001 00001' = coda delle qty di due record affiancati (p228):
+        # gruppi identici -> eco di colonna, mai un codice
+        from src.ingestion.brands import repair_row
+        cells = ["B oCCHettone 3/4'-C roMo /C HroMe 00001 00001"]
+        assert repair_row(cells, get_profile("mamoli"), known=set()) == ([], [])
+
+    def test_restore_rifiuta_sottofinestra_di_codice_estraibile(self):
+        # 'V00 3215 00001' e' gia' estraibile (V00321500001): il run
+        # '3215 00001' e' sotto-finestra delle sue cifre, non un orfano
+        # (misurato p226: fabbricava il quasi-duplicato V03215000011)
+        from src.ingestion.brands import repair_row
+        codes, _ = repair_row(["C aPPUCCio 1028 V00 3215 00001"],
+                              get_profile("mamoli"), known={"V00321500001"})
+        assert codes == []
+
 
 class TestFonteDB:
     """Debito §1: profili da Postgres, fail-closed, cache invalidabile."""
