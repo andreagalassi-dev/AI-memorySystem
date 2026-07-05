@@ -1,7 +1,7 @@
 """P4.4 — Test del Cascade Fallback (current -> superseded) e avviso obsoleto.
 
 Vincoli sotto test: fallback SOLO quando la via current porterebbe a BASSA;
-al massimo UN ciclo (fallback_done); le evidence superseded SOVRASCRIVONO
+al massimo UN ciclo (fallback_superseded_done); le evidence superseded SOVRASCRIVONO
 quelle current (mai contesto misto v1/v2 all'LLM); l'avviso obsoleto arriva
 a finalize e cappa il livello a MEDIA; con retrieve_superseded=None il
 grafo si comporta esattamente come in P3.5.
@@ -13,7 +13,7 @@ from src.graph.pipeline import (
     Deps,
     Evidence,
     build_graph,
-    fallback_node,
+    fallback_superseded_node,
     reconcile,
 )
 from src.retrieval.confidence import Thresholds
@@ -58,17 +58,17 @@ class TestEvidenceRetrocompat:
 class TestFallbackNode:
     def test_sovrascrive_evidence_e_accende_flag(self):
         st = {"query": "guarnizione", "evidence": [EV_CUR_POOR]}
-        out = fallback_node(st, make_deps(
+        out = fallback_superseded_node(st, make_deps(
             retrieve_superseded=lambda q: ([EV_OLD, EV_OLD2], [])))
         assert out["evidence"] == [EV_OLD, EV_OLD2]   # SOVRASCRITTE, non appese
         assert out["obsolete_warning"] is True
-        assert out["fallback_done"] is True
+        assert out["fallback_superseded_done"] is True
 
     def test_eccezione_fail_closed(self):
         def boom(q):
             raise ConnectionError("qdrant down")
-        out = fallback_node({"query": "x"}, make_deps(retrieve_superseded=boom))
-        assert out["system_error"] and out["fallback_done"]
+        out = fallback_superseded_node({"query": "x"}, make_deps(retrieve_superseded=boom))
+        assert out["system_error"] and out["fallback_superseded_done"]
 
 
 # ------------------------------------------------------------ reconcile puro
