@@ -25,9 +25,9 @@ _PROFILE_REGEX_FIELDS = ("short_pattern", "unsafe_numeric")
 _FAMILY_REGEX_FIELDS = ("extract_pattern", "token_pattern")
 
 _PROFILE_COLS = ("short_pattern", "reason_short", "unsafe_numeric",
-                 "reason_unsafe", "passthrough")
+                 "reason_unsafe", "passthrough", "fuzzy_repair")
 _FAMILY_COLS = ("extract_pattern", "token_pattern", "rejoin",
-                "reason_rejoin", "reason_double")
+                "reason_rejoin", "reason_double", "restore_prefix")
 
 
 def init_schema(conn: psycopg.Connection) -> None:
@@ -70,6 +70,7 @@ def canonical_profile(profile: dict) -> dict:
                 "rejoin": bool(fam.get("rejoin", False)),
                 "reason_rejoin": fam.get("reason_rejoin"),
                 "reason_double": fam.get("reason_double"),
+                "restore_prefix": fam.get("restore_prefix"),
             }
             for fam in profile.get("long_families", [])
         ],
@@ -78,6 +79,7 @@ def canonical_profile(profile: dict) -> dict:
         "unsafe_numeric": profile.get("unsafe_numeric"),
         "reason_unsafe": profile.get("reason_unsafe"),
         "passthrough": bool(profile.get("passthrough", False)),
+        "fuzzy_repair": bool(profile.get("fuzzy_repair", False)),
     }
 
 
@@ -98,9 +100,10 @@ def load_profiles(conn: psycopg.Connection) -> dict:
     """
     profiles: dict[str, dict] = {}
     ids: dict[int, str] = {}
-    for pid, name, short, r_short, unsafe, r_unsafe, passthrough in conn.execute(
+    for (pid, name, short, r_short, unsafe, r_unsafe, passthrough,
+         fuzzy) in conn.execute(
         "SELECT id, name, short_pattern, reason_short, unsafe_numeric, "
-        "reason_unsafe, passthrough FROM ingestion_profiles "
+        "reason_unsafe, passthrough, fuzzy_repair FROM ingestion_profiles "
         "WHERE is_active ORDER BY name"
     ):
         ids[pid] = name
@@ -108,17 +111,19 @@ def load_profiles(conn: psycopg.Connection) -> dict:
             "long_families": [],
             "short_pattern": short, "reason_short": r_short,
             "unsafe_numeric": unsafe, "reason_unsafe": r_unsafe,
-            "passthrough": passthrough,
+            "passthrough": passthrough, "fuzzy_repair": fuzzy,
         }
-    for pid, fname, extract, token, rejoin, r_rejoin, r_double in conn.execute(
+    for (pid, fname, extract, token, rejoin, r_rejoin, r_double,
+         r_prefix) in conn.execute(
         "SELECT profile_id, name, extract_pattern, token_pattern, rejoin, "
-        "reason_rejoin, reason_double FROM ingestion_code_families "
-        "ORDER BY position, id"
+        "reason_rejoin, reason_double, restore_prefix "
+        "FROM ingestion_code_families ORDER BY position, id"
     ):
         if pid in ids:  # famiglie di profili disattivati: ignorate
             profiles[ids[pid]]["long_families"].append({
                 "name": fname, "extract_pattern": extract, "token_pattern": token,
-                "rejoin": rejoin, "reason_rejoin": r_rejoin, "reason_double": r_double,
+                "rejoin": rejoin, "reason_rejoin": r_rejoin,
+                "reason_double": r_double, "restore_prefix": r_prefix,
             })
     doc_map = {glob: prof for glob, prof in conn.execute(
         "SELECT d.glob_pattern, p.name FROM ingestion_doc_map d "
@@ -138,14 +143,15 @@ def upsert_profile(conn: psycopg.Connection, name: str, profile: dict) -> int:
     validate_profile(name, p)
     row = conn.execute(
         "INSERT INTO ingestion_profiles (name, short_pattern, reason_short, "
-        "unsafe_numeric, reason_unsafe, passthrough) "
-        "VALUES (%s, %s, %s, %s, %s, %s) "
+        "unsafe_numeric, reason_unsafe, passthrough, fuzzy_repair) "
+        "VALUES (%s, %s, %s, %s, %s, %s, %s) "
         "ON CONFLICT (name) DO UPDATE SET "
         "short_pattern = EXCLUDED.short_pattern, "
         "reason_short = EXCLUDED.reason_short, "
         "unsafe_numeric = EXCLUDED.unsafe_numeric, "
         "reason_unsafe = EXCLUDED.reason_unsafe, "
         "passthrough = EXCLUDED.passthrough, "
+        "fuzzy_repair = EXCLUDED.fuzzy_repair, "
         "is_active = true, updated_at = now() "
         "RETURNING id",
         (name, *(p[c] for c in _PROFILE_COLS)),
@@ -156,13 +162,15 @@ def upsert_profile(conn: psycopg.Connection, name: str, profile: dict) -> int:
         conn.execute(
             "INSERT INTO ingestion_code_families (profile_id, name, "
             "extract_pattern, token_pattern, rejoin, reason_rejoin, "
-            "reason_double, position) VALUES (%s, %s, %s, %s, %s, %s, %s, %s) "
+            "reason_double, restore_prefix, position) "
+            "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) "
             "ON CONFLICT (profile_id, name) DO UPDATE SET "
             "extract_pattern = EXCLUDED.extract_pattern, "
             "token_pattern = EXCLUDED.token_pattern, "
             "rejoin = EXCLUDED.rejoin, "
             "reason_rejoin = EXCLUDED.reason_rejoin, "
             "reason_double = EXCLUDED.reason_double, "
+            "restore_prefix = EXCLUDED.restore_prefix, "
             "position = EXCLUDED.position",
             (pid, fam["name"], *(fam[c] for c in _FAMILY_COLS), pos),
         )

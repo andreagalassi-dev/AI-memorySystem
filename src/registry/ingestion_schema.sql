@@ -41,3 +41,15 @@ CREATE TABLE IF NOT EXISTS ingestion_doc_map (
     profile_id   integer NOT NULL REFERENCES ingestion_profiles(id) ON DELETE CASCADE,
     priority     integer NOT NULL DEFAULT 0
 );
+
+-- Debito §4 — riparazione "ultima ratio" (OFF di default, per-profilo).
+-- fuzzy_repair: abilita il pass di riparazione (confusable 1-char, row-rejoin
+-- su riga con prezzi mascherati, prefix-restore). I codici riparati sono
+-- SEMPRE classificati fuzzy_repaired e a valle cappati a MEDIA, mai ALTA.
+-- ALTER idempotenti: le tabelle possono preesistere alla colonna.
+ALTER TABLE ingestion_profiles
+    ADD COLUMN IF NOT EXISTS fuzzy_repair boolean NOT NULL DEFAULT false;
+-- restore_prefix: prefisso di famiglia restaurabile su run numerici orfani
+-- (es. 'V0' Mamoli: '94094 00000' -> V09409400000). NULL = mai.
+ALTER TABLE ingestion_code_families
+    ADD COLUMN IF NOT EXISTS restore_prefix text;
