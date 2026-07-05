@@ -49,7 +49,7 @@ from src.ingestion.embedding import (  # noqa: E402
 CHUNKS_DIR = ROOT / "output" / "spike" / "chunks"
 TABLE_IDS = ["MAMOLI_P231_IT", "MAMOLI_P060_IT",
              "DELITOOLS_EN", "ELECTROLUX_EN", "ELECTROLUX_ES"]
-EXPECTED_SPIKE = 234  # 89+84 (Mamoli P2.2) + 19+21+21 (CSV XLSX P2.4)
+EXPECTED_SPIKE = 237  # 92+84 (Mamoli P2.2 + 3 riparati debito §4) + 19+21+21 (CSV XLSX P2.4)
 # P2.6: chunk del corpus esteso (54 PDF via Docling + profili brand).
 CORPUS_CHUNKS_DIR = ROOT / "output" / "ingestion" / "chunks"
 UPSERT_BATCH = 64
