@@ -27,6 +27,17 @@ from src.ingestion.codes import base_cleanup, canonical
 # (len>=4) o solo cifre (len>=5). Niente virgole (prezzi), niente spazi.
 DEFAULT_CODEY = re.compile(r"^(?=.{4,})(?:(?=.*\d)(?=.*[A-Z])[0-9A-Z][0-9A-Z./-]*|\d{5,})$")
 
+# ---- Debito §4: pass di riparazione "ultima ratio" (gate: profile.fuzzy_repair)
+# Mappa CHIUSA di glifi confondibili (mai distanza di edit generica: 2->3
+# impossibile per costruzione). Max 1 sostituzione per token.
+CONFUSABLE = {"O": "0", "0": "O", "I": "1", "1": "I",
+              "S": "5", "5": "S", "B": "8", "8": "B"}
+# Prezzi in formato europeo ('68,00', '1.234,50'): mascherati prima del
+# row-rejoin — sono la causa misurata dei codici spezzati tra celle (P231 r29).
+PRICE = re.compile(r"\b\d{1,3}(?:\.\d{3})*,\d{2}\b")
+# Run numerico orfano (cifre e spazi, senza alnum adiacente) per prefix-restore.
+DIGIT_RUN = re.compile(r"(?<![0-9A-Z])\d[\d ]{8,14}\d(?![0-9A-Z])")
+
 
 def _load_from_db() -> dict:
     import psycopg
@@ -147,3 +158,93 @@ def normalize_cell(cell: str, profile: dict) -> tuple[list[str], list[dict]]:
                          "type": "unsafe_candidate",
                          "reason": profile["reason_unsafe"]})
     return [], logs
+
+
+# --------------------------------------------- Debito §4: pass di riparazione
+# I codici riparati NON sono mai safe_*: tipo `fuzzy_repaired`, e a valle il
+# chunk che li porta va marcato (warning 'fuzzy_code') -> confidence cappata
+# a MEDIA. Decisioni utente 2026-07-05: OFF di default, per-profilo a DB;
+# mappa confusable chiusa; collision check obbligatorio.
+
+def fuzzy_cell(cell: str, profile: dict) -> tuple[str | None, dict | None]:
+    """Confusable 1-char SOLO sul prefisso letterale di famiglia (O<->0, ...).
+
+    Con alfabeti permissivi ([0-9A-Z]) una sostituzione a meta' token non e'
+    mai PROVABILMENTE giusta (il pattern accetta entrambe le forme): l'unica
+    regione dove l'errore e' dimostrabile e' il prefisso letterale
+    (restore_prefix, es. 'VO'!='V0'). Quindi: max 1 sostituzione confusable,
+    solo nel prefisso, e il token riparato deve matchare la forma canonica.
+    Il resto del token passa la STESSA validazione dei codici safe nativi
+    (un'eventuale corruzione della coda e' indistinguibile senza catalogo,
+    per il pass safe come per questo). Token gia' validi mai toccati (V012
+    non puo' diventare V013: '2'->'3' non e' nella mappa chiusa). Famiglie
+    senza restore_prefix: nessuna riparazione. Collision check al chiamante.
+    """
+    if not profile.get("fuzzy_repair"):
+        return None, None
+    can = canonical(base_cleanup(cell))
+    if not can:
+        return None, None
+    fams = profile.get("long_families", [])
+    if any(f["_token"].fullmatch(can) for f in fams):
+        return None, None          # gia' valido: mai alterare
+    for fam in fams:
+        pref = fam.get("restore_prefix")
+        if not pref or len(can) <= len(pref):
+            continue
+        head = can[:len(pref)]
+        mism = [i for i in range(len(pref)) if head[i] != pref[i]]
+        if len(mism) != 1 or CONFUSABLE.get(head[mism[0]]) != pref[mism[0]]:
+            continue               # 0 o >1 errori, o glifo non confondibile
+        repaired = pref + can[len(pref):]
+        if fam["_token"].fullmatch(repaired):
+            return repaired, {
+                "original": cell.strip(), "normalized": repaired,
+                "type": "fuzzy_repaired",
+                "reason": f"confusable 1-char sul prefisso {pref!r} "
+                          f"({fam['name']}): glifo provabilmente errato "
+                          "corretto (cap MEDIA)"}
+    return None, None
+
+
+def repair_row(cells: list[str], profile: dict,
+               known: set[str]) -> tuple[list[str], list[dict]]:
+    """Riparazione a livello di RIGA sulle tabelle fuse (debito §4).
+
+    Docling puo' spezzare un codice tra celle adiacenti col prezzo in mezzo
+    ('V0 92750 68,00' | '00001') o perdere il prefisso di famiglia
+    ('94094 00000'). Sulla riga piatta coi prezzi MASCHERATI:
+      A) row-rejoin: regex di famiglia sui frammenti ricomposti;
+      B) prefix-restore: prefisso di famiglia (config a DB) su run numerici
+         orfani, solo se il risultato matcha la forma canonica.
+    `known` = codici gia' estratti in modo safe nella pagina: un candidato che
+    collide NON viene emesso (era gia' visibile) e nessuna riparazione puo'
+    coincidere con un codice esistente per errore.
+    """
+    if not profile.get("fuzzy_repair"):
+        return [], []
+    flat = PRICE.sub(" ", base_cleanup(" ".join(cells)))
+    out: list[str] = []
+    logs: list[dict] = []
+
+    def add(code: str, reason: str) -> None:
+        if code in known or code in out:
+            return
+        out.append(code)
+        logs.append({"original": flat[:120], "normalized": code,
+                     "type": "fuzzy_repaired", "reason": reason})
+
+    for fam in profile.get("long_families", []):
+        for m in fam["_extract"].findall(flat):
+            add(canonical(m),
+                f"row-rejoin ({fam['name']}): frammenti ricomposti a livello "
+                "riga, prezzi mascherati (cap MEDIA)")
+        pref = fam.get("restore_prefix")
+        if pref:
+            for run in DIGIT_RUN.finditer(flat):
+                cand = pref + canonical(run.group())
+                if fam["_token"].fullmatch(cand):
+                    add(cand,
+                        f"prefix-restore ({fam['name']}): prefisso {pref!r} "
+                        "restaurato su run numerico orfano (cap MEDIA)")
+    return out, logs

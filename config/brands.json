@@ -9,13 +9,15 @@
           "token_pattern": "^V0[0-9A-Z]{10}$",
           "rejoin": true,
           "reason_rejoin": "famiglia V0: uniti blocchi separati da spazi/markup",
-          "reason_double": "codice-doppio fuso: split via findall"
+          "reason_double": "codice-doppio fuso: split via findall",
+          "restore_prefix": "V0"
         }
       ],
       "short_pattern": "^[0-9A-Z][0-9A-Z./-]{1,9}$",
       "reason_short": "codice corto: trim/markup",
       "unsafe_numeric": "^\\d{10,11}$",
-      "reason_unsafe": "numerico lungo senza V0: possibile prefisso perso, NON applicato"
+      "reason_unsafe": "numerico lungo senza V0: possibile prefisso perso, NON applicato al pass safe (debito §4: riparabile dal pass fuzzy_repair, cappato MEDIA)",
+      "fuzzy_repair": true
     },
     "electrolux": {
       "long_families": [

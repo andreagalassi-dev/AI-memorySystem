@@ -73,6 +73,68 @@ class TestRouterDaConfig:
         assert r.query_type == "code"
 
 
+class TestRepairUltimaRatio:
+    """Debito §4: riparazioni fuzzy_repaired — gate per-profilo, mai safe."""
+
+    def test_confusable_ripara_glifo(self):
+        from src.ingestion.brands import fuzzy_cell
+        code, log = fuzzy_cell("VO 91568 00007", get_profile("mamoli"))
+        assert code == "V09156800007"
+        assert log["type"] == "fuzzy_repaired"
+
+    def test_token_valido_mai_toccato(self):
+        from src.ingestion.brands import fuzzy_cell
+        assert fuzzy_cell("V0 91568 00007", get_profile("mamoli")) == (None, None)
+
+    def test_mai_sostituzioni_fuori_dal_prefisso(self):
+        # la 'I' a meta' token NON e' provabilmente errata ([0-9A-Z] la
+        # accetta): il confusable ripara SOLO il prefisso letterale
+        from src.ingestion.brands import fuzzy_cell
+        code, log = fuzzy_cell("VO 9I568 00007", get_profile("mamoli"))
+        assert code == "V09I56800007"          # prefisso corretto, coda intatta
+        assert "prefisso" in log["reason"]
+
+    def test_prefisso_non_confondibile_rifiutato(self):
+        from src.ingestion.brands import fuzzy_cell
+        assert fuzzy_cell("X0 91568 00007", get_profile("mamoli")) == (None, None)
+
+    def test_gate_profilo_spento(self):
+        from src.ingestion.brands import fuzzy_cell, repair_row
+        assert fuzzy_cell("VO 91568 00007", get_profile("electrolux")) == (None, None)
+        assert repair_row(["V0 92750 68,00", "00001"],
+                          get_profile("electrolux"), set()) == ([], [])
+
+    def test_row_rejoin_caso_p231_riga29(self):
+        # codice spezzato tra celle col prezzo in mezzo (misurato su Docling)
+        from src.ingestion.brands import repair_row
+        cells = ["V0 91832 00001", "B oCCa", "1", "V0 92750 68,00", "00001"]
+        codes, logs = repair_row(cells, get_profile("mamoli"),
+                                 known={"V09183200001"})
+        assert codes == ["V09275000001"]
+        assert "row-rejoin" in logs[0]["reason"]
+
+    def test_prefix_restore_caso_p231_riga46(self):
+        from src.ingestion.brands import repair_row
+        cells = ["S Catola e V0 94093 00000 94094 00000"]
+        codes, _ = repair_row(cells, get_profile("mamoli"),
+                              known={"V09409300000"})
+        assert codes == ["V09409400000"]
+
+    def test_collision_check_annulla(self):
+        # il candidato riparato coincide con un codice gia' estratto -> niente
+        from src.ingestion.brands import repair_row
+        codes, logs = repair_row(["V0 92750 68,00", "00001"],
+                                 get_profile("mamoli"),
+                                 known={"V09275000001"})
+        assert codes == [] and logs == []
+
+    def test_riga_sana_zero_riparazioni(self):
+        from src.ingestion.brands import repair_row
+        cells = ["V0 91707 00001", "a Sta e PoMolo", "1", "16,00"]
+        assert repair_row(cells, get_profile("mamoli"),
+                          known={"V09170700001"}) == ([], [])
+
+
 class TestFonteDB:
     """Debito §1: profili da Postgres, fail-closed, cache invalidabile."""
 
