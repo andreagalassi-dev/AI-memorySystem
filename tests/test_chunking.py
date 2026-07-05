@@ -333,14 +333,20 @@ class TestIntegrazioneP231:
         gt_codes = {r["codice"] for r in gt}
         chunk_codes = {c.code for c in result["chunks"]}
         reject_codes = {cd for r in result["rejects"] for cd in r.codes_involved}
-        still_missing = set(json.loads(
+        acc = json.loads(
             (NORM / "_code_accuracy.json").read_text(encoding="utf-8")
-        )["MAMOLI_P231_IT"]["still_missing"])
+        )["MAMOLI_P231_IT"]
+        still_missing = set(acc["still_missing"])
+        # debito §4: codici recuperati dal pass fuzzy_repair del normalizzatore
+        # (tracciati in acc['repaired'], cap MEDIA); il chunker non li indicizza
+        # ancora — integrazione = follow-up dichiarato del debito §4
+        repaired = set(acc.get("repaired", []))
         # ogni codice GT: indicizzato, o in un reject, o perdita Docling gia'
-        # documentata nel gate P1 — mai sparito senza traccia
-        unexplained = gt_codes - chunk_codes - reject_codes - still_missing
+        # documentata nel gate P1, o RIPARATO — mai sparito senza traccia
+        unexplained = gt_codes - chunk_codes - reject_codes - still_missing - repaired
         assert not unexplained
-        assert len(chunk_codes) == 89  # 94 GT - 3 perdite Docling - 2 riga fusa
+        # 94 GT - 3 riparati (ex perdite Docling) - 2 riga fusa
+        assert len(chunk_codes) == 89
         assert not chunk_codes & still_missing
 
     def test_conteggi_e_reject_attesi(self, res):
