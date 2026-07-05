@@ -33,14 +33,17 @@ def apply_soft_delete(conn, document_id: int):
     )
     conn.commit()
     
-    # 2. Backfill Qdrant per aggiornare il payload
+    # 2. Backfill Qdrant per riallineare il payload (version_status='deleted').
+    # La SSOT è Postgres: export_backfill(conn) ritorna TUTTO lo stato corrente e
+    # sync_collection(qc, coll, export) riallinea la collection. L'errore NON va
+    # nascosto: il worker deve poterlo vedere e mettere il file in stato 'failed'.
+    from src.registry.sync import sync_collection
+    from src.ingestion.embedding import COLLECTION
     try:
-        from src.registry.sync import sync_collection
-        # Estraiamo il nuovo stato (che ora sarà 'deleted')
-        records = export_backfill(conn)
-        if doc_stem in records:
-            # Sync riapplica il payload corretto (con version_status='deleted')
-            sync_collection(records)
-            logger.info(f"Soft delete applicato con successo per stem={doc_stem}")
+        qc = get_qdrant_client()
+        export = export_backfill(conn)
+        sync_collection(qc, COLLECTION, export)
+        logger.info(f"Soft delete applicato con successo per stem={doc_stem}")
     except Exception as e:
         logger.error(f"Errore durante sync qdrant per soft delete: {e}")
+        raise
