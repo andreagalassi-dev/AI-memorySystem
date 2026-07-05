@@ -217,7 +217,9 @@ def fallback_superseded_node(state: GraphState, deps: Deps) -> dict:
     contesto misto v1/v2 all'LLM. Fail-closed come retrieval_node."""
     try:
         ev, children = _retrieve_with_terms(deps.retrieve_superseded, state)
-        return {"evidence": ev, "children_evidence": children, "obsolete_warning": True, "fallback_superseded_done": True,
+        # L'avviso "SOSTITUITA" ha senso SOLO se il fallback ha trovato evidenza:
+        # su risultato vuoto si scende comunque a rifiuto, senza avvisare di nulla.
+        return {"evidence": ev, "children_evidence": children, "obsolete_warning": bool(ev), "fallback_superseded_done": True,
                 "audit": _audit(state, f"fallback su SOSTITUITO: {len(ev)} hit, {len(children)} children")}
     except Exception as exc:
         return {"system_error": True, "level": "BASSA", "fallback_superseded_done": True,
@@ -228,7 +230,9 @@ def fallback_deleted_node(state: GraphState, deps: Deps) -> dict:
     """P7 — Cascade fallback sull'ELIMINATO (solo se superseded -> BASSA)."""
     try:
         ev, children = _retrieve_with_terms(deps.retrieve_deleted, state)
-        return {"evidence": ev, "children_evidence": children, "deleted_warning": True, "fallback_deleted_done": True,
+        # L'avviso "ELIMINATO" ha senso SOLO se il fallback ha trovato evidenza:
+        # su risultato vuoto la risposta è un rifiuto puro, senza avviso spurio.
+        return {"evidence": ev, "children_evidence": children, "deleted_warning": bool(ev), "fallback_deleted_done": True,
                 "audit": _audit(state, f"fallback su ELIMINATO: {len(ev)} hit, {len(children)} children")}
     except Exception as exc:
         return {"system_error": True, "level": "BASSA", "fallback_deleted_done": True,
