@@ -131,7 +131,7 @@ def chunk_csv_table(table_id: str, csv_text: str, cfg: dict) -> dict:
         chunks.append(Chunk(
             chunk_id=f"{table_id}/r{idx:03d}",
             text=text, code=code or None, code_raw=code or None,
-            normalization_type=None,
+            normalization_type=None, code_normalized_by=None,
             pos=pos or None, desc=desc or None, qty=qty or None, price=None,
             doc=cfg["doc"], page=0, lang=cfg["lang"],
             table_index=1, row_index=idx, segment="csv",

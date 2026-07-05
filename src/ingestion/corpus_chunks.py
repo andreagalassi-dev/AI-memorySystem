@@ -60,6 +60,7 @@ class CorpusChunk:
     source_cells: list[str] = field(default_factory=list)
     parent_id: str | None = None
     is_assembly: bool = False
+    code_normalized_by: str | None = None
 
 
 def _table_blocks(md: str) -> tuple[list[list[list[str]]], list[str]]:
@@ -198,7 +199,8 @@ def chunk_page(doc: str, cat: str, page: int, md: str, profile: dict,
                 qty=qty, price=price, doc=doc, page=page, lang=lang, cat=cat,
                 status="degraded" if warnings else "ok", warnings=warnings,
                 source_cells=[c for c in row if c.strip()],
-                parent_id=parent_id, is_assembly=is_assembly))
+                parent_id=parent_id, is_assembly=is_assembly,
+                code_normalized_by=profile.get("_name") if profile else None))
 
     # ------- pass di riparazione ultima-ratio (debito §4, gate per-profilo) ----
     if profile.get("fuzzy_repair"):
@@ -234,7 +236,8 @@ def chunk_page(doc: str, cat: str, page: int, md: str, profile: dict,
                         code=code, pos=None, desc=None, qty=None, price=None,
                         doc=doc, page=page, lang=lang, cat=cat,
                         status="repaired", warnings=["fuzzy_code"],
-                        source_cells=[c for c in row if c.strip()]))
+                        source_cells=[c for c in row if c.strip()],
+                        code_normalized_by=profile.get("_name") if profile else None))
 
     # ------- testo libero -> paragrafi (mai spezzare a meta' riga/token) -------
     paras, buf = [], []

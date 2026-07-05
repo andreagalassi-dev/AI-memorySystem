@@ -102,6 +102,7 @@ def resolve(doc_name: str) -> dict:
 def all_token_patterns() -> list[re.Pattern]:
     """Famiglie canoniche di TUTTI i brand (per il router Tier A)."""
     return [fam["_token"] for p in _config()["profiles"].values()
+            if p.get("_name") != "generic"
             for fam in p.get("long_families", [])]
 
 
@@ -111,6 +112,7 @@ def all_extract_patterns() -> list[re.Pattern]:
     (V0 91568 00007) e codici-doppi fusi. Vedi all_token_patterns per la forma
     canonica ancorata."""
     return [fam["_extract"] for p in _config()["profiles"].values()
+            if p.get("_name") != "generic"
             for fam in p.get("long_families", [])]
 
 
