@@ -150,8 +150,10 @@ def extract_signals(unified: dict, guardrail_report) -> Signals:
     unreliable = False
     if top is not None:
         pl = getattr(top, "payload", None) or {}
+        # debito §4: 'fuzzy_code' = codice riparato in ingestion -> mai ALTA
         unreliable = (pl.get("status") == "degraded"
-                      or "ocr_source" in (pl.get("warnings") or []))
+                      or "ocr_source" in (pl.get("warnings") or [])
+                      or "fuzzy_code" in (pl.get("warnings") or []))
 
     return Signals(
         gate=guardrail_report.gate,

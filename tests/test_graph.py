@@ -88,6 +88,15 @@ class TestNodi:
         assert out["margin"] == 1.0 and out["level"] != "BASSA"
         assert "1 gruppi-codice da 2 hit" in out["audit"][-1]
 
+    def test_confidence_codice_riparato_mai_alta(self):
+        # debito §4: warning fuzzy_code sul top hit -> unreliable -> cap MEDIA
+        # anche con margine perfetto
+        ev = EV_CODE._replace(warnings=["fuzzy_code"])
+        st = {"query": "codice 877615", "route": "code", "evidence": [ev]}
+        out = confidence_node(st, make_deps())
+        assert out["unreliable"] and out["margin"] == 1.0
+        assert out["level"] == "MEDIA"
+
     def test_confidence_codici_diversi_pari_score_restano_ambigui(self):
         # ambiguita' VERA: due codici DIVERSI a pari punteggio -> margine 0
         st = {"query": "anello", "route": "natural",

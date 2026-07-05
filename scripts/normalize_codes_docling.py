@@ -39,7 +39,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from src.ingestion.brands import normalize_cell, resolve  # noqa: E402
+from src.ingestion.brands import (  # noqa: E402
+    fuzzy_cell,
+    normalize_cell,
+    repair_row,
+    resolve,
+)
 from src.ingestion.codes import (  # noqa: E402
     base_cleanup,
     canonical,
@@ -95,6 +100,22 @@ def main() -> int:
                 new_row.append(" ".join(codes) if codes else clean)
             norm_rows.append(new_row)
 
+        # Debito §4 — pass 2 (ultima ratio, gate profilo fuzzy_repair):
+        # riparazioni a livello riga (row-rejoin + prefix-restore) e confusable
+        # sul prefisso. DOPO il pass safe completo (collision set a livello
+        # pagina), PRIMA degli output (i log riparati vanno nel CSV).
+        # MAI mescolate coi safe: tipo fuzzy_repaired, metrica separata.
+        repaired: set[str] = set()
+        for r in rows:
+            r_codes, r_logs = repair_row(r, profile, known=norm_codes | repaired)
+            repaired.update(r_codes)
+            entries.extend(r_logs)
+            for c in r:
+                fc, fl = fuzzy_cell(c, profile)
+                if fc and fc not in norm_codes | repaired:
+                    repaired.add(fc)
+                    entries.append(fl)
+
         # scrivi output normalizzato
         d = OUT / tid
         d.mkdir(parents=True, exist_ok=True)
@@ -109,18 +130,25 @@ def main() -> int:
 
         raw_hit = len(gtc & raw_exact)
         norm_hit = len(gtc & norm_codes)
+        all_hit = len(gtc & (norm_codes | repaired))
         acc[tid] = {
             "gt_codes": len(gtc),
             "codeAcc_raw_exact": round(raw_hit / len(gtc), 3),
             "codeAcc_normalized_exact": round(norm_hit / len(gtc), 3),
+            "codeAcc_with_repair": round(all_hit / len(gtc), 3),
             "recovered": sorted(gtc & norm_codes - raw_exact),
-            "still_missing": sorted(gtc - norm_codes),
+            "repaired": sorted(repaired),
+            "repaired_in_gt": sorted(repaired & gtc),
+            "false_repairs": sorted(repaired - gtc),
+            "still_missing": sorted(gtc - norm_codes - repaired),
             "unsafe_candidates": [e for e in entries if e["type"] == "unsafe_candidate"],
             "fused_table": fused,
         }
         full_log[tid] = entries
         print(f"[norm] {tid}: GT={len(gtc)}  raw_exact={acc[tid]['codeAcc_raw_exact']}  "
               f"normalized_exact={acc[tid]['codeAcc_normalized_exact']}  "
+              f"with_repair={acc[tid]['codeAcc_with_repair']}  "
+              f"riparati={len(repaired)} (falsi={len(acc[tid]['false_repairs'])})  "
               f"fused={fused['fused_suspected']}  ancora_mancanti={len(acc[tid]['still_missing'])}")
 
     (OUT / "_normalization_log.json").write_text(

@@ -149,7 +149,10 @@ def confidence_node(state: GraphState, deps: Deps) -> dict:
     is_code = state.get("route") == "code"
     has_ev = (bool(ev) and ev[0].score > 0) if is_code else bool(ev)
     top = ev[0] if ev else None
-    unreliable = bool(top and (top.status == "degraded" or "ocr_source" in top.warnings))
+    # Debito §4: 'fuzzy_code' = codice RIPARATO in ingestion -> mai ALTA
+    unreliable = bool(top and (top.status == "degraded"
+                               or "ocr_source" in top.warnings
+                               or "fuzzy_code" in top.warnings))
     # Debito §3 — margine sui GRUPPI-codice (max per gruppo): i duplicati
     # intra-doc dello stesso codice non sono ambiguita'. Solo il segnale
     # margine: evidence/citazioni/sintesi restano sugli hit originali.
