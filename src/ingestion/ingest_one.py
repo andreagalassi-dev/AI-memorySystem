@@ -124,7 +124,7 @@ def delete_document_points(qc, collection: str, doc_stem: str) -> int:
 
 def ingest_document(filepath: str, *, doc_stem: str, role: str, conn,
                     is_update: bool = False, cat: str = "unknown",
-                    collection: str = COLLECTION, extract_fn=None,
+                    collection: str | None = None, extract_fn=None,
                     extract_limit: int = 0) -> dict:
     """Ingerisce UN documento: estrazione -> chunk -> embedding -> upsert -> registro.
 
@@ -141,6 +141,9 @@ def ingest_document(filepath: str, *, doc_stem: str, role: str, conn,
 
     Ritorna: {doc_stem, n_chunks, n_points, profile_used, profile_warning}.
     """
+    # default collezione risolto a runtime: sovrascrivibile (test/e2e isolato)
+    # senza toccare la produzione, senza legare il default all'import.
+    collection = collection or COLLECTION
     extract_fn = extract_fn or (lambda fp: _default_extract(fp, limit=extract_limit))
     profile = resolve(doc_stem)
     profile_warning = profile.get("_name") == "default"
