@@ -58,6 +58,8 @@ class CorpusChunk:
     status: str
     warnings: list[str] = field(default_factory=list)
     source_cells: list[str] = field(default_factory=list)
+    parent_id: str | None = None
+    is_assembly: bool = False
 
 
 def _table_blocks(md: str) -> tuple[list[list[list[str]]], list[str]]:
@@ -137,6 +139,7 @@ def chunk_page(doc: str, cat: str, page: int, md: str, profile: dict,
                         warnings=["table_without_code_column"]))
             continue
         desc_col = _desc_column(matrix, {code_col})
+        current_parent: str | None = None
         for ri, row in enumerate(matrix):
             cell = row[code_col] if code_col < len(row) else ""
             codes, logs = normalize_cell(cell, profile)
@@ -155,6 +158,18 @@ def chunk_page(doc: str, cat: str, page: int, md: str, profile: dict,
                 continue
             desc = (base_cleanup(row[desc_col])
                     if desc_col is not None and desc_col < len(row) else None) or None
+            
+            row_text = " ".join(base_cleanup(c) for c in row if c.strip())
+            is_assembly = False
+            if profile.get("_assembly") and profile["_assembly"].search(row_text):
+                is_assembly = True
+
+            if is_assembly:
+                current_parent = code
+                parent_id = None
+            else:
+                parent_id = current_parent
+
             pos = qty = price = None
             for c_idx, c in enumerate(row):
                 if c_idx in (code_col, desc_col):
@@ -182,7 +197,8 @@ def chunk_page(doc: str, cat: str, page: int, md: str, profile: dict,
                 type="table_row", text=text, code=code, pos=pos, desc=desc,
                 qty=qty, price=price, doc=doc, page=page, lang=lang, cat=cat,
                 status="degraded" if warnings else "ok", warnings=warnings,
-                source_cells=[c for c in row if c.strip()]))
+                source_cells=[c for c in row if c.strip()],
+                parent_id=parent_id, is_assembly=is_assembly))
 
     # ------- pass di riparazione ultima-ratio (debito §4, gate per-profilo) ----
     if profile.get("fuzzy_repair"):

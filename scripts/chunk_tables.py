@@ -104,8 +104,10 @@ def main() -> int:
                   f"(rigenerare con normalize_codes_docling.py)")
             return 1
         norm_map = load_norm_map(tid)
+        from src.ingestion.brands import resolve
+        profile = resolve(meta["doc"])
         res = chunk_table(tid, md_path.read_text(encoding="utf-8"), meta, norm_map,
-                          repaired=load_repaired(tid))
+                          repaired=load_repaired(tid), profile=profile)
         chunks, rejects, report = res["chunks"], res["rejects"], res["report"]
 
         d = OUT / tid

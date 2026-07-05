@@ -18,7 +18,8 @@
       "reason_short": "codice corto: trim/markup",
       "unsafe_numeric": "^\\d{10,11}$",
       "reason_unsafe": "numerico lungo senza V0: possibile prefisso perso, NON applicato al pass safe (debito §4: riparabile dal pass fuzzy_repair, cappato MEDIA)",
-      "fuzzy_repair": true
+      "fuzzy_repair": true,
+      "assembly_pattern": "(?i)\\b(?:KIT|ASSEMBLY|ASSY|GRUPPO)\\b"
     },
     "electrolux": {
       "long_families": [

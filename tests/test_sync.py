@@ -74,7 +74,9 @@ def test_colls():
                                payload={"doc": stem, "page": i,
                                         "version_status": "current",
                                         "doc_version": 1,
-                                        "ruoli_consentiti": ["tecnico"]})
+                                        "ruoli_consentiti": ["tecnico"],
+                                        "parent_id": "V09156800000" if i > 0 else None,
+                                        "is_assembly": i == 0})
             for i, stem in enumerate(["stem_old", "stem_old", "stem_other"])],
             wait=True)
     yield qc
@@ -103,6 +105,12 @@ class TestSyncCollection:
             expect = "superseded" if p.payload["doc"] == "stem_old" else "current"
             assert p.payload["version_status"] == expect
             assert p.payload["page"] is not None    # chiavi preesistenti intatte
+            if p.id == 0:
+                assert p.payload["is_assembly"] is True
+                assert p.payload["parent_id"] is None
+            else:
+                assert p.payload["is_assembly"] is False
+                assert p.payload["parent_id"] == "V09156800000"
 
     def test_crash_a_meta_poi_rilancio_converge(self, test_colls):
         from src.registry.sync import sync_collection

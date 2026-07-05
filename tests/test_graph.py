@@ -29,7 +29,7 @@ T = Thresholds(tau_hi=0.5, tau_lo=0.2)
 
 def make_deps(retrieve=None, synthesize=None, catalog=None, cross_probe=None):
     return Deps(
-        retrieve=retrieve or (lambda q: [EV_CODE, EV2]),
+        retrieve=retrieve or (lambda q: ([EV_CODE, EV2], [])),
         synthesize=synthesize or (lambda q, ev: "Lo spinotto è 877615 (rotax_912_914_IPC, pag. 22)."),
         catalog_lookup=catalog or (lambda k: False),
         thresholds=T,
@@ -139,7 +139,7 @@ class TestEndToEnd:
         def synth(q, ev):
             called.append(1)
             return "non dovrei essere chiamato"
-        r = self._run(make_deps(retrieve=lambda q: [], synthesize=synth))
+        r = self._run(make_deps(retrieve=lambda q: ([], []), synthesize=synth))
         assert r["final_level"] == "BASSA" and not called  # LLM MAI chiamato
 
     def test_guardrail_block_su_codice_allucinato(self):

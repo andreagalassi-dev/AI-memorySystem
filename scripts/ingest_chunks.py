@@ -111,9 +111,11 @@ def main() -> int:
         sparse_vectors_config={SPARSE_NAME: models.SparseVectorParams(
             modifier=models.Modifier.IDF)},
     )
-    for field in ("code", "lang", "doc", "status"):
+    for field in ("code", "lang", "doc", "status", "parent_id"):
         client.create_payload_index(COLLECTION, field_name=field,
                                     field_schema=models.PayloadSchemaType.KEYWORD)
+    client.create_payload_index(COLLECTION, field_name="is_assembly",
+                                field_schema=models.PayloadSchemaType.BOOL)
     info = client.get_collection(COLLECTION)
     cfg = info.config.params
     check("Collezione ricreata (dense 1024/cosine + sparse IDF + index payload)",

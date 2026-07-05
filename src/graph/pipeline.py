@@ -45,6 +45,7 @@ class Evidence(NamedTuple):
     # (P3.5) restano valide. version_status: "current" | "superseded".
     version_status: str | None = None
     doc_version: int | None = None
+    is_assembly: bool = False
 
 
 class GraphState(TypedDict, total=False):
@@ -56,6 +57,7 @@ class GraphState(TypedDict, total=False):
     route_reason: str
     expansion_terms: list[str]
     evidence: list[Evidence]
+    children_evidence: list[Evidence]
     margin: float
     has_evidence: bool
     unreliable: bool
@@ -77,13 +79,13 @@ class Deps:
     # retrieve/retrieve_superseded: chiamate con (query) oppure, se il nodo
     # expansion ha prodotto termini (debito §2), con (query, expansion_terms).
     # Con expand=None il contratto resta quello P3.5/P4.4 a un argomento.
-    retrieve: Callable[..., list[Evidence]]
+    retrieve: Callable[..., tuple[list[Evidence], list[Evidence]]]
     synthesize: Callable[[str, list[Evidence]], str]
     catalog_lookup: Callable[[str], bool]
     thresholds: Thresholds
     cross_probe: Callable[[str], list[tuple[str, int]]] | None = None
     # P4.4 — cascade fallback sul SOSTITUITO; None = comportamento P3.5
-    retrieve_superseded: Callable[..., list[Evidence]] | None = None
+    retrieve_superseded: Callable[..., tuple[list[Evidence], list[Evidence]]] | None = None
     # Debito §2 — Query Expansion (solo route natural); None = nodo no-op
     expand: Callable[[str], list[str]] | None = None
 
@@ -129,7 +131,7 @@ def expansion_node(state: GraphState, deps: Deps) -> dict:
                                    if terms else "expansion: nessun termine")}
 
 
-def _retrieve_with_terms(fn: Callable, state: GraphState) -> list[Evidence]:
+def _retrieve_with_terms(fn: Callable, state: GraphState) -> tuple[list[Evidence], list[Evidence]]:
     """Contratto Deps: (query, terms) solo se l'espansione ha prodotto termini."""
     terms = state.get("expansion_terms") or []
     return fn(state["query"], terms) if terms else fn(state["query"])
@@ -137,8 +139,9 @@ def _retrieve_with_terms(fn: Callable, state: GraphState) -> list[Evidence]:
 
 def retrieval_node(state: GraphState, deps: Deps) -> dict:
     try:
-        ev = _retrieve_with_terms(deps.retrieve, state)
-        return {"evidence": ev, "audit": _audit(state, f"retrieval: {len(ev)} hit")}
+        ev, children = _retrieve_with_terms(deps.retrieve, state)
+        return {"evidence": ev, "children_evidence": children, 
+                "audit": _audit(state, f"retrieval: {len(ev)} hit, {len(children)} children")}
     except Exception as exc:  # fail-closed: Qdrant giu'/timeout
         return {"system_error": True, "level": "BASSA",
                 "audit": _audit(state, f"Sistema non disponibile (retrieval): {exc}")}
@@ -183,7 +186,9 @@ def fusion_node(state: GraphState, deps: Deps) -> dict:
 
 def synthesis_node(state: GraphState, deps: Deps) -> dict:
     try:
-        out = deps.synthesize(state["query"], state.get("evidence") or [])
+        # P3.5 / Hop 2: l'LLM vede evidenza + children combinati in fondo
+        combined_ev = (state.get("evidence") or []) + (state.get("children_evidence") or [])
+        out = deps.synthesize(state["query"], combined_ev)
         return {"answer": out, "citations": extract_citations(out),
                 "audit": _audit(state, "synthesis: risposta generata")}
     except Exception as exc:  # fail-closed: Ollama giu'/timeout
@@ -192,7 +197,8 @@ def synthesis_node(state: GraphState, deps: Deps) -> dict:
 
 
 def guardrail_node(state: GraphState, deps: Deps) -> dict:
-    payloads = [e._asdict() for e in state.get("evidence") or []]
+    combined_ev = (state.get("evidence") or []) + (state.get("children_evidence") or [])
+    payloads = [e._asdict() for e in combined_ev]
     # il guardrail legge le AFFERMAZIONI, non le citazioni (nomi-doc code-shaped)
     rep = check_answer(strip_citations(state.get("answer") or ""),
                        payloads, deps.catalog_lookup)
@@ -206,9 +212,9 @@ def fallback_node(state: GraphState, deps: Deps) -> dict:
     Le evidence trovate SOVRASCRIVONO quelle povere del current: mai
     contesto misto v1/v2 all'LLM. Fail-closed come retrieval_node."""
     try:
-        ev = _retrieve_with_terms(deps.retrieve_superseded, state)
-        return {"evidence": ev, "obsolete_warning": True, "fallback_done": True,
-                "audit": _audit(state, f"fallback su SOSTITUITO: {len(ev)} hit")}
+        ev, children = _retrieve_with_terms(deps.retrieve_superseded, state)
+        return {"evidence": ev, "children_evidence": children, "obsolete_warning": True, "fallback_done": True,
+                "audit": _audit(state, f"fallback su SOSTITUITO: {len(ev)} hit, {len(children)} children")}
     except Exception as exc:
         return {"system_error": True, "level": "BASSA", "fallback_done": True,
                 "audit": _audit(state, f"Sistema non disponibile (fallback): {exc}")}
@@ -349,7 +355,28 @@ def _default_deps(role: Role) -> Deps:
         return Evidence(p.get("doc"), p.get("page"), p.get("lang"), p.get("code"),
                         p.get("desc"), p.get("text"), p.get("qty"), p.get("price"),
                         p.get("type"), p.get("status"), p.get("warnings") or [], score,
-                        p.get("version_status"), p.get("doc_version"))
+                        p.get("version_status"), p.get("doc_version"),
+                        p.get("is_assembly", False))
+
+    def _apply_hop2(ev_list: list[Evidence]) -> tuple[list[Evidence], list[Evidence]]:
+        seen = set()
+        grouped = []
+        for e in ev_list:
+            if e.code not in seen:
+                grouped.append(e)
+                if e.code: seen.add(e.code)
+        
+        children = []
+        if grouped and grouped[0].is_assembly and grouped[0].code:
+            cf = models.Filter(must=[models.FieldCondition(
+                key="parent_id", match=models.MatchValue(value=grouped[0].code))])
+            records, _ = qc.scroll("aike_chunks", scroll_filter=cf, limit=100)
+            for r in records:
+                # children inherit score of parent for Context presentation, but are kept separate
+                children.append(_to_ev(models.ScoredPoint(
+                    id=r.id, version=0, score=grouped[0].score, payload=r.payload, vector=None
+                ), grouped[0].score))
+        return grouped, children
 
     def _retrieve(version_status: str):
         # P4.4/P4.5 — stessa logica routed_rr su scope diversi, SEMPRE dentro
@@ -357,11 +384,11 @@ def _default_deps(role: Role) -> Deps:
         # sull'obsoleto resta filtrato per ruolo
         vf = access_filter(version_status, role)
 
-        def retrieve(query: str, extra_terms: list[str] | None = None) -> list[Evidence]:
+        def retrieve(query: str, extra_terms: list[str] | None = None) -> tuple[list[Evidence], list[Evidence]]:
             route = classify_query(query)
             if route.query_type == "code":
                 hits = search(qc, query, "routed", limit=10, query_filter=vf)
-                return [_to_ev(h, h.score) for h in hits]
+                return _apply_hop2([_to_ev(h, h.score) for h in hits])
             # natural/mixed: reranker SIGMOID come score di produzione (P3.2 §3)
             # (l'espansione debito §2 entra solo nel canale sparse via search;
             #  il reranker resta sulla query originale)
@@ -369,7 +396,7 @@ def _default_deps(role: Role) -> Deps:
             base = search(qc, query, "routed", limit=RERANK_TOPK, query_filter=vf,
                           extra_terms=extra_terms)
             if not base:
-                return []
+                return [], []
             tok, model, device = _reranker()
             pairs = [(query, h.payload.get("text") or h.payload.get("desc") or "")
                      for h in base]
@@ -381,7 +408,7 @@ def _default_deps(role: Role) -> Deps:
             if not isinstance(probs, list):
                 probs = [probs]
             ranked = sorted(zip(probs, base), key=lambda t: -t[0])
-            return [_to_ev(h, s) for s, h in ranked[:10]]
+            return _apply_hop2([_to_ev(h, s) for s, h in ranked[:10]])
 
         return retrieve
 

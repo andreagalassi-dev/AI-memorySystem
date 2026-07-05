@@ -63,6 +63,26 @@ class TestTableRow:
         assert all(c.type == "text" for c in res["chunks"])
         assert any("table_without_code_column" in c.warnings for c in res["chunks"])
 
+    def test_rilevamento_assembly_e_parent_id(self):
+        md = ("| V0 91568 00000 | KIT RICAMBIO | 1 |\n"
+              "| V0 91569 00001 | pezzo 1 | 2 |\n"
+              "| V0 91570 00002 | pezzo 2 | 3 |\n"
+              "| V0 92000 00000 | KIT SECONDO | 1 |\n"
+              "| V0 92001 00001 | pezzo 3 | 1 |\n")
+        prof = get_profile("mamoli").copy()
+        import re
+        prof["_assembly"] = re.compile(r"KIT")
+        res = chunk_page("doc", "cat", 1, md, prof, "IT")
+        chunks = res["chunks"]
+        assert chunks[0].is_assembly is True
+        assert chunks[0].parent_id is None
+        assert chunks[1].is_assembly is False
+        assert chunks[1].parent_id == "V09156800000"
+        assert chunks[2].parent_id == "V09156800000"
+        assert chunks[3].is_assembly is True
+        assert chunks[3].parent_id is None
+        assert chunks[4].parent_id == "V09200000000"
+
 
 class TestRepairPass:
     """Debito §4 follow-up: il chunker di produzione indicizza i riparati.

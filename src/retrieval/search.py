@@ -124,6 +124,40 @@ def search(client: QdrantClient, query: str, strategy: str, limit: int = 10,
         return rerank(query, base, limit=limit)
     raise ValueError(f"strategia sconosciuta: {strategy}")
 
+def group_by_code(hits: list) -> list:
+    """Hop 1: Deduplica risultati tenendo solo il primo (score max) per ogni codice."""
+    seen = set()
+    out = []
+    for h in hits:
+        c = (getattr(h, "payload", None) or {}).get("code")
+        if c not in seen:
+            out.append(h)
+            if c:
+                seen.add(c)
+    return out
+
+def apply_hop2(client: QdrantClient, hits: list) -> tuple[list, list, str | None]:
+    """Applica Hop 1 (group by) e Hop 2 (recupero children)."""
+    grouped_hits = group_by_code(hits)
+    children_hits = []
+    hop2_warning = None
+    if grouped_hits and grouped_hits[0].payload.get("is_assembly"):
+        kit_code = grouped_hits[0].payload.get("code")
+        if kit_code:
+            children_filter = models.Filter(must=[
+                models.FieldCondition(key="parent_id", match=models.MatchValue(value=kit_code))
+            ])
+            # Hop 2 exact match
+            records, _ = client.scroll(COLLECTION, scroll_filter=children_filter, limit=100)
+            if not records:
+                hop2_warning = "Assembly_Has_No_Children"
+            else:
+                for r in records:
+                    children_hits.append(models.ScoredPoint(
+                        id=r.id, version=r.version, score=grouped_hits[0].score, payload=r.payload, vector=None
+                    ))
+    return grouped_hits, children_hits, hop2_warning
+
 
 def search_unified(client: QdrantClient, query: str, limit: int = 10) -> dict:
     """Instradamento unificato testo/visione (P2.7).
@@ -141,8 +175,11 @@ def search_unified(client: QdrantClient, query: str, limit: int = 10) -> dict:
         visual = search_visual(client, query, limit)
         text = (search(client, route.code_token, "sparse", limit)
                 if route.code_token else [])
+        text, children, hop2_warning = apply_hop2(client, text)
         return {"route": "visual", "reason": route.reason,
-                "text_hits": text, "visual_hits": visual}
+                "text_hits": text, "children_hits": children, "hop2_warning": hop2_warning,
+                "visual_hits": visual}
+    text, children, hop2_warning = apply_hop2(client, search(client, query, "routed", limit))
     return {"route": route.query_type, "reason": route.reason,
-            "text_hits": search(client, query, "routed", limit),
+            "text_hits": text, "children_hits": children, "hop2_warning": hop2_warning,
             "visual_hits": []}

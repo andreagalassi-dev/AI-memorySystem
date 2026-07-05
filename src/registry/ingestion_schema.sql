@@ -49,6 +49,9 @@ CREATE TABLE IF NOT EXISTS ingestion_doc_map (
 -- ALTER idempotenti: le tabelle possono preesistere alla colonna.
 ALTER TABLE ingestion_profiles
     ADD COLUMN IF NOT EXISTS fuzzy_repair boolean NOT NULL DEFAULT false;
+-- assembly_pattern: regex per identificare una riga che rappresenta un Kit/Assembly (Punto 5).
+ALTER TABLE ingestion_profiles
+    ADD COLUMN IF NOT EXISTS assembly_pattern text;
 -- restore_prefix: prefisso di famiglia restaurabile su run numerici orfani
 -- (es. 'V0' Mamoli: '94094 00000' -> V09409400000). NULL = mai.
 ALTER TABLE ingestion_code_families

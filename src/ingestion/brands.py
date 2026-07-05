@@ -81,6 +81,8 @@ def _config() -> dict:
             p["_short"] = re.compile(p["short_pattern"])
         if p.get("unsafe_numeric"):
             p["_unsafe"] = re.compile(p["unsafe_numeric"])
+        if p.get("assembly_pattern"):
+            p["_assembly"] = re.compile(p["assembly_pattern"])
         p["_name"] = name
     return cfg
 

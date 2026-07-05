@@ -21,11 +21,11 @@ import psycopg
 
 SCHEMA_PATH = Path(__file__).with_name("ingestion_schema.sql")
 
-_PROFILE_REGEX_FIELDS = ("short_pattern", "unsafe_numeric")
+_PROFILE_REGEX_FIELDS = ("short_pattern", "unsafe_numeric", "assembly_pattern")
 _FAMILY_REGEX_FIELDS = ("extract_pattern", "token_pattern", "restore_run")
 
 _PROFILE_COLS = ("short_pattern", "reason_short", "unsafe_numeric",
-                 "reason_unsafe", "passthrough", "fuzzy_repair")
+                 "reason_unsafe", "passthrough", "fuzzy_repair", "assembly_pattern")
 _FAMILY_COLS = ("extract_pattern", "token_pattern", "rejoin",
                 "reason_rejoin", "reason_double", "restore_prefix",
                 "restore_run")
@@ -82,6 +82,7 @@ def canonical_profile(profile: dict) -> dict:
         "reason_unsafe": profile.get("reason_unsafe"),
         "passthrough": bool(profile.get("passthrough", False)),
         "fuzzy_repair": bool(profile.get("fuzzy_repair", False)),
+        "assembly_pattern": profile.get("assembly_pattern"),
     }
 
 
@@ -103,9 +104,9 @@ def load_profiles(conn: psycopg.Connection) -> dict:
     profiles: dict[str, dict] = {}
     ids: dict[int, str] = {}
     for (pid, name, short, r_short, unsafe, r_unsafe, passthrough,
-         fuzzy) in conn.execute(
+         fuzzy, assembly) in conn.execute(
         "SELECT id, name, short_pattern, reason_short, unsafe_numeric, "
-        "reason_unsafe, passthrough, fuzzy_repair FROM ingestion_profiles "
+        "reason_unsafe, passthrough, fuzzy_repair, assembly_pattern FROM ingestion_profiles "
         "WHERE is_active ORDER BY name"
     ):
         ids[pid] = name
@@ -114,6 +115,7 @@ def load_profiles(conn: psycopg.Connection) -> dict:
             "short_pattern": short, "reason_short": r_short,
             "unsafe_numeric": unsafe, "reason_unsafe": r_unsafe,
             "passthrough": passthrough, "fuzzy_repair": fuzzy,
+            "assembly_pattern": assembly,
         }
     for (pid, fname, extract, token, rejoin, r_rejoin, r_double,
          r_prefix, r_run) in conn.execute(
@@ -146,8 +148,8 @@ def upsert_profile(conn: psycopg.Connection, name: str, profile: dict) -> int:
     validate_profile(name, p)
     row = conn.execute(
         "INSERT INTO ingestion_profiles (name, short_pattern, reason_short, "
-        "unsafe_numeric, reason_unsafe, passthrough, fuzzy_repair) "
-        "VALUES (%s, %s, %s, %s, %s, %s, %s) "
+        "unsafe_numeric, reason_unsafe, passthrough, fuzzy_repair, assembly_pattern) "
+        "VALUES (%s, %s, %s, %s, %s, %s, %s, %s) "
         "ON CONFLICT (name) DO UPDATE SET "
         "short_pattern = EXCLUDED.short_pattern, "
         "reason_short = EXCLUDED.reason_short, "
@@ -155,6 +157,7 @@ def upsert_profile(conn: psycopg.Connection, name: str, profile: dict) -> int:
         "reason_unsafe = EXCLUDED.reason_unsafe, "
         "passthrough = EXCLUDED.passthrough, "
         "fuzzy_repair = EXCLUDED.fuzzy_repair, "
+        "assembly_pattern = EXCLUDED.assembly_pattern, "
         "is_active = true, updated_at = now() "
         "RETURNING id",
         (name, *(p[c] for c in _PROFILE_COLS)),

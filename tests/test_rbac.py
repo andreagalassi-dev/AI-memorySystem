@@ -28,7 +28,7 @@ EV2 = EV._replace(code="877616", score=2.0)
 
 def make_deps(retrieve=None, synthesize=None, catalog=None):
     return Deps(
-        retrieve=retrieve or (lambda q: [EV, EV2]),
+        retrieve=retrieve or (lambda q: ([EV, EV2], [])),
         synthesize=synthesize or (
             lambda q, ev: "Lo spinotto è 877615 (rotax_912_914_IPC, pag. 22)."),
         catalog_lookup=catalog or (lambda k: True),

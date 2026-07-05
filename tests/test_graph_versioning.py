@@ -35,12 +35,12 @@ EV_OLD2 = EV_OLD._replace(code="MX-101", score=2.0)
 def make_deps(retrieve=None, retrieve_superseded=None, synthesize=None,
               catalog=None):
     return Deps(
-        retrieve=retrieve or (lambda q: []),
+        retrieve=retrieve or (lambda q: ([], [])),
         synthesize=synthesize or (
             lambda q, ev: "La guarnizione è MX-100 (mamoli_v1, pag. 41)."),
         catalog_lookup=catalog or (lambda k: False),
         thresholds=T,
-        retrieve_superseded=retrieve_superseded,
+        retrieve_superseded=retrieve_superseded or (lambda q: ([], [])),
     )
 
 
@@ -59,7 +59,7 @@ class TestFallbackNode:
     def test_sovrascrive_evidence_e_accende_flag(self):
         st = {"query": "guarnizione", "evidence": [EV_CUR_POOR]}
         out = fallback_node(st, make_deps(
-            retrieve_superseded=lambda q: [EV_OLD, EV_OLD2]))
+            retrieve_superseded=lambda q: ([EV_OLD, EV_OLD2], [])))
         assert out["evidence"] == [EV_OLD, EV_OLD2]   # SOVRASCRITTE, non appese
         assert out["obsolete_warning"] is True
         assert out["fallback_done"] is True
@@ -99,7 +99,7 @@ class TestCascadeEndToEnd:
         return build_graph(deps).invoke({"query": query, "role": "tecnico"})
 
     def test_current_vuoto_fallback_risponde_con_avviso(self):
-        r = self._run(make_deps(retrieve_superseded=lambda q: [EV_OLD, EV_OLD2],
+        r = self._run(make_deps(retrieve_superseded=lambda q: ([EV_OLD, EV_OLD2], []),
                                 catalog=lambda k: True))
         assert r["final_level"] == "MEDIA"            # cap: mai ALTA da obsoleto
         assert "MX-100" in r["final_answer"]
@@ -116,8 +116,8 @@ class TestCascadeEndToEnd:
             seen.append(list(ev))
             return "La guarnizione è MX-100 (mamoli_v1, pag. 41)."
         cur2 = EV_CUR_POOR._replace(page=4, score=0.049)
-        self._run(make_deps(retrieve=lambda q: [EV_CUR_POOR, cur2],
-                            retrieve_superseded=lambda q: [EV_OLD, EV_OLD2],
+        self._run(make_deps(retrieve=lambda q: ([EV_CUR_POOR, cur2], []),
+                            retrieve_superseded=lambda q: ([EV_OLD, EV_OLD2], []),
                             synthesize=synth, catalog=lambda k: True))
         assert seen == [[EV_OLD, EV_OLD2]]
 
@@ -125,7 +125,7 @@ class TestCascadeEndToEnd:
         calls = []
         def sup(q):
             calls.append(1)
-            return []
+            return ([], [])
         r = self._run(make_deps(retrieve_superseded=sup))
         assert r["final_level"] == "BASSA" and r["final_answer"] == REFUSAL
         assert len(calls) == 1                        # UNA sola cascata, no loop
@@ -134,10 +134,10 @@ class TestCascadeEndToEnd:
         called = []
         def sup(q):
             called.append(1)
-            return [EV_OLD]
+            return ([EV_OLD], [])
         ev_good = EV_OLD._replace(version_status="current", doc_version=2,
                                   doc="mamoli_v2")
-        r = self._run(make_deps(retrieve=lambda q: [ev_good, EV_OLD2],
+        r = self._run(make_deps(retrieve=lambda q: ([ev_good, EV_OLD2], []),
                                 retrieve_superseded=sup, catalog=lambda k: True))
         assert not called                             # zero costo quando non serve
         assert "obsolet" not in r["final_answer"].lower()

@@ -83,7 +83,7 @@ class TestNodoGrafo:
     def _mk_deps(self, expand=None, retrieve=None):
         from src.graph.pipeline import Deps
         from src.retrieval.confidence import CALIBRATED_V1
-        return Deps(retrieve=retrieve or (lambda q, t=None: []),
+        return Deps(retrieve=retrieve or (lambda q, t=None: ([], [])),
                     synthesize=lambda q, ev: "", catalog_lookup=lambda k: False,
                     thresholds=CALIBRATED_V1, expand=expand)
 

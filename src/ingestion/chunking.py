@@ -279,6 +279,8 @@ class Chunk:
     warnings: list[str]
     source_cells: list[str]   # celle sorgente del record (audit trail)
     sheet: str | None = None  # foglio XLSX per la citazione (None per i PDF)
+    parent_id: str | None = None
+    is_assembly: bool = False
 
 
 @dataclass
@@ -315,7 +317,8 @@ def _merge_pair(pending: RawRecord, cur: RawRecord) -> RawRecord | None:
 
 def chunk_table(table_id: str, md_text: str, meta: dict,
                 norm_map: dict[str, dict] | None = None,
-                repaired: list[dict] | None = None) -> dict:
+                repaired: list[dict] | None = None,
+                profile: dict | None = None) -> dict:
     """Chunking difensivo di un markdown tabellare normalizzato.
 
     `repaired`: ancore del pass di riparazione del normalizzatore (debito §4,
@@ -457,8 +460,20 @@ def chunk_table(table_id: str, md_text: str, meta: dict,
             accepted.append(rec)
 
     # --- 4. emissione chunk ------------------------------------------------------
+    current_parent: str | None = None
     for rec in accepted:
         code = rec.codes[0]
+        row_text = " ".join(base_cleanup(c) for c in rec.source_cells if c.strip())
+        is_assembly = False
+        if profile and profile.get("_assembly") and profile["_assembly"].search(row_text):
+            is_assembly = True
+
+        if is_assembly:
+            current_parent = code
+            parent_id = None
+        else:
+            parent_id = current_parent
+
         if not rec.desc:
             rec.warnings.append("desc_missing")
         recovered = "recovered_multirow" in rec.warnings
@@ -485,6 +500,8 @@ def chunk_table(table_id: str, md_text: str, meta: dict,
             table_index=rec.block, row_index=rec.row_index, segment=rec.segment,
             status=status, warnings=sorted(set(real_warnings)),
             source_cells=rec.source_cells,
+            parent_id=parent_id,
+            is_assembly=is_assembly,
         ))
 
     # --- 4b. chunk 'repaired' dalle ancore del normalizzatore (debito §4) --------
