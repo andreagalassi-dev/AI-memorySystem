@@ -46,6 +46,7 @@ class Signals:
     margin: float                # [0,1], relativo top1-top2
     unreliable: bool             # top hit ocr_source / status=degraded
     agreement: str | None = None  # "agree" | "disagree" | None (P3.3)
+    hop2_warning: str | None = None
 
 
 @dataclass
@@ -109,6 +110,9 @@ def confidence_level(signals: Signals, thresholds: Thresholds) -> ConfidenceRepo
     if s.gate == "VERIFY":
         return ConfidenceReport(Level.MEDIA, s,
                                 "guardrail a VERIFICA MANUALE -> verifica consigliata")
+    if s.hop2_warning:
+        return ConfidenceReport(Level.MEDIA, s,
+                                f"avviso recupero gerarchico ({s.hop2_warning}) -> verifica consigliata")
     if s.unreliable:
         return ConfidenceReport(Level.MEDIA, s,
                                 "evidenza inaffidabile (OCR/degraded) -> verifica consigliata")
@@ -161,4 +165,5 @@ def extract_signals(unified: dict, guardrail_report) -> Signals:
         margin=compute_margin(group_scores(keyed)),
         unreliable=unreliable,
         agreement=None,
+        hop2_warning=unified.get("hop2_warning"),
     )

@@ -68,7 +68,9 @@ class GraphState(TypedDict, total=False):
     guardrail_gate: str
     system_error: bool
     obsolete_warning: bool
-    fallback_done: bool
+    deleted_warning: bool
+    fallback_superseded_done: bool
+    fallback_deleted_done: bool
     final_answer: str
     final_level: str
     audit: list[str]
@@ -84,8 +86,10 @@ class Deps:
     catalog_lookup: Callable[[str], bool]
     thresholds: Thresholds
     cross_probe: Callable[[str], list[tuple[str, int]]] | None = None
-    # P4.4 — cascade fallback sul SOSTITUITO; None = comportamento P3.5
+    # P4.4 — cascade fallback sul SOSTITUITO
     retrieve_superseded: Callable[..., tuple[list[Evidence], list[Evidence]]] | None = None
+    # P7 — cascade fallback sull'ELIMINATO (Livello 3)
+    retrieve_deleted: Callable[..., tuple[list[Evidence], list[Evidence]]] | None = None
     # Debito §2 — Query Expansion (solo route natural); None = nodo no-op
     expand: Callable[[str], list[str]] | None = None
 
@@ -206,18 +210,29 @@ def guardrail_node(state: GraphState, deps: Deps) -> dict:
             "audit": _audit(state, f"guardrail: {rep.reason}")}
 
 
-def fallback_node(state: GraphState, deps: Deps) -> dict:
+def fallback_superseded_node(state: GraphState, deps: Deps) -> dict:
     """P4.4 — Cascade fallback sul SOSTITUITO (solo se current -> BASSA).
 
     Le evidence trovate SOVRASCRIVONO quelle povere del current: mai
     contesto misto v1/v2 all'LLM. Fail-closed come retrieval_node."""
     try:
         ev, children = _retrieve_with_terms(deps.retrieve_superseded, state)
-        return {"evidence": ev, "children_evidence": children, "obsolete_warning": True, "fallback_done": True,
+        return {"evidence": ev, "children_evidence": children, "obsolete_warning": True, "fallback_superseded_done": True,
                 "audit": _audit(state, f"fallback su SOSTITUITO: {len(ev)} hit, {len(children)} children")}
     except Exception as exc:
-        return {"system_error": True, "level": "BASSA", "fallback_done": True,
-                "audit": _audit(state, f"Sistema non disponibile (fallback): {exc}")}
+        return {"system_error": True, "level": "BASSA", "fallback_superseded_done": True,
+                "audit": _audit(state, f"Sistema non disponibile (fallback_superseded): {exc}")}
+
+
+def fallback_deleted_node(state: GraphState, deps: Deps) -> dict:
+    """P7 — Cascade fallback sull'ELIMINATO (solo se superseded -> BASSA)."""
+    try:
+        ev, children = _retrieve_with_terms(deps.retrieve_deleted, state)
+        return {"evidence": ev, "children_evidence": children, "deleted_warning": True, "fallback_deleted_done": True,
+                "audit": _audit(state, f"fallback su ELIMINATO: {len(ev)} hit, {len(children)} children")}
+    except Exception as exc:
+        return {"system_error": True, "level": "BASSA", "fallback_deleted_done": True,
+                "audit": _audit(state, f"Sistema non disponibile (fallback_deleted): {exc}")}
 
 
 def refuse_node(state: GraphState, deps: Deps) -> dict:
@@ -244,9 +259,16 @@ def reconcile(state: GraphState) -> dict:
                "final_level": "MEDIA"}
     else:
         out = {"final_answer": answer_text, "final_level": state.get("level", "MEDIA")}
-    # P4.4 — SPEC §E: risposta da fonte sostituita -> avviso esplicito e
-    # mai ALTA (cap a MEDIA, come il gate VERIFY: correttezza-prima)
-    if state.get("obsolete_warning"):
+    # P4.4 / P7 — Gestione warning per obsoleto / eliminato
+    if state.get("deleted_warning"):
+        out["final_answer"] += (
+            "\nATTENZIONE: risposta basata su un documento ELIMINATO dall'archivio. "
+            "Questo documento non è più presente nella cartella monitorata. "
+            "Le informazioni potrebbero essere obsolete o non più valide. "
+            "Verificare con il fornitore o il responsabile tecnico."
+        )
+        out["final_level"] = "BASSA"
+    elif state.get("obsolete_warning"):
         out["final_answer"] += ("\nATTENZIONE: risposta basata su documentazione "
                                 "SOSTITUITA (obsoleta). Verificare la versione corrente.")
         if out["final_level"] == "ALTA":
@@ -269,12 +291,14 @@ def _after_retrieval(state: GraphState) -> str:
     return "finalize" if state.get("system_error") else "confidence"
 
 
-def _after_confidence(state: GraphState, has_fallback: bool = False) -> str:
+def _after_confidence(state: GraphState, has_fallback_sup: bool = False, has_fallback_del: bool = False) -> str:
     if state.get("level") != "BASSA":
         return "fusion"
-    # P4.4 — cascade: BASSA sulla via current -> UNA sola discesa sul sostituito
-    if has_fallback and not state.get("fallback_done"):
-        return "fallback"
+    # P4.4/P7 — cascade a tre livelli
+    if has_fallback_sup and not state.get("fallback_superseded_done"):
+        return "fallback_superseded"
+    if has_fallback_del and not state.get("fallback_deleted_done"):
+        return "fallback_deleted"
     return "refuse"
 
 
@@ -296,7 +320,8 @@ def build_graph(deps: Deps):
     g.add_node("expansion", n(expansion_node))
     g.add_node("retrieval", n(retrieval_node))
     g.add_node("confidence", n(confidence_node))
-    g.add_node("fallback", n(fallback_node))
+    g.add_node("fallback_superseded", n(fallback_superseded_node))
+    g.add_node("fallback_deleted", n(fallback_deleted_node))
     g.add_node("fusion", n(fusion_node))
     g.add_node("synthesis", n(synthesis_node))
     g.add_node("guardrail", n(guardrail_node))
@@ -309,12 +334,16 @@ def build_graph(deps: Deps):
     g.add_edge("expansion", "retrieval")
     g.add_conditional_edges("retrieval", _after_retrieval,
                             {"finalize": "finalize", "confidence": "confidence"})
-    has_fb = deps.retrieve_superseded is not None
+    has_fb_sup = deps.retrieve_superseded is not None
+    has_fb_del = deps.retrieve_deleted is not None
     g.add_conditional_edges("confidence",
-                            lambda s: _after_confidence(s, has_fallback=has_fb),
+                            lambda s: _after_confidence(s, has_fallback_sup=has_fb_sup, has_fallback_del=has_fb_del),
                             {"refuse": "refuse", "fusion": "fusion",
-                             "fallback": "fallback"})
-    g.add_conditional_edges("fallback", _after_fallback,
+                             "fallback_superseded": "fallback_superseded",
+                             "fallback_deleted": "fallback_deleted"})
+    g.add_conditional_edges("fallback_superseded", _after_fallback,
+                            {"finalize": "finalize", "confidence": "confidence"})
+    g.add_conditional_edges("fallback_deleted", _after_fallback,
                             {"finalize": "finalize", "confidence": "confidence"})
     g.add_edge("fusion", "synthesis")
     g.add_conditional_edges("synthesis", _after_synthesis,
@@ -425,4 +454,5 @@ def _default_deps(role: Role) -> Deps:
     return Deps(retrieve=_retrieve("current"), synthesize=synthesize,
                 catalog_lookup=catalog_lookup, thresholds=CALIBRATED_V1,
                 retrieve_superseded=_retrieve("superseded"),
+                retrieve_deleted=_retrieve("deleted"),
                 expand=expand_query)

@@ -92,6 +92,38 @@ services:
       - aike_net
     restart: unless-stopped
 
+  watchdog:
+    build:
+      context: .
+      dockerfile: docker/watchdog.Dockerfile
+    depends_on:
+      qdrant:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./corpus:/corpus:ro
+      - ./src:/app/src:ro
+      - ./config:/app/config:ro
+    environment:
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
+      - POSTGRES_DSN=${POSTGRES_DSN:-postgresql://aike:aike_dev@postgres:5432/aike_registry}
+      - WATCHDOG_CORPUS_PATH=/corpus
+      - WATCHDOG_DEFAULT_ROLE=tecnico
+      - WATCHDOG_SCAN_INTERVAL_SECS=300
+    ports:
+      - "8001:8001"
+    networks:
+      - aike_net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
 networks:
   aike_net:
     driver: bridge

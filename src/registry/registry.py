@@ -19,6 +19,7 @@ SCHEMA_PATH = Path(__file__).with_name("schema.sql")
 
 CURRENT = "current"
 SUPERSEDED = "superseded"
+DELETED = "deleted"
 
 
 class RegisterResult(NamedTuple):
@@ -171,7 +172,7 @@ def backfill_payload(rec: BackfillRecord) -> dict:
     (un doc senza ruoli sarebbe invisibile a tutti col filtro RBAC di P4.5,
     ma un buco qui indica dati SSOT corrotti: meglio fermarsi).
     """
-    if rec.version_status not in (CURRENT, SUPERSEDED):
+    if rec.version_status not in (CURRENT, SUPERSEDED, DELETED):
         raise ValueError(f"version_status fuori vocabolario: {rec.version_status!r}")
     if not rec.ruoli:
         raise ValueError("record senza ruoli: SSOT incoerente, backfill fermato")

@@ -38,3 +38,43 @@ CREATE TABLE IF NOT EXISTS document_roles (
                 CHECK (role IN ('commerciale', 'tecnico', 'amministrazione')),
     PRIMARY KEY (document_id, role)
 );
+
+-- P7 — Watchdog / Auto-Ingestion
+-- Migrazione idempotente: aggiorna il constraint di version_status per accettare 'deleted'
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.table_constraints
+        WHERE table_name = 'document_versions'
+          AND constraint_name = 'document_versions_version_status_check'
+    ) THEN
+        ALTER TABLE document_versions
+            DROP CONSTRAINT document_versions_version_status_check;
+    END IF;
+    ALTER TABLE document_versions
+        ADD CONSTRAINT document_versions_version_status_check
+        CHECK (version_status IN ('current', 'superseded', 'deleted'));
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+-- Traccia lo stato fisico dei file nel corpus (P7).
+-- FK su documents.id (logico), NON su document_versions.id (fisico).
+CREATE TABLE IF NOT EXISTS tracked_files (
+    id                  serial PRIMARY KEY,
+    filename            text NOT NULL UNIQUE,
+    file_hash           text NOT NULL,           -- SHA-256 del contenuto
+    file_size           bigint,                  -- pre-filtro Fase 1
+    file_mtime          timestamptz,             -- pre-filtro Fase 1
+    status              text NOT NULL
+                        CHECK (status IN ('queued', 'processing', 'active', 'deleted', 'failed')),
+    document_id         integer REFERENCES documents(id) ON DELETE SET NULL,
+    last_processed_at   timestamptz NOT NULL DEFAULT now(),
+    queued_at           timestamptz,
+    deleted_at          timestamptz,
+    error_log           text,
+    retry_count         integer NOT NULL DEFAULT 0,
+    profile_warning     boolean NOT NULL DEFAULT false
+);
+
+CREATE INDEX IF NOT EXISTS tracked_files_status_idx ON tracked_files(status);
+CREATE INDEX IF NOT EXISTS tracked_files_document_id_idx ON tracked_files(document_id);
