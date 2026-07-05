@@ -245,6 +245,22 @@ def reconcile(state: GraphState) -> dict:
         return {"final_answer": ACCESS_MSG, "final_level": "BASSA"}
     if state.get("system_error"):
         return {"final_answer": SYS_UNAVAIL, "final_level": "BASSA"}
+    # P7 — documento ELIMINATO: l'avviso deve comparire SEMPRE, anche quando la
+    # risposta di base è un rifiuto (level BASSA) o un blocco guardrail. Va quindi
+    # gestito PRIMA del return anticipato su BASSA. Cap sempre a BASSA.
+    if state.get("deleted_warning"):
+        base = state.get("answer") or ""
+        if state.get("level") == "BASSA" or not base.strip() or REFUSAL in base:
+            base = REFUSAL
+        elif state.get("guardrail_gate", "PASS") == "BLOCK":
+            base = BLOCK_MSG
+        base += (
+            "\nATTENZIONE: risposta basata su un documento ELIMINATO dall'archivio. "
+            "Questo documento non è più presente nella cartella monitorata. "
+            "Le informazioni potrebbero essere obsolete o non più valide. "
+            "Verificare con il fornitore o il responsabile tecnico."
+        )
+        return {"final_answer": base, "final_level": "BASSA"}
     if state.get("level") == "BASSA":
         return {"final_answer": REFUSAL, "final_level": "BASSA"}
     answer_text = state.get("answer") or ""
@@ -259,16 +275,9 @@ def reconcile(state: GraphState) -> dict:
                "final_level": "MEDIA"}
     else:
         out = {"final_answer": answer_text, "final_level": state.get("level", "MEDIA")}
-    # P4.4 / P7 — Gestione warning per obsoleto / eliminato
-    if state.get("deleted_warning"):
-        out["final_answer"] += (
-            "\nATTENZIONE: risposta basata su un documento ELIMINATO dall'archivio. "
-            "Questo documento non è più presente nella cartella monitorata. "
-            "Le informazioni potrebbero essere obsolete o non più valide. "
-            "Verificare con il fornitore o il responsabile tecnico."
-        )
-        out["final_level"] = "BASSA"
-    elif state.get("obsolete_warning"):
+    # P4.4 — Gestione warning per documento SOSTITUITO (obsoleto).
+    # Il ramo ELIMINATO è gestito prima (return anticipato con cap BASSA).
+    if state.get("obsolete_warning"):
         out["final_answer"] += ("\nATTENZIONE: risposta basata su documentazione "
                                 "SOSTITUITA (obsoleta). Verificare la versione corrente.")
         if out["final_level"] == "ALTA":
