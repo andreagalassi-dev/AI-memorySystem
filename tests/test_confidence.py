@@ -23,9 +23,10 @@ T = Thresholds(tau_hi=0.5, tau_lo=0.2)
 
 
 def sig(gate="PASS", has_evidence=True, margin=0.9, unreliable=False,
-        agreement=None):
+        agreement=None, is_generic_code=False):
     return Signals(gate=gate, has_evidence=has_evidence, margin=margin,
-                   unreliable=unreliable, agreement=agreement)
+                   unreliable=unreliable, agreement=agreement,
+                   is_generic_code=is_generic_code)
 
 
 def level(**kw):
@@ -107,6 +108,9 @@ class TestMatriceHardGates:
 
     def test_ocr_inaffidabile_media(self):  # riga 4
         assert level(unreliable=True, margin=0.99) == Level.MEDIA
+
+    def test_generic_code_media(self):
+        assert level(is_generic_code=True, margin=0.99) == Level.MEDIA
 
 
 class TestMatriceSoftScore:
@@ -191,3 +195,8 @@ class TestEstrazioneSegnali:
     def test_agreement_none_in_p32(self):
         unified = {"route": "natural", "text_hits": [FakeHit(0.9, {})]}
         assert extract_signals(unified, FakeReport("PASS")).agreement is None
+
+    def test_generic_code_signal(self):
+        unified = {"route": "natural",
+                   "text_hits": [FakeHit(0.9, {"code_normalized_by": "generic"})]}
+        assert extract_signals(unified, FakeReport("PASS")).is_generic_code is True

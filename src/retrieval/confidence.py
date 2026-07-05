@@ -47,6 +47,7 @@ class Signals:
     unreliable: bool             # top hit ocr_source / status=degraded
     agreement: str | None = None  # "agree" | "disagree" | None (P3.3)
     hop2_warning: str | None = None
+    is_generic_code: bool = False
 
 
 @dataclass
@@ -116,6 +117,9 @@ def confidence_level(signals: Signals, thresholds: Thresholds) -> ConfidenceRepo
     if s.unreliable:
         return ConfidenceReport(Level.MEDIA, s,
                                 "evidenza inaffidabile (OCR/degraded) -> verifica consigliata")
+    if s.is_generic_code:
+        return ConfidenceReport(Level.MEDIA, s,
+                                "codice derivante da profilo generico -> verifica consigliata")
 
     # Soft score (gate PASS, evidenza presente, evidenza affidabile)
     if s.margin >= t.tau_hi and s.agreement != "disagree":
@@ -158,6 +162,9 @@ def extract_signals(unified: dict, guardrail_report) -> Signals:
         unreliable = (pl.get("status") == "degraded"
                       or "ocr_source" in (pl.get("warnings") or [])
                       or "fuzzy_code" in (pl.get("warnings") or []))
+        is_generic = (pl.get("code_normalized_by") == "generic")
+    else:
+        is_generic = False
 
     return Signals(
         gate=guardrail_report.gate,
@@ -166,4 +173,5 @@ def extract_signals(unified: dict, guardrail_report) -> Signals:
         unreliable=unreliable,
         agreement=None,
         hop2_warning=unified.get("hop2_warning"),
+        is_generic_code=is_generic,
     )

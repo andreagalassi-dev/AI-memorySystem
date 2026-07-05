@@ -60,6 +60,24 @@
       "unsafe_numeric": null,
       "reason_unsafe": null,
       "passthrough": true
+    },
+    "generic": {
+      "long_families": [
+        {
+          "name": "generic-alnum",
+          "extract_pattern": "[A-Z0-9-]{5,20}",
+          "token_pattern": "^[A-Z0-9-]{5,20}$",
+          "rejoin": false,
+          "reason_rejoin": "codice generico: cleanup esatto",
+          "reason_double": "doppio codice generico in cella: split"
+        }
+      ],
+      "short_pattern": null,
+      "reason_short": null,
+      "unsafe_numeric": null,
+      "reason_unsafe": null,
+      "passthrough": false,
+      "fuzzy_repair": false
     }
   },
   "doc_map": {

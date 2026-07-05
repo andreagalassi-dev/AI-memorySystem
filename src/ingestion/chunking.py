@@ -265,6 +265,7 @@ class Chunk:
     code: str | None       # None = riga legittimamente senza codice (es. DeliTools)
     code_raw: str | None
     normalization_type: str | None
+    code_normalized_by: str | None
     pos: str | None
     desc: str | None
     qty: str | None
@@ -495,6 +496,7 @@ def chunk_table(table_id: str, md_text: str, meta: dict,
             text=text, code=code,
             code_raw=nm.get("original", rec.code_cell),
             normalization_type=nm.get("type"),
+            code_normalized_by=profile.get("_name") if profile else None,
             pos=rec.pos, desc=rec.desc, qty=rec.qty, price=rec.price,
             doc=meta["doc"], page=meta["page"], lang=meta["lang"],
             table_index=rec.block, row_index=rec.row_index, segment=rec.segment,
@@ -516,6 +518,7 @@ def chunk_table(table_id: str, md_text: str, meta: dict,
             text=f"{meta['doc']} pagina {meta['page']} | codice {code}",
             code=code, code_raw=entry.get("original"),
             normalization_type="fuzzy_repaired",
+            code_normalized_by=profile.get("_name") if profile else None,
             pos=None, desc=None, qty=None, price=None,
             doc=meta["doc"], page=meta["page"], lang=meta["lang"],
             table_index=0, row_index=entry["row_index"], segment="repaired",
