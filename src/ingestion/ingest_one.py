@@ -188,8 +188,9 @@ def ingest_document(filepath: str, *, doc_stem: str, role: str, conn,
     # 6. registro Postgres (SSOT): versione + ruoli. register_document e'
     # idempotente (no-op se lo stem esiste gia'): la sostituzione di versione
     # (mark_superseded) e' responsabilita' del Watchdog/versioning, non di qui.
-    register_document(conn, slug=doc_stem, category=cat, roles=[role],
-                      doc_stem=doc_stem, langs=[lang])
+    reg = register_document(conn, slug=doc_stem, category=cat, roles=[role],
+                            doc_stem=doc_stem, langs=[lang])
 
     return {"doc_stem": doc_stem, "n_chunks": len(chunks), "n_points": len(points),
-            "profile_used": profile.get("_name"), "profile_warning": profile_warning}
+            "profile_used": profile.get("_name"), "profile_warning": profile_warning,
+            "document_id": reg.document_id}

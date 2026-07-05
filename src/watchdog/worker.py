@@ -42,18 +42,22 @@ def process_diffs(conn, diffs: dict[str, str], corpus_path: str, default_role: s
                     )
                 conn.commit()
                 
-                # TODO: Clean up partial chunks if processing_orphan or modified
-                # ...
-                
-                # Ingest!
+                # La pulizia dei chunk vecchi (anti-orfani su modified/orphan) e'
+                # gestita DENTRO ingest_document -> delete_document_points prima
+                # dell'upsert (B3): niente duplicati della versione precedente.
+
+                # Ingest reale (B4)
                 is_update = (action == "modified")
-                ingest_file(filepath, role=default_role, is_update=is_update)
-                
-                # Mark as active
+                result = ingest_file(filepath, role=default_role, conn=conn,
+                                     is_update=is_update)
+
+                # Mark as active + profile_warning (profilo 'default' passthrough)
+                # + link al documento logico (serve alla cascata soft-delete B5)
                 conn.execute(
-                    "UPDATE tracked_files SET status='active', last_processed_at=now() "
-                    "WHERE filename=%s",
-                    (filename,)
+                    "UPDATE tracked_files SET status='active', last_processed_at=now(), "
+                    "profile_warning=%s, document_id=%s WHERE filename=%s",
+                    (bool(result.get("is_default_profile")),
+                     result.get("document_id"), filename)
                 )
                 conn.commit()
                 
