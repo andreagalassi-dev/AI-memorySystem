@@ -136,8 +136,14 @@ def group_by_code(hits: list) -> list:
                 seen.add(c)
     return out
 
-def apply_hop2(client: QdrantClient, hits: list) -> tuple[list, list, str | None]:
-    """Applica Hop 1 (group by) e Hop 2 (recupero children)."""
+def apply_hop2(client: QdrantClient, hits: list, role: Role) -> tuple[list, list, str | None]:
+    """Applica Hop 1 (group by) e Hop 2 (recupero children).
+
+    P4.5/A6 — il recupero dei figli di un assembly applica lo STESSO filtro
+    ruolo del resto del retrieval (`ruoli_consentiti` contiene il ruolo), in
+    AND con `parent_id`: un ruolo non deve mai ricevere componenti riservati a
+    un altro ruolo (l'RBAC è obbligatorio, non opzionale).
+    """
     grouped_hits = group_by_code(hits)
     children_hits = []
     hop2_warning = None
@@ -145,7 +151,10 @@ def apply_hop2(client: QdrantClient, hits: list) -> tuple[list, list, str | None
         kit_code = grouped_hits[0].payload.get("code")
         if kit_code:
             children_filter = models.Filter(must=[
-                models.FieldCondition(key="parent_id", match=models.MatchValue(value=kit_code))
+                models.FieldCondition(key="parent_id",
+                                      match=models.MatchValue(value=kit_code)),
+                models.FieldCondition(key="ruoli_consentiti",
+                                      match=models.MatchValue(value=role.value)),
             ])
             # Hop 2 exact match
             records, _ = client.scroll(COLLECTION, scroll_filter=children_filter, limit=100)
@@ -159,7 +168,8 @@ def apply_hop2(client: QdrantClient, hits: list) -> tuple[list, list, str | None
     return grouped_hits, children_hits, hop2_warning
 
 
-def search_unified(client: QdrantClient, query: str, limit: int = 10) -> dict:
+def search_unified(client: QdrantClient, query: str, limit: int = 10, *,
+                   role: Role) -> dict:
     """Instradamento unificato testo/visione (P2.7).
 
     - query 'visual' -> collection visiva (pagine citabili con render);
@@ -167,6 +177,9 @@ def search_unified(client: QdrantClient, query: str, limit: int = 10) -> dict:
       aike_chunks (l'esploso E la riga ricambio);
     - tutto il resto -> strategia routed su aike_chunks (invariata).
     Ritorna {"route", "reason", "text_hits", "visual_hits"}.
+
+    P4.5/A6 — `role` è obbligatorio (keyword-only, fail-closed) e viene
+    propagato fino all'Hop 2 per il filtro RBAC sui figli.
     """
     from src.retrieval.visual import search_visual
 
@@ -175,11 +188,11 @@ def search_unified(client: QdrantClient, query: str, limit: int = 10) -> dict:
         visual = search_visual(client, query, limit)
         text = (search(client, route.code_token, "sparse", limit)
                 if route.code_token else [])
-        text, children, hop2_warning = apply_hop2(client, text)
+        text, children, hop2_warning = apply_hop2(client, text, role)
         return {"route": "visual", "reason": route.reason,
                 "text_hits": text, "children_hits": children, "hop2_warning": hop2_warning,
                 "visual_hits": visual}
-    text, children, hop2_warning = apply_hop2(client, search(client, query, "routed", limit))
+    text, children, hop2_warning = apply_hop2(client, search(client, query, "routed", limit), role)
     return {"route": route.query_type, "reason": route.reason,
             "text_hits": text, "children_hits": children, "hop2_warning": hop2_warning,
             "visual_hits": []}

@@ -100,7 +100,11 @@ def diff_files(conn, current_files: dict[str, FileState], corpus_path: str) -> d
             if t["file_mtime"] is None:
                 needs_hash = True
             else:
-                db_mtime = t["file_mtime"].timestamp()
+                raw_mtime = t["file_mtime"]
+                if hasattr(raw_mtime, "timestamp"):
+                    db_mtime = raw_mtime.timestamp()   # datetime dal DB
+                else:
+                    db_mtime = float(raw_mtime)        # già epoch (test o valori grezzi)
                 # Tolleranza di 1 secondo per problemi di filesystem
                 if abs(db_mtime - state.mtime) > 1.0:
                     needs_hash = True

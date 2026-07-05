@@ -15,6 +15,7 @@ sys.path.insert(0, str(ROOT))
 
 from src.backend.clients.qdrant_client import get_qdrant_client
 from src.retrieval.search import search_unified
+from src.common.roles import Role
 
 def calc_r_hierarchy(children_hits: list, expected_child_codes: list[str]) -> float:
     """Calcola la metrica R_hierarchy.
@@ -50,7 +51,7 @@ def main() -> int:
     # Simula iterazione sull'eval set (nella realta' caricherebbe eval_set_v1.jsonl)
     for pair in mock_eval_set:
         if "expected_children" in pair:
-            result = search_unified(client, pair["query"], limit=10)
+            result = search_unified(client, pair["query"], limit=10, role=Role.TECNICO)
             children_hits = result.get("children_hits", [])
             r_hier = calc_r_hierarchy(children_hits, pair["expected_children"])
             total_r_hierarchy += r_hier
