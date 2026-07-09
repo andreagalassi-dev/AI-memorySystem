@@ -16,6 +16,9 @@ from typing import Callable, NamedTuple, TypedDict
 from langgraph.graph import END, START, StateGraph
 
 from src.common.roles import Role, parse_role
+from src.graph.llm import LanguageModel
+from src.graph.render import SYSTEM_RENDER, build_render_prompt, verify_price_grounding
+from src.graph.tools.sql_tool import LookupRow, SqlExecutor, SqlParams, extract_params
 from src.retrieval.confidence import (Signals, Thresholds, compute_margin,
                                       confidence_level, group_scores)
 from src.retrieval.guardrail import check_answer
@@ -55,9 +58,10 @@ class GraphState(TypedDict, total=False):
     route: str
     code_token: str | None
     route_reason: str
-    # Fase 1.3 — intent d'instradamento (STRUCTURED|VISUAL|NARRATIVE). Additivo:
-    # emesso dal router ma NON ancora agito sugli archi (branch a Passo 4/5).
+    # Fase 1.3 — intent d'instradamento (STRUCTURED|VISUAL|NARRATIVE) + ramo STRUCTURED
     intent: str
+    sql_params: SqlParams
+    sql_rows: list[LookupRow]
     expansion_terms: list[str]
     evidence: list[Evidence]
     children_evidence: list[Evidence]
@@ -95,6 +99,10 @@ class Deps:
     retrieve_deleted: Callable[..., tuple[list[Evidence], list[Evidence]]] | None = None
     # Debito §2 — Query Expansion (solo route natural); None = nodo no-op
     expand: Callable[[str], list[str]] | None = None
+    # Fase 1.3 — ramo STRUCTURED: LLM (render) + esecutore SQL sicuro. Con uno dei
+    # due None il ramo NON e' cablato e l'intent STRUCTURED degrada a NARRATIVE.
+    llm: LanguageModel | None = None
+    sql_query: SqlExecutor | None = None
 
 
 def _audit(state: GraphState, msg: str) -> list[str]:
@@ -153,6 +161,68 @@ def retrieval_node(state: GraphState, deps: Deps) -> dict:
     except Exception as exc:  # fail-closed: Qdrant giu'/timeout
         return {"system_error": True, "level": "BASSA",
                 "audit": _audit(state, f"Sistema non disponibile (retrieval): {exc}")}
+
+
+def _row_to_evidence(row: LookupRow, code: str | None, campo: str) -> Evidence:
+    """Fase 1.3 — mappa una riga SQL su Evidence, cosi' il ramo STRUCTURED converge
+    su guardrail/finalize INVARIATI. Il codice del listino diventa evidence-code:
+    e' la base contro cui il guardrail P3.1 verifica i codici citati dall'LLM."""
+    return Evidence(
+        doc=row.doc_stem, page=row.page, lang=None, code=code,
+        desc=(str(row.valore) if campo == "descrizione" and row.valore is not None else None),
+        text=None, qty=None,
+        price=(float(row.valore) if campo == "prezzo" and row.valore is not None else None),
+        type="table_row", status="clean", warnings=[], score=1.0)
+
+
+def sql_node(state: GraphState, deps: Deps) -> dict:
+    """Fase 1.3 ramo STRUCTURED — Text-to-Parameters -> lookup sicuro su righe_listino.
+
+    L'LLM non genera SQL: i parametri li estrae `sql_tool` (codice via canonical +
+    campo da whitelist). Fail-closed: codice degenere/0 righe -> BASSA ('non lo so');
+    eccezione di rete -> system_error, come `retrieval_node`. Su righe, sintetizza
+    l'Evidence (per il guardrail) e alza il livello ad ALTA (lookup esatto sull'SSOT)."""
+    try:
+        params = extract_params(state.get("code_token") or "", state["query"])
+    except ValueError as exc:
+        return {"level": "BASSA",
+                "audit": _audit(state, f"sql: codice non valido ({exc}) -> non lo so")}
+    try:
+        rows = deps.sql_query.run(params)
+    except Exception as exc:  # fail-closed: Postgres giu'/timeout
+        return {"system_error": True, "level": "BASSA",
+                "audit": _audit(state, f"Sistema non disponibile (sql): {exc}")}
+    if not rows:
+        return {"sql_params": params, "sql_rows": [], "level": "BASSA",
+                "audit": _audit(state, f"sql: 0 righe per '{params.codice_normalizzato}' "
+                                       "-> non lo so")}
+    ev = [_row_to_evidence(r, state.get("code_token"), params.campo) for r in rows]
+    return {"sql_params": params, "sql_rows": rows, "evidence": ev, "level": "ALTA",
+            "audit": _audit(state, f"sql: {len(rows)} riga/e campo={params.campo} -> ALTA")}
+
+
+def render_node(state: GraphState, deps: Deps) -> dict:
+    """Fase 1.3 ramo STRUCTURED — l'LLM formatta i dati GIA' letti (mai genera SQL).
+
+    Barriera #2 (deterministica): sul campo prezzo, `verify_price_grounding` pretende
+    che ogni prezzo enunciato sia un valore del DB e che almeno uno sia enunciato;
+    altrimenti fail-closed -> BASSA (REFUSAL). Le citazioni sono ricavate da noi dalle
+    righe (provenienza), non dal testo dell'LLM. Il guardrail codici resta a valle."""
+    params: SqlParams = state["sql_params"]
+    rows: list[LookupRow] = state["sql_rows"]
+    try:
+        out = deps.llm.generate(
+            SYSTEM_RENDER,
+            build_render_prompt(state["query"], state.get("code_token"), params.campo, rows))
+    except Exception as exc:  # fail-closed: modello giu'/timeout
+        return {"system_error": True, "level": "BASSA",
+                "audit": _audit(state, f"Sistema non disponibile (render): {exc}")}
+    if params.campo == "prezzo" and not verify_price_grounding(out, [r.valore for r in rows]):
+        return {"level": "BASSA",
+                "audit": _audit(state, "render: prezzo non ancorato ai dati DB -> non lo so")}
+    citations = [(r.doc_stem, r.page) for r in rows]
+    return {"answer": out, "citations": citations,
+            "audit": _audit(state, "render: risposta formattata dai dati DB")}
 
 
 def confidence_node(state: GraphState, deps: Deps) -> dict:
@@ -300,8 +370,30 @@ def finalize_node(state: GraphState, deps: Deps) -> dict:
 
 # ------------------------------------------------------------------- grafo
 
-def _after_router(state: GraphState) -> str:
-    return "finalize" if state.get("access_error") else "expansion"
+def _after_router(state: GraphState, has_sql: bool = False) -> str:
+    if state.get("access_error"):
+        return "finalize"
+    # Fase 1.3 — biforcazione: STRUCTURED solo se il ramo e' cablato (llm+sql),
+    # altrimenti (e per VISUAL, non ancora cablato) si resta su NARRATIVE.
+    if has_sql and state.get("intent") == "structured":
+        return "sql"
+    return "expansion"
+
+
+def _after_sql(state: GraphState) -> str:
+    if state.get("system_error"):
+        return "finalize"
+    if state.get("level") == "BASSA":   # 0 righe / codice degenere -> rifiuto
+        return "finalize"
+    return "render"
+
+
+def _after_render(state: GraphState) -> str:
+    if state.get("system_error"):
+        return "finalize"
+    if state.get("level") == "BASSA":   # prezzo non ancorato -> rifiuto
+        return "finalize"
+    return "guardrail"
 
 
 def _after_retrieval(state: GraphState) -> str:
@@ -335,6 +427,8 @@ def build_graph(deps: Deps):
     g = StateGraph(GraphState)
     g.add_node("router", n(router_node))
     g.add_node("expansion", n(expansion_node))
+    g.add_node("sql", n(sql_node))
+    g.add_node("render", n(render_node))
     g.add_node("retrieval", n(retrieval_node))
     g.add_node("confidence", n(confidence_node))
     g.add_node("fallback_superseded", n(fallback_superseded_node))
@@ -345,9 +439,15 @@ def build_graph(deps: Deps):
     g.add_node("refuse", n(refuse_node))
     g.add_node("finalize", n(finalize_node))
 
+    has_sql = deps.sql_query is not None and deps.llm is not None
     g.add_edge(START, "router")
-    g.add_conditional_edges("router", _after_router,
-                            {"finalize": "finalize", "expansion": "expansion"})
+    g.add_conditional_edges("router", lambda s: _after_router(s, has_sql),
+                            {"finalize": "finalize", "expansion": "expansion", "sql": "sql"})
+    # Fase 1.3 — ramo STRUCTURED: sql -> render -> guardrail (convergenza invariata)
+    g.add_conditional_edges("sql", _after_sql,
+                            {"finalize": "finalize", "render": "render"})
+    g.add_conditional_edges("render", _after_render,
+                            {"finalize": "finalize", "guardrail": "guardrail"})
     g.add_edge("expansion", "retrieval")
     g.add_conditional_edges("retrieval", _after_retrieval,
                             {"finalize": "finalize", "confidence": "confidence"})
