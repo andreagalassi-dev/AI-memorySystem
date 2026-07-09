@@ -45,13 +45,15 @@ def build_client(*, base_url: str, api_key: str,
     return instructor.from_openai(OpenAI(base_url=base_url, api_key=api_key), mode=mode)
 
 
-def enforce_page(client: instructor.Instructor, page_text: str, *, model: str,
+def enforce_page(client: instructor.Instructor, content: str | list[dict], *, model: str,
                  max_retries: int = 2) -> list[RigaGrezza]:
     """Estrae e valida le righe di una pagina forzando lo schema `list[RigaGrezza]`.
 
     Args:
       client: client Instructor-patched (iniettato; mockabile nei test).
-      page_text: testo/markdown grezzo della pagina da cui estrarre le righe.
+      content: contenuto del messaggio utente nel formato OpenAI — testo grezzo (str)
+        OPPURE blocchi multimodali (list[dict], es. testo + image_url per DeepSeek-OCR).
+        L'enforcement e' identico nei due casi: un solo punto di validazione.
       model: nome del modello sull'endpoint (es. 'deepseek-ocr').
       max_retries: tentativi di ri-generazione su output non-valido prima di sollevare.
 
@@ -67,7 +69,7 @@ def enforce_page(client: instructor.Instructor, page_text: str, *, model: str,
         max_retries=max_retries,
         messages=[
             {"role": "system", "content": _SYSTEM_PROMPT},
-            {"role": "user", "content": page_text},
+            {"role": "user", "content": content},
         ],
     )
     logger.info("enforce: model=%s righe_validate=%d", model, len(rows))
