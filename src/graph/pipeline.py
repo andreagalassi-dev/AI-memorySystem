@@ -629,8 +629,15 @@ def _default_deps(role: Role) -> Deps:
     except Exception:
         sql_query = None
 
+    # Fase 1.3 — LLM del render STRUCTURED: OllamaModel (reasoner locale gia' attivo).
+    # Costruzione lazy (nessuna connessione qui); se Ollama e' giu' l'errore emerge in
+    # render_node -> system_error (fail-closed). Con sql_query != None il ramo STRUCTURED
+    # e' ora ACCESO. L'MLXModel sara' un drop-in futuro sullo stesso Port.
+    from src.backend.clients.ollama_client import OllamaModel
+    llm = OllamaModel()
+
     return Deps(retrieve=_retrieve("current"), synthesize=synthesize,
                 catalog_lookup=catalog_lookup, thresholds=CALIBRATED_V1,
                 retrieve_superseded=_retrieve("superseded"),
                 retrieve_deleted=_retrieve("deleted"),
-                expand=expand_query, sql_query=sql_query)
+                expand=expand_query, sql_query=sql_query, llm=llm)

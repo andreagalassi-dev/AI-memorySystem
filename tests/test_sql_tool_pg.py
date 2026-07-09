@@ -80,12 +80,13 @@ class TestDefaultDepsWiring:
 
     def test_sql_query_cablato_su_connessione_readonly(self):
         from src.common.roles import Role
+        from src.graph.llm import LanguageModel
         from src.graph.pipeline import _default_deps
 
         deps = _default_deps(Role.COMMERCIALE)
-        assert isinstance(deps.sql_query, PgSqlExecutor)  # esecutore reale cablato
-        # config parziale: senza LLM il ramo STRUCTURED NON si attiva (has_sql=False)
-        assert deps.llm is None
+        assert isinstance(deps.sql_query, PgSqlExecutor)   # esecutore reale cablato
+        # ramo STRUCTURED ora ACCESO: entrambi (llm + sql_query) presenti -> has_sql=True
+        assert isinstance(deps.llm, LanguageModel)
         # e la connessione e' davvero SELECT-only: una scrittura e' rifiutata dal DB
         with pytest.raises(errors.InsufficientPrivilege):
             with deps.sql_query.conn.cursor() as cur:
