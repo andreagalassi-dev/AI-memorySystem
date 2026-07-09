@@ -24,6 +24,9 @@ class Settings(BaseSettings):
     postgres_user: str = "aike"
     postgres_password: str = "aike_dev"  # dev-only; override da .env
     postgres_db: str = "aike_registry"
+    # Fase 1.3 — ruolo SELECT-only per il ramo STRUCTURED (difesa in profondita').
+    postgres_ro_user: str = "aike_ro"         # env POSTGRES_RO_USER
+    postgres_ro_password: str = "aike_ro_dev"  # dev-only; override da .env
 
     # --- Ollama (LLM locale, ragionatore solo-testo P3.4) ---
     ollama_host: str = "http://localhost:11434"  # env OLLAMA_HOST

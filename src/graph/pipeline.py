@@ -616,8 +616,21 @@ def _default_deps(role: Role) -> Deps:
 
     from src.retrieval.expansion import expand_query
 
+    # Fase 1.3 — ramo STRUCTURED: esecutore SQL su connessione read-only (difesa in
+    # profondita'). Fail-safe: se il DB e' irraggiungibile o il ruolo manca, sql_query
+    # resta None e l'intent STRUCTURED degrada a NARRATIVE (mai un crash all'avvio).
+    # NB: il ramo si attiva solo con ANCHE `llm` != None (MLXModel, ancora differito).
+    # TODO: [Performance] Implementare pool di connessioni o context manager per
+    # evitare leak a ogni answer() (oggi si apre una connessione RO per invocazione).
+    try:
+        from src.backend.clients.postgres_client import get_pg_conn_readonly
+        from src.graph.tools.sql_tool import PgSqlExecutor
+        sql_query = PgSqlExecutor(get_pg_conn_readonly())
+    except Exception:
+        sql_query = None
+
     return Deps(retrieve=_retrieve("current"), synthesize=synthesize,
                 catalog_lookup=catalog_lookup, thresholds=CALIBRATED_V1,
                 retrieve_superseded=_retrieve("superseded"),
                 retrieve_deleted=_retrieve("deleted"),
-                expand=expand_query)
+                expand=expand_query, sql_query=sql_query)

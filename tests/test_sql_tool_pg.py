@@ -75,6 +75,25 @@ def ro_env():
 
 
 @needs_pg
+class TestDefaultDepsWiring:
+    """Passo 3 — cablaggio in `_default_deps` su connessione read-only, fail-safe."""
+
+    def test_sql_query_cablato_su_connessione_readonly(self):
+        from src.common.roles import Role
+        from src.graph.pipeline import _default_deps
+
+        deps = _default_deps(Role.COMMERCIALE)
+        assert isinstance(deps.sql_query, PgSqlExecutor)  # esecutore reale cablato
+        # config parziale: senza LLM il ramo STRUCTURED NON si attiva (has_sql=False)
+        assert deps.llm is None
+        # e la connessione e' davvero SELECT-only: una scrittura e' rifiutata dal DB
+        with pytest.raises(errors.InsufficientPrivilege):
+            with deps.sql_query.conn.cursor() as cur:
+                cur.execute("CREATE TABLE estrazione._deps_probe(x int)")
+        deps.sql_query.conn.rollback()
+
+
+@needs_pg
 class TestRuoloReadOnly:
     def test_select_funziona_col_ruolo_readonly(self, ro_env):
         _adm, ro, schema = ro_env
