@@ -1,77 +1,106 @@
 # Handoff — Fase 1.3 Cervello Unificatore (per la prossima istanza)
 
 > Branch: `feature/fase1-pipeline`. Spec completa: `docs/superpowers/specs/2026-07-09-fase1.3-cervello-unificatore-design.md`.
-> Leggi anche `src/graph/pipeline.py` (grafo P3.5 che stiamo evolvendo) e le memorie `fase1.1-pixelrag.md` / `fase1.2-estrazione-massiva.md`.
+> Leggi anche `src/graph/pipeline.py` (il grafo) e le memorie `fase1.1-pixelrag.md` / `fase1.2-estrazione-massiva.md`.
 
-## 1. Riassunto del Design Architetturale (approvato dall'utente)
+## STATO: Fase 1.3 (logica) COMPLETA — Passi 1→6 committati
 
-La Fase 1.3 **evolve in modo ADDITIVO** il grafo LangGraph maturo di P3.5
-(`src/graph/pipeline.py`: `GraphState` TypedDict, `Deps` con callable iniettati,
-nodi puri, fail-closed, `answer(query, role, deps=None)`). Nessuna regressione: i
-nuovi campi di stato e i nuovi `Deps` sono opzionali; con `None` il grafo resta
-quello di oggi (ramo NARRATIVE).
+L'architettura logica del Cervello Unificatore e' **chiusa e testata dietro i Fake**.
+Residuo: **solo il wiring degli adapter reali** (vedi §5). Nessuna regressione: full
+suite **verde salvo i 3 rossi ambientali noti** (Qdrant-corpus: `test_rbac`
+TestLeakAsimmetrico ×2, `test_search_filter` — asseriscono conteggi punti su una
+collection non caricata, indipendenti dal grafo).
 
-- **Router additivo (deterministico-first):** `router_node` deriva un `intent`
-  (`STRUCTURED | VISUAL | NARRATIVE`) da `classify_query` (che gia' da'
-  `code/visual/natural/mixed` + `code_token`) + whitelist di keyword prezzo/quantita'.
-  Niente LLM per instradare (cheap, auditabile).
-    - `code`/prezzo/quantita' -> STRUCTURED -> tool SQL su `estrazione.righe_listino` (1.2).
-    - `visual` -> VISUAL -> tool PixelRAG (1.1).
-    - `natural`/`mixed` -> NARRATIVE -> RAG testuale esistente.
-- **Convergenza:** tutti i rami finiscono su **guardrail (P3.1) -> finalize (P3.2)
-  invariati** = Defense in Depth (il guardrail codici e il "non lo so" valgono anche
-  sulle risposte SQL renderizzate dall'LLM).
-- **Text-to-Parameters (NON Text-to-SQL):** l'LLM non genera mai SQL eseguibile. Si
-  estraggono solo PARAMETRI (codice_normalizzato + campo da whitelist) e si esegue
-  una query template parametrizzata.
-- **Ports & Adapters:** `LanguageModel` (FakeLLM nei test; `MLXModel` reale
-  Gemma4/Nemotron differito), `sql_query` e `visual_search` iniettati in `Deps`.
-  L'intero grafo testabile senza MLX/Qdrant/Postgres.
+## 1. Design (approvato dall'utente)
 
-## 2. Stato: Passo 1 COMPLETATO e COMMITTATO
+Evoluzione **ADDITIVA** del grafo LangGraph P3.5 (`GraphState` TypedDict, `Deps` con
+callable iniettati, nodi puri, fail-closed, `answer(query, role, deps=None)`). I nuovi
+campi di stato e i nuovi `Deps` sono opzionali: con `None` il ramo NON e' cablato e
+l'intent degrada al RAG testuale (NARRATIVE) — zero regressione.
 
-- `src/graph/llm.py` — Port `LanguageModel` (`generate(system, user) -> str`) +
-  `FakeLLM` (modalita': response fissa / handler dinamico / error per il fail-closed;
-  registra `calls`). `tests/test_graph_llm.py` — 7 test verdi.
-- Commit: `868e529 feat(fase1.3): port LanguageModel + FakeLLM`.
-- Spec committata: `6e3e2fe docs: spec Cervello Unificatore (Fase 1.3)`.
+```
+                        router_node
+                    (classify_query + derive_intent)  ← deterministico, NO LLM
+                             │
+        ┌────────────────────┼────────────────────┐
+   intent=STRUCTURED     intent=VISUAL         intent=NARRATIVE
+    (se llm+sql_query)    (se visual_search)     (default fail-safe)
+        │                    │                        │
+     sql_node            visual_node             expansion
+   Text-to-Parameters   PixelRAG 1.1                 │
+   lookup righe_listino  NESSUN LLM              retrieval
+        │                puntatore det.               │
+     render_node          MEDIA                   confidence
+   LLM FORMATTA i dati     │                    (+fallback v2/eliminato)
+   Barriera #2 (prezzo)    │                        │
+        │                  │                     fusion→synthesis
+        └──────────────────┴────────► guardrail ◄────┘   Barriera #1 (codici, P3.1)
+                                          │
+                                      finalize (reconcile fail-closed)
+```
 
-## 3. PRIMO COMPITO della nuova sessione — Passo 2: `sql_tool.py`
+- **Router deterministico**: `derive_intent(route, query)` (in `src/retrieval/router.py`)
+  da `classify_query` (`code/visual/natural/mixed` + `code_token`) + whitelist keyword
+  prezzo (`STRUCTURED_KEYWORDS`, IT/EN/DE). Le keyword di QUANTITA' sono volutamente
+  ESCLUSE (nessuna colonna quantita' in `righe_listino` → sarebbe un falso). `visual`
+  prevale; `code_token` + (route `code` o keyword-prezzo) → STRUCTURED; resto → NARRATIVE.
+- **Convergenza invariata**: tutti i rami finiscono su **guardrail (P3.1) → finalize
+  (P3.2)** = Defense in Depth. Il test tri-intent lo prova: un codice allucinato sul
+  ramo SQL viene bloccato dal guardrail **dopo** aver superato la Barriera #2.
+- **Confidence per ramo**: STRUCTURED (lookup esatto SSOT) → ALTA; VISUAL (similarita'
+  MaxSim, non lookup) → MEDIA (l'occhio umano valida l'immagine); NARRATIVE → calibrata
+  P3.2. Fail-closed ovunque: eccezione I/O → `system_error`→BASSA; 0 risultati → BASSA→REFUSAL.
 
-Implementa `src/graph/tools/sql_tool.py`: **Text-to-Parameters + query template
-parametrizzata + `FakeSqlExecutor`**. Poi mostra il codice all'utente PRIMA di
-committare (workflow: review-prima-di-ogni-commit).
+## 2. Ramo STRUCTURED (Passi 2+4)
 
-**Requisiti di sicurezza NON NEGOZIABILI (l'utente li ha ribaditi esplicitamente):**
-- La query si costruisce in modo RIGOROSO con `psycopg.sql`:
-    - **colonne** selezionate SOLO da una **whitelist chiusa** (es. `prezzo`,
-      `descrizione`), composte con **`psycopg.sql.Identifier`** — mai dal valore
-      grezzo dell'utente/LLM.
-    - il **`codice_normalizzato`** passa SOLO come parametro **`%s`** (placeholder
-      psycopg), calcolato da noi con `codes.canonical`.
-- **ASSOLUTAMENTE VIETATE le interpolazioni di stringa** (niente f-string,
-  `%`-format o `+` per costruire SQL). Nessun SQL arbitrario dal modello.
-- Tabella interrogata: SOLO `estrazione.righe_listino` (Semantic Layer). Prevedere
-  ruolo DB read-only come difesa in profondita'.
-- **Fail-closed:** codice non presente in tabella -> "non lo so", mai un valore
-  inventato.
-- **PRETENDI test anti-injection:** input malevoli (es. `codice = "0; DROP TABLE
-  righe_listino; --"`, o un `campo` fuori whitelist) devono essere neutralizzati/
-  rifiutati, non eseguiti. Unit test col `FakeSqlExecutor` (DB-free) + un test
-  `needs_pg` sulla query reale (pattern `tests/conftest.py`, schema usa-e-getta
-  come `test_extraction_load.py`).
+- `src/graph/tools/sql_tool.py` — **Text-to-Parameters, MAI Text-to-SQL**. Tripla
+  barriera anti-injection: `codice_normalizzato` via `codes.canonical` (riduce a
+  `[0-9A-Z]`) passato SOLO come placeholder `%s`; `campo` SOLO da whitelist chiusa
+  (`ALLOWED_COLUMNS`) composta con `psycopg.sql.Identifier`; nessuna interpolazione di
+  stringa. Tabella unica: `estrazione.righe_listino`. Port `SqlExecutor` +
+  `FakeSqlExecutor` + `PgSqlExecutor` (conn iniettata, schema param).
+- `src/graph/render.py` — l'LLM **formatta solo** i dati letti (mai genera SQL).
+  **Barriera #2 (`verify_price_grounding`)**: value-grounding deterministico — ogni
+  prezzo enunciato dev'essere un valore del DB e almeno uno enunciato, altrimenti BASSA.
+- `pipeline.py`: `sql_node` (extract_params→run→Evidence, ALTA), `render_node`
+  (LLM→grounding→citazioni deterministiche dalle righe). Deps: `llm`, `sql_query`.
 
-### Riferimenti utili gia' nel repo
-- `src/ingestion/codes.py::canonical` — normalizzazione codici (riusare, non reinventare).
-- `src/ingestion/extraction/load.py` — pattern `psycopg.sql.Identifier` + schema
-  parametrizzabile per i test (copiare lo stile).
-- `src/common/roles.py` — `Role` (StrEnum) per il filtro RBAC.
-- Schema Fase 1.2: `estrazione.righe_listino(doc_stem, page, codice_normalizzato,
+## 3. Ramo VISUAL (Passo 5)
+
+- `src/graph/tools/visual_tool.py` — **NESSUN LLM**: `format_visual_answer(pages)`
+  restituisce un puntatore deterministico col **pattern-citazione canonico**
+  `(doc, pag. N)` (lo stesso di `synthesis`), cosi' il frontend lo parsa con la stessa
+  regex (`extract_citations`) per iniettare l'immagine, e il guardrail resta PASS.
+  `visual_citations(pages)`; `make_visual_search(embedder, index, k=3)` → callable
+  `(query, role)` che chiude su `pixelrag.visual_search` (RBAC+versioning fail-closed).
+- `pipeline.py`: `visual_node` (role→visual_search; eccezione→system_error; 0 pagine o
+  RBAC-filtra-tutto→BASSA; pagine→MEDIA). Deps: `visual_search`. State: `visual_pages`.
+
+## 4. Test (tutti DB/GPU/MLX-free, dietro i Fake)
+
+- `test_graph_sql_tool.py` (20), `test_router_intent.py` (18), `test_graph_render.py`
+  (17), `test_graph_structured.py` (13), `test_graph_visual_tool.py` (8),
+  `test_graph_visual.py` (8), `test_graph_triintent.py` (7 — contratto e2e tri-intent).
+
+## 5. PROSSIMO COMPITO — wiring adapter reali (l'orchestratore e' pronto)
+
+`_default_deps` in produzione ha oggi `llm=None`, `sql_query=None`, `visual_search=None`
+→ tutto passa da NARRATIVE. Attaccare un adapter alla volta, ognuno col suo mini-gate:
+
+1. **`PgSqlExecutor` reale (consigliato per primo — no GPU/serving)**: cablare in
+   `_default_deps` con connessione al DB Fase 1.2 su **ruolo Postgres read-only**
+   (difesa in profondita': anche se qualcosa aggirasse la whitelist, il DB rifiuta le
+   scritture). Test `needs_pg` sulla query reale con **schema usa-e-getta** (pattern
+   `tests/conftest.py` + `test_extraction_load.py`): seed di `righe_listino`, verifica
+   lookup per `codice_normalizzato`, e un test che il ruolo read-only **respinge** un
+   INSERT/UPDATE. Verificare che i `needs_pg` girino (marker in conftest).
+2. **`MLXModel`** (`LanguageModel`) per il render STRUCTURED — serving MLX reale.
+3. **`QdrantVisualIndex` + `Qwen3VLEmbedder`** (`VisualIndex`/`VisualEmbedder`) per
+   VISUAL — residuo noto di 1.1.
+
+### Riferimenti utili nel repo
+- `src/ingestion/codes.py::canonical` — normalizzazione codici (riusata).
+- `src/ingestion/extraction/load.py` — pattern `psycopg.sql.Identifier` + schema param.
+- `src/common/roles.py::Role` (StrEnum) — filtro RBAC obbligatorio, fail-closed.
+- Schema 1.2: `estrazione.righe_listino(doc_stem, page, codice_normalizzato,
   codice_originale, descrizione, prezzo, updated_at)`.
-
-## 4. Roadmap residua Fase 1.3 (dopo il Passo 2)
-3. Router `intent` (estensione deterministica) + test.
-4. `sql_node` + render(LLM) + branch STRUCTURED nel grafo + test (FakeLLM).
-5. `visual_tool` + `visual_node` + branch VISUAL + test (FakeVisualIndex).
-6. e2e `answer()` sui tre intent + guardrail sulle risposte SQL.
-Adapter reale `MLXModel` differito a server acceso (come DeepSeek 1.2 / Qwen3-VL 1.1).
