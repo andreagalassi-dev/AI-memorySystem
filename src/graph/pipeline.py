@@ -19,7 +19,7 @@ from src.common.roles import Role, parse_role
 from src.retrieval.confidence import (Signals, Thresholds, compute_margin,
                                       confidence_level, group_scores)
 from src.retrieval.guardrail import check_answer
-from src.retrieval.router import classify_query
+from src.retrieval.router import classify_query, derive_intent
 from src.retrieval.synthesis import REFUSAL, extract_citations, strip_citations
 
 SYS_UNAVAIL = "Sistema non disponibile. Riprova più tardi."
@@ -55,6 +55,9 @@ class GraphState(TypedDict, total=False):
     route: str
     code_token: str | None
     route_reason: str
+    # Fase 1.3 — intent d'instradamento (STRUCTURED|VISUAL|NARRATIVE). Additivo:
+    # emesso dal router ma NON ancora agito sugli archi (branch a Passo 4/5).
+    intent: str
     expansion_terms: list[str]
     evidence: list[Evidence]
     children_evidence: list[Evidence]
@@ -110,9 +113,10 @@ def router_node(state: GraphState, deps: Deps) -> dict:
                 "audit": _audit(state, "ingresso: ruolo mancante o non valido "
                                        f"({state.get('role')!r})")}
     r = classify_query(state["query"])
+    intent = derive_intent(r, state["query"])
     return {"route": r.query_type, "code_token": r.code_token,
-            "route_reason": r.reason,
-            "audit": _audit(state, f"router[{role.value}]: {r.reason}")}
+            "route_reason": r.reason, "intent": intent.value,
+            "audit": _audit(state, f"router[{role.value}]: {r.reason} -> {intent.value}")}
 
 
 def expansion_node(state: GraphState, deps: Deps) -> dict:
