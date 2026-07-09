@@ -19,6 +19,8 @@ from src.common.roles import Role, parse_role
 from src.graph.llm import LanguageModel
 from src.graph.render import SYSTEM_RENDER, build_render_prompt, verify_price_grounding
 from src.graph.tools.sql_tool import LookupRow, SqlExecutor, SqlParams, extract_params
+from src.graph.tools.visual_tool import format_visual_answer, visual_citations
+from src.retrieval.pixelrag.index import PageHit
 from src.retrieval.confidence import (Signals, Thresholds, compute_margin,
                                       confidence_level, group_scores)
 from src.retrieval.guardrail import check_answer
@@ -62,6 +64,8 @@ class GraphState(TypedDict, total=False):
     intent: str
     sql_params: SqlParams
     sql_rows: list[LookupRow]
+    # Fase 1.3 — ramo VISUAL: pagine PixelRAG (audit/provenienza)
+    visual_pages: list[PageHit]
     expansion_terms: list[str]
     evidence: list[Evidence]
     children_evidence: list[Evidence]
@@ -103,6 +107,9 @@ class Deps:
     # due None il ramo NON e' cablato e l'intent STRUCTURED degrada a NARRATIVE.
     llm: LanguageModel | None = None
     sql_query: SqlExecutor | None = None
+    # Fase 1.3 — ramo VISUAL: binder PixelRAG (query, role) -> pagine. Con None il
+    # ramo NON e' cablato e l'intent VISUAL degrada al RAG testuale (NARRATIVE).
+    visual_search: Callable[[str, Role], list[PageHit]] | None = None
 
 
 def _audit(state: GraphState, msg: str) -> list[str]:
@@ -223,6 +230,28 @@ def render_node(state: GraphState, deps: Deps) -> dict:
     citations = [(r.doc_stem, r.page) for r in rows]
     return {"answer": out, "citations": citations,
             "audit": _audit(state, "render: risposta formattata dai dati DB")}
+
+
+def visual_node(state: GraphState, deps: Deps) -> dict:
+    """Fase 1.3 ramo VISUAL — retrieval PixelRAG 1.1 -> puntatore deterministico.
+
+    NESSUN LLM: un match visivo e' una similarita', non un lookup esatto; descrivere
+    l'immagine rischierebbe l'allucinazione. Restituiamo un puntatore alle pagine
+    (doc+pagina) — livello MEDIA, l'utente valida l'immagine a schermo. Fail-closed:
+    eccezione di rete -> system_error (come `retrieval_node`); 0 pagine (incluso il
+    caso in cui l'RBAC dentro `visual_search` filtra tutto) -> BASSA ('non lo so')."""
+    role = parse_role(state["role"])  # gia' validato dal router; ribadito fail-closed
+    try:
+        pages = deps.visual_search(state["query"], role)
+    except Exception as exc:  # fail-closed: Qdrant/embedder giu'/timeout
+        return {"system_error": True, "level": "BASSA",
+                "audit": _audit(state, f"Sistema non disponibile (visual): {exc}")}
+    if not pages:
+        return {"visual_pages": [], "level": "BASSA",
+                "audit": _audit(state, "visual: 0 pagine (o filtrate da RBAC) -> non lo so")}
+    return {"visual_pages": pages, "answer": format_visual_answer(pages),
+            "citations": visual_citations(pages), "level": "MEDIA",
+            "audit": _audit(state, f"visual: {len(pages)} pagina/e -> MEDIA")}
 
 
 def confidence_node(state: GraphState, deps: Deps) -> dict:
@@ -370,14 +399,26 @@ def finalize_node(state: GraphState, deps: Deps) -> dict:
 
 # ------------------------------------------------------------------- grafo
 
-def _after_router(state: GraphState, has_sql: bool = False) -> str:
+def _after_router(state: GraphState, has_sql: bool = False,
+                  has_visual: bool = False) -> str:
     if state.get("access_error"):
         return "finalize"
-    # Fase 1.3 — biforcazione: STRUCTURED solo se il ramo e' cablato (llm+sql),
-    # altrimenti (e per VISUAL, non ancora cablato) si resta su NARRATIVE.
-    if has_sql and state.get("intent") == "structured":
+    # Fase 1.3 — biforcazione: STRUCTURED/VISUAL solo se il ramo e' cablato,
+    # altrimenti l'intent degrada al RAG testuale esistente (NARRATIVE).
+    intent = state.get("intent")
+    if has_sql and intent == "structured":
         return "sql"
+    if has_visual and intent == "visual":
+        return "visual"
     return "expansion"
+
+
+def _after_visual(state: GraphState) -> str:
+    if state.get("system_error"):
+        return "finalize"
+    if state.get("level") == "BASSA":   # 0 pagine / RBAC filtra tutto -> rifiuto
+        return "finalize"
+    return "guardrail"
 
 
 def _after_sql(state: GraphState) -> str:
@@ -429,6 +470,7 @@ def build_graph(deps: Deps):
     g.add_node("expansion", n(expansion_node))
     g.add_node("sql", n(sql_node))
     g.add_node("render", n(render_node))
+    g.add_node("visual", n(visual_node))
     g.add_node("retrieval", n(retrieval_node))
     g.add_node("confidence", n(confidence_node))
     g.add_node("fallback_superseded", n(fallback_superseded_node))
@@ -440,13 +482,19 @@ def build_graph(deps: Deps):
     g.add_node("finalize", n(finalize_node))
 
     has_sql = deps.sql_query is not None and deps.llm is not None
+    has_visual = deps.visual_search is not None
     g.add_edge(START, "router")
-    g.add_conditional_edges("router", lambda s: _after_router(s, has_sql),
-                            {"finalize": "finalize", "expansion": "expansion", "sql": "sql"})
+    g.add_conditional_edges("router",
+                            lambda s: _after_router(s, has_sql, has_visual),
+                            {"finalize": "finalize", "expansion": "expansion",
+                             "sql": "sql", "visual": "visual"})
     # Fase 1.3 — ramo STRUCTURED: sql -> render -> guardrail (convergenza invariata)
     g.add_conditional_edges("sql", _after_sql,
                             {"finalize": "finalize", "render": "render"})
     g.add_conditional_edges("render", _after_render,
+                            {"finalize": "finalize", "guardrail": "guardrail"})
+    # Fase 1.3 — ramo VISUAL: visual -> guardrail (NESSUN LLM; convergenza invariata)
+    g.add_conditional_edges("visual", _after_visual,
                             {"finalize": "finalize", "guardrail": "guardrail"})
     g.add_edge("expansion", "retrieval")
     g.add_conditional_edges("retrieval", _after_retrieval,
