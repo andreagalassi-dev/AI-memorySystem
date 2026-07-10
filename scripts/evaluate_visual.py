@@ -19,7 +19,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from src.backend.clients.qdrant_client import get_qdrant_client  # noqa: E402
-from src.retrieval.visual import VISUAL_COLLECTION, search_visual  # noqa: E402
+from src.retrieval.qwen3vl import VISUAL_COLLECTION, search_visual  # noqa: E402
 
 EVAL = ROOT / "data" / "eval" / "eval_visual_v0.jsonl"
 OUT = ROOT / "output" / "eval" / "p27_visual_results.json"

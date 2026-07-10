@@ -7,7 +7,7 @@ Due livelli, entrambi sul motore vero (`needs_qdrant`):
     multivettore DUMMY: nessun modello caricato, ma si verifica che come `tecnico`
     tornino hit reali e come `commerciale` zero (le pagine sono ruolo-tecnico).
 
-Il grounding loop col modello ColQwen2 vero e' separato (manuale), non un unit test.
+Il grounding loop col modello Qwen3-VL vero e' separato (manuale), non un unit test.
 """
 
 from __future__ import annotations

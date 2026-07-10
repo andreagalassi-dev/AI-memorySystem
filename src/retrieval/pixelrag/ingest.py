@@ -6,7 +6,7 @@ Chiude il binario "cerca": data una PDF con grafica/esplosi, per ogni pagina VIS
 sicurezza (RBAC `ruoli_consentiti` + `version_status`) e la provenienza (bbox).
 
 Simmetrico a `extraction/pipeline.run_document`: dipende SOLO dai Port (embedder +
-index), quindi l'e2e gira col `FakeVisualIndex` e col ColQwen2 mascherato, senza
+index), quindi l'e2e gira col `FakeVisualIndex` e col Qwen3-VL mascherato, senza
 Qdrant ne' GPU. Le pagine testuali pure vengono saltate (vanno al binario testo).
 
 Fail-Closed: un documento senza ruoli e' rifiutato (un `ruoli_consentiti` vuoto
@@ -79,7 +79,7 @@ def ingest_document(doc, *, doc_stem: str, roles: list[Role], embedder: VisualEm
       doc: documento sfogliabile (es. `fitz.Document`).
       doc_stem: identita' logica del documento.
       roles: ruoli RBAC ammessi al documento (OBBLIGATORIO, fail-closed se vuoto).
-      embedder: Port dell'embedder visivo (ColQwen2 in prod, fake nei test).
+      embedder: Port dell'embedder visivo (Qwen3-VL in prod, fake nei test).
       index: Port del motore vettoriale (Qdrant in prod, FakeVisualIndex nei test).
       version_status: stato versione dei punti (default 'current').
       dpi/tile_px/overlap: parametri di tiling.

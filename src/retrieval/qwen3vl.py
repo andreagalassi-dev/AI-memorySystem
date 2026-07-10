@@ -1,22 +1,17 @@
 """Fase 1.1 — Backend torch/transformers per l'embedder visivo Qwen3-VL.
 
-Specularie a `src/retrieval/visual.py` (ColQwen2, P2.7): stesso pattern di
-caricamento lazy (`lru_cache`), stesso comparator MaxSim su Qdrant, stesso
-contratto `embed_pages`/`embed_query`. La differenza e' il checkpoint:
-ColQwen2 e' verificato; Qwen3-VL-Embedding e' **parametrico e spike-pending**
-(vedi PIANO-IMPLEMENTAZIONE riga 18 + §Fase 1.1).
+Backend unificato per PixelRAG: embedding visivi (patch-level multivettore) +
+gestione collection Qdrant + ricerca MaxSim. Sostituisce completamente il vecchio
+`src/retrieval/visual.py` (ColQwen2, P2.7, rimosso nella migrazione a Qwen3-VL).
 
-IMPORTANT: il nome esatto del checkpoint HuggingFace e della classe
-retrieval-specializzata (es. un `ColQwen3ForRetrieval` analogo) va confermato
-allo spike di estrazione reale (Gate P1). Qui esponiamo il SEAM corretto:
-caricamento torch/transformers su MPS, processor per immagini/query, output
-multivettore patch-level nello stesso spazio di `embedder.embed_query`.
-Cambiare checkpoint = cambiare `QWEN3VL_MODEL`, zero impatto sul resto.
+Caricamento lazy (`lru_cache`): costruire l'adapter (e testarlo con fake) non
+importa mai torch; il backend pesante si tocca solo alla prima chiamata reale,
+dopo che il ModelMultiplexer ha garantito lo spazio RAM/VRAM (eviction dei
+modelli inattivi).
 
-L'embedder visivo (`Qwen3VLEmbedder`) risolve queste funzioni in modo LAZY:
-costruire l'adapter (e testarlo con fake) non importa mai torch; il backend
-pesante si tocca solo alla prima chiamata reale, dopo che il ModelMultiplexer
-ha garantito lo spazio RAM/VRAM (eviction dei modelli inattivi).
+Il checkpoint Qwen3-VL-Embedding e' **parametrico e spike-pending** (vedi
+PIANO-IMPLEMENTAZIONE riga 18 + §Fase 1.1). Cambiare checkpoint = cambiare
+`QWEN3VL_MODEL`, zero impatto sul resto.
 """
 
 from __future__ import annotations
@@ -57,7 +52,7 @@ def embed_pages(images) -> list[list[list[float]]]:
 
     Stesso contratto di `visual.embed_pages`: lista di immagini -> lista
     (una per immagine) di liste di patch-vettori (128-d). Il downstream
-    (QdrantVisualIndex) e' identico al path ColQwen2.
+    (QdrantVisualIndex) e' identico al path del predecessore.
     """
     import torch
 
@@ -77,3 +72,84 @@ def embed_query(text: str) -> list[list[float]]:
     with torch.no_grad():
         out = model(**batch).embeddings
     return out[0].to(torch.float32).cpu().numpy().tolist()
+
+
+# ----------------------------------------------------------- Qdrant collection
+
+VISUAL_COLLECTION = "aike_pages_visual"
+
+
+def ensure_visual_collection(client, recreate: bool = False) -> None:
+    """Crea (o ricrea) la collection visiva multivettore su Qdrant.
+
+    Un punto = una PAGINA (multivettore ~700-800 patch x 128 dim, comparator
+    MaxSim). HNSW disabilitato (m=0): a questo volume la scansione brute-force
+    e' rapida e azzera il costo RAM di build dell'indice multivettore.
+    """
+    from qdrant_client import models
+
+    if recreate and client.collection_exists(VISUAL_COLLECTION):
+        client.delete_collection(VISUAL_COLLECTION)
+    if not client.collection_exists(VISUAL_COLLECTION):
+        client.create_collection(
+            collection_name=VISUAL_COLLECTION,
+            vectors_config=models.VectorParams(
+                size=PATCH_DIM,
+                # DOT come scorer ufficiale: la norma dei patch e' informativa
+                # (patch vuoti = norma piccola); la normalizzazione cosine li
+                # amplificherebbe
+                distance=models.Distance.DOT,
+                multivector_config=models.MultiVectorConfig(
+                    comparator=models.MultiVectorComparator.MAX_SIM),
+                hnsw_config=models.HnswConfigDiff(m=0),  # brute-force MaxSim
+            ),
+        )
+        for f in ("doc", "cat", "page"):
+            client.create_payload_index(
+                VISUAL_COLLECTION, field_name=f,
+                field_schema=models.PayloadSchemaType.INTEGER if f == "page"
+                else models.PayloadSchemaType.KEYWORD)
+
+
+@lru_cache(maxsize=1)
+def _indexed_docs_cache() -> tuple[str, ...]:
+    """Cache degli stem documenti indicizzati nella collection visiva."""
+    from src.backend.clients.qdrant_client import get_qdrant_client
+
+    client = get_qdrant_client()
+    docs, offset = set(), None
+    while True:
+        pts, offset = client.scroll(VISUAL_COLLECTION, limit=512, offset=offset,
+                                    with_payload=["doc"])
+        docs.update(p.payload["doc"] for p in pts)
+        if offset is None:
+            return tuple(sorted(docs))
+
+
+def doc_hint_filter(query: str):
+    """Filtro deterministico: token della query che matchano il NOME documento.
+
+    Il retrieval visivo e' ancorato al testo VISIBILE sulla pagina: gli esplosi
+    muti non contengono il brand, che pero' sta nel nome del documento — e il
+    tecnico la macchina la nomina ("...della pompa Iwaki"). Token alfabetici
+    >=4 char confrontati con gli stem dei doc indicizzati; nessun match ->
+    nessun filtro (ricerca globale).
+    """
+    from qdrant_client import models
+
+    tokens = {t.lower() for t in query.replace("-", " ").split()
+               if len(t) >= 4 and t.isalpha()}
+    matched = [d for d in _indexed_docs_cache()
+               if any(tok in d.lower() for tok in tokens)]
+    if not matched:
+        return None
+    return models.Filter(must=[models.FieldCondition(
+        key="doc", match=models.MatchAny(any=matched))])
+
+
+def search_visual(client, query: str, limit: int = 10):
+    """Ricerca MaxSim (+ doc-hint): pagine citabili (doc+pagina+render)."""
+    return client.query_points(
+        VISUAL_COLLECTION, query=embed_query(query),
+        query_filter=doc_hint_filter(query),
+        with_payload=True, limit=limit).points

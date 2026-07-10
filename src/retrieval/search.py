@@ -181,7 +181,7 @@ def search_unified(client: QdrantClient, query: str, limit: int = 10, *,
     P4.5/A6 — `role` è obbligatorio (keyword-only, fail-closed) e viene
     propagato fino all'Hop 2 per il filtro RBAC sui figli.
     """
-    from src.retrieval.visual import search_visual
+    from src.retrieval.qwen3vl import search_visual
 
     route = classify_query(query)
     if route.query_type == "visual":

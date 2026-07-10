@@ -1,6 +1,6 @@
 """Fase 1.1 — Test end-to-end dell'ingestion visiva (render REALE, embed/index fake).
 
-Rendering PyMuPDF vero (osserviamo tile reali); embedder ColQwen2 MASCHERATO (funzioni
+Rendering PyMuPDF vero (osserviamo tile reali); embedder Qwen3-VL MASCHERATO (funzioni
 iniettate, no torch) e FakeVisualIndex. Verifica: selezione pagine grafiche, tile +
 thumbnail, payload RBAC, id deterministici (re-ingest idempotente) e il roundtrip
 ingest -> visual_search filtrato per ruolo.
@@ -12,7 +12,7 @@ import fitz
 import pytest
 
 from src.common.roles import Role
-from src.retrieval.pixelrag.embedder import ColQwen2Embedder
+from src.retrieval.pixelrag.embedder import Qwen3VLEmbedder
 from src.retrieval.pixelrag.index import KIND_THUMB, KIND_TILE, FakeVisualIndex
 from src.retrieval.pixelrag.ingest import ingest_document
 from src.retrieval.pixelrag.search import visual_search
@@ -20,8 +20,8 @@ from src.retrieval.pixelrag.search import visual_search
 
 def _fake_embedder():
     # un embedding [1,0] per ogni immagine (tile o thumbnail); nessun torch
-    return ColQwen2Embedder(embed_pages=lambda imgs: [[1.0, 0.0]] * len(imgs),
-                            embed_query=lambda t: [1.0, 0.0])
+    return Qwen3VLEmbedder(embed_pages=lambda imgs: [[1.0, 0.0]] * len(imgs),
+                           embed_query=lambda t: [1.0, 0.0])
 
 
 def _doc_grafica_e_prosa() -> fitz.Document:

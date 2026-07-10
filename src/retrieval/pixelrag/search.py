@@ -38,7 +38,7 @@ def visual_search(query: str, *, embedder: VisualEmbedder, index: VisualIndex,
 
     Args:
       query: testo della domanda ("mostrami l'esploso del gruppo pompa").
-      embedder: Port dell'embedder visivo (ColQwen2 in prod, fake nei test).
+      embedder: Port dell'embedder visivo (Qwen3-VL in prod, fake nei test).
       index: Port del motore vettoriale (Qdrant in prod, FakeVisualIndex nei test).
       role: ruolo RBAC del richiedente — OBBLIGATORIO, fail-closed (niente default).
       k: numero di PAGINE da restituire.

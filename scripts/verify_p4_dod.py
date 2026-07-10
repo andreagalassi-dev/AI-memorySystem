@@ -36,7 +36,7 @@ from src.registry.registry import (  # noqa: E402
 )
 from src.registry.sync import sync_collection  # noqa: E402
 from src.retrieval.synthesis import REFUSAL  # noqa: E402
-from src.retrieval.visual import VISUAL_COLLECTION  # noqa: E402
+from src.retrieval.qwen3vl import VISUAL_COLLECTION  # noqa: E402
 
 COLLECTIONS = (COLLECTION, VISUAL_COLLECTION)
 

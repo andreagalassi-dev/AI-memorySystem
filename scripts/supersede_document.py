@@ -28,7 +28,7 @@ from src.backend.clients.qdrant_client import get_qdrant_client  # noqa: E402
 from src.ingestion.embedding import COLLECTION  # noqa: E402
 from src.registry.registry import supersede_document  # noqa: E402
 from src.registry.sync import sync_collection  # noqa: E402
-from src.retrieval.visual import VISUAL_COLLECTION  # noqa: E402
+from src.retrieval.qwen3vl import VISUAL_COLLECTION  # noqa: E402
 
 COLLECTIONS = (COLLECTION, VISUAL_COLLECTION)
 

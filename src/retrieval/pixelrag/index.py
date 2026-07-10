@@ -1,7 +1,7 @@
 """Fase 1.1 — Port del motore vettoriale visivo + Fake DB-free + ricomposizione pagina.
 
 Il vector store reale (Qdrant, collection `aike_pages_visual`, comparator MaxSim) sta
-DIETRO il Port `VisualIndex`, come DeepSeek dietro `TableExtractor` in 1.2. Cosi'
+DIETRO il Port `VisualIndex`, come GLM-OCR dietro `TableExtractor` in 1.2. Cosi'
 tiling, ricomposizione e (in seguito) fusione ibrida si sviluppano e testano contro
 un `FakeVisualIndex` in memoria, senza Qdrant ne' GPU.
 
@@ -146,7 +146,7 @@ class QdrantVisualIndex:
     """Adapter reale `VisualIndex` su Qdrant (Fase 1.3, ramo VISUAL).
 
     Punta di default sulla collection `aike_pages_visual` (P2.7/P4): un punto = una
-    PAGINA, multivettore ColQwen2, comparator MaxSim. Client e collection INIETTATI
+    PAGINA, multivettore Qwen3-VL, comparator MaxSim. Client e collection INIETTATI
     (come `PgSqlExecutor`): l'adapter e' testabile su una collection usa-e-getta.
 
     Il filtro RBAC/versioning generico (`{ruoli_consentiti, version_status}`, prodotto
