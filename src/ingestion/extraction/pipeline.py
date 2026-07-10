@@ -6,9 +6,9 @@ Cuce insieme i pezzi gia' testati in isolamento, pagina per pagina:
 
 - `table_detect.is_table_page`  : salta le pagine non-tabella (no estrazione inutile).
 - `extractor` (PORT iniettato)  : da PageRef a `list[RigaGrezza]`. Il `FakeExtractor`
-  sta al posto di "modello + enforce" per l'e2e veloce; l'adapter DeepSeek reale
-  incapsulera' `enforce.enforce_page` (schema-enforcement Instructor) dietro lo
-  stesso Protocol, senza toccare l'orchestratore.
+  sta al posto di "modello + enforce" per l'e2e veloce; l'adapter GLM-OCR reale
+  incapsulera' l'inferenza VLM dietro lo stesso Protocol, senza toccare
+  l'orchestratore.
 - `grounding.partition`         : strato 2 Fail-Closed (codice non ancorato -> scarto).
 - `load.persist`                : upsert righe valide + insert scarti nella SSOT.
 
@@ -69,7 +69,7 @@ def run_document(conn: psycopg.Connection, doc, *, doc_stem: str,
       conn: connessione psycopg3 alla SSOT (iniettata).
       doc: documento sfogliabile pagina-per-pagina (es. `fitz.Document`).
       doc_stem: identita' logica del documento.
-      extractor: port di estrazione (FakeExtractor nei test; adapter DeepSeek in prod).
+      extractor: port di estrazione (FakeExtractor nei test; adapter GLM-OCR in prod).
       schema: schema Postgres di destinazione (override per l'isolamento dei test).
 
     Ritorna: `DocumentOutcome` con i conteggi aggregati e l'esito per-pagina.

@@ -4,7 +4,7 @@ I default puntano al setup locale (localhost). Nel container il valore
 QDRANT_HOST viene sovrascritto a 'qdrant' (nome servizio sulla rete aike_net).
 
 Fase 1 (BLOCCO 2): i modelli sono allineati a PIANO-IMPLEMENTAZIONE.md —
-Gemma 4 via MLX (logica), DeepSeek-OCR-2 (estrazione), Qwen3-VL (PixelRAG).
+Gemma 4 via MLX (logica), GLM-OCR (estrazione tabelle), Qwen3-VL (PixelRAG).
 Il context window e' clampato a local_ctx_cap per contenere la KV cache sui
 32GB di RAM unificata. Ollama resta come legacy transizionale del grafo P3.4.
 """
@@ -37,8 +37,9 @@ class Settings(BaseSettings):
     # Cervello / ragionatore: Google Gemma 4 12B servito via MLX da HuggingFace
     # (non Ollama). Caricato/scaricato dal ModelMultiplexer (src/serving).
     logic_model: str = "google/gemma-4-12b-it"
-    # Estrazione visiva tabelle: DeepSeek-OCR-2 (endpoint VLM, ~3GB a Q4).
-    extraction_model: str = "deepseek-ocr-2"
+    # Estrazione visiva tabelle: GLM-OCR (zai-org/GLM-OCR, ~2GB BF16, 1B params).
+    # Standard transformers (AutoModelForImageTextToText), no custom_code, MPS-safe.
+    extraction_model: str = "zai-org/GLM-OCR"
     # Retrieval visivo: PixelRAG con Qwen3-VL-Embedding (su Qdrant, vedi retrieval/).
     # Cap duro sul context window dell'LLM: limita la KV cache (~2-4GB) e lascia
     # RAM libera per gli embedder residenti. Clampato dal ModelMultiplexer.

@@ -1,10 +1,10 @@
 """Fase 1.2 — Port di estrazione tabelle + Fake per i test.
 
-Il modello reale DeepSeek-OCR-2 sta DIETRO il port `TableExtractor`: enforce,
+Il modello reale GLM-OCR sta DIETRO il port `TableExtractor`: enforce,
 grounding e load si sviluppano e testano contro un `FakeExtractor` deterministico,
-senza modello ne' rete. L'adapter DeepSeek reale (endpoint OpenAI-compat, serving
-MLX) sara' un modulo separato che implementa lo stesso Protocol. Coerente con
-l'iniezione `extract_fn` gia' usata in `src/ingestion/ingest_one.py`.
+senza modello ne' rete. L'adapter GLM-OCR reale (transformers + MPS, serving
+nativo Apple Silicon) sara' un modulo separato che implementa lo stesso Protocol.
+Coerente con l'iniezione `extract_fn` gia' usata in `src/ingestion/ingest_one.py`.
 
 Design: docs/superpowers/specs/2026-07-09-fase1.2-estrazione-massiva-design.md.
 """
@@ -21,7 +21,7 @@ from src.ingestion.extraction.schema import RigaGrezza
 class PageRef:
     """Riferimento a UNA pagina da estrarre (1-based).
 
-    L'input pixel reale (render della pagina) sara' aggiunto dall'adapter DeepSeek:
+    L'input pixel reale (render della pagina) sara' aggiunto dall'adapter GLM-OCR:
     il contratto resta minimale finche' l'interfaccia del modello non e' fissata.
     """
 

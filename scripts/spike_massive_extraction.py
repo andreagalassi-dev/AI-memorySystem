@@ -101,7 +101,7 @@ def main() -> int:
     mux = ModelMultiplexer(rt, max_resident=1, ctx_cap=16000)
     extractor = FakeExtractor(SPIKE_ROWS)
 
-    model_name = "deepseek-ocr-2"
+    model_name = "glm-ocr"
     results = []
 
     for fp, doc_stem in SPIKE_PDFS:

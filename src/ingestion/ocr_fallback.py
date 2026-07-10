@@ -6,7 +6,7 @@ cataloghi scansionati, questo modulo genera un text-layer "invisibile" usando
 l'OCR nativo di Apple Silicon (framework Vision via `ocrmac`), molto piu'
 veloce ed efficiente di Tesseract su Mac M1 Pro.
 
-Il testo OCR non sostituisce MAI l'estrazione di DeepSeek-OCR-2 (il VLM resta la
+Il testo OCR non sostituisce MAI l'estrazione di GLM-OCR (il VLM resta la
 fonte strutturata): fornisce solo la base testuale per il grounding deterministico,
 cosi' il Fail-Closed puo' validare i codici estratti dal modello contro l'OCR nativo.
 

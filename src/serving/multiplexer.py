@@ -1,7 +1,7 @@
 """Model Multiplexer / Watchdog per la gestione della memoria (Fase 1, BLOCCO 1).
 
 Su un Mac M1 Pro 32GB la memoria unificata e' condivisa tra tutti i modelli: caricare
-insieme DeepSeek-OCR-2 (~3GB), Qwen3-VL-Embedding e Gemma 4 12B (~8-12GB in Q4) porterebbe
+insieme GLM-OCR (~2GB), Qwen3-VL-Embedding e Gemma 4 12B (~8-12GB in Q4) porterebbe
 a OOM e swap. Questo modulo garantisce tre invarianti architetturali:
 
 1. EVICTION: prima di caricare un nuovo modello, gli inattivi vengono scaricati, in modo

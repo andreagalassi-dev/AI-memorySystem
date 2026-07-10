@@ -43,7 +43,7 @@ class OllamaModel:
     temperatura bassa + seed fisso), che massimizza l'aderenza ai `<dati>`; le difese
     DURE (guardrail codici, value-grounding prezzi) restano a valle nel grafo.
 
-    Client e opzioni sono LAZY (come `ColQwen2Embedder`): costruire l'adapter non apre
+    Client e opzioni sono LAZY (come `Qwen3VLEmbedder`): costruire l'adapter non apre
     connessioni. `_chat` e' iniettabile nei test (DB/Ollama-free). Fail-closed: gli
     errori del modello NON vengono inghiottiti — risalgono a `render_node` che degrada
     a `system_error`. Backend intercambiabile: l'MLXModel sara' un drop-in sullo stesso

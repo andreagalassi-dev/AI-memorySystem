@@ -137,7 +137,7 @@ def test_runner_usa_ocr_fallback_per_scan_puro(pgconn, tmp_path, caplog):
         conn=pgconn,
         extractor=extractor,
         multiplexer=mux,
-        model_name="deepseek-ocr-2",
+        model_name="glm-ocr",
         schema=SCHEMA,
         ocr=ocr,
     )

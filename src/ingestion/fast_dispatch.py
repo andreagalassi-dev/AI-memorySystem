@@ -3,7 +3,7 @@
 Micro-step di classificazione all'ingresso della pipeline di ingestion a triplo
 binario (docs/PIANO-IMPLEMENTAZIONE.md §Fase 1). Per ogni pagina di un PDF decide
 UNA rotta ed estrae il testo al volo SOLO dove la pagina e' born-digital e
-solo-testo, bypassando i modelli pesanti (PixelRAG 1.1, DeepSeek-OCR 1.2) e
+solo-testo, bypassando i modelli pesanti (PixelRAG 1.1, GLM-OCR 1.2) e
 risparmiando compute/RAM. Si ferma all'interfaccia di routing: non chunka, non
 embedda, non chiama modelli.
 
@@ -57,7 +57,7 @@ class Route(Enum):
     """Rotta di dispatch di una pagina."""
 
     FAST_TEXT = "fast_text"  # born-digital solo-testo: testo estratto qui, no AI
-    HEAVY = "heavy"          # -> binari 1.1 (PixelRAG) + 1.2 (DeepSeek-OCR)
+    HEAVY = "heavy"          # -> binari 1.1 (PixelRAG) + 1.2 (GLM-OCR)
 
 
 @dataclass(frozen=True)

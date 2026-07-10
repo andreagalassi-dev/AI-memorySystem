@@ -1,7 +1,7 @@
 """Fase 1.3 — Port del modello linguistico (Cervello Unificatore) + FakeLLM.
 
 L'LLM primario (Gemma 4 / Nemotron via MLX) sta DIETRO il Port `LanguageModel`,
-come DeepSeek dietro `TableExtractor` (1.2) e ColQwen2 dietro `VisualEmbedder`
+come GLM-OCR dietro `TableExtractor` (1.2) e Qwen3-VL dietro `VisualEmbedder`
 (1.1). Cosi' il grafo — sintesi narrativa e rendering delle righe SQL — si sviluppa
 e testa contro un `FakeLLM` deterministico, senza accendere il modello (niente MLX,
 niente download pesi, niente Watchdog nei test).

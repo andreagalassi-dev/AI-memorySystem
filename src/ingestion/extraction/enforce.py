@@ -1,6 +1,6 @@
 """Fase 1.2 — Schema-enforcement dell'estrazione (Instructor + Pydantic strict).
 
-Forza il modello (DeepSeek-OCR-2 servito via endpoint OpenAI-compat: LM Studio/
+Forza il modello (GLM-OCR servito via endpoint OpenAI-compat: LM Studio/
 vLLM/Ollama) a produrre ESATTAMENTE `list[RigaGrezza]`: Instructor patcha il client
 OpenAI e usa `response_model` per validare l'output con Pydantic, ritentando su
 output non-valido fino a `max_retries` e poi **sollevando**. Fail-Closed: nessuna
@@ -52,9 +52,9 @@ def enforce_page(client: instructor.Instructor, content: str | list[dict], *, mo
     Args:
       client: client Instructor-patched (iniettato; mockabile nei test).
       content: contenuto del messaggio utente nel formato OpenAI — testo grezzo (str)
-        OPPURE blocchi multimodali (list[dict], es. testo + image_url per DeepSeek-OCR).
+        OPPURE blocchi multimodali (list[dict], es. testo + image_url per GLM-OCR).
         L'enforcement e' identico nei due casi: un solo punto di validazione.
-      model: nome del modello sull'endpoint (es. 'deepseek-ocr').
+      model: nome del modello sull'endpoint (es. 'glm-ocr').
       max_retries: tentativi di ri-generazione su output non-valido prima di sollevare.
 
     Ritorna: `list[RigaGrezza]` validate (Pydantic strict via `response_model`).

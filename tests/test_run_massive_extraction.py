@@ -110,7 +110,7 @@ def test_extractor_crasha_db_senza_sporcia(pgconn, tmp_path):
             conn=pgconn,
             extractor=CrashingExtractor(),
             multiplexer=mux,
-            model_name="deepseek-ocr-2",
+            model_name="glm-ocr",
             schema=SCHEMA,
         )
 
@@ -160,7 +160,7 @@ def test_fast_heavy_conteggi_loggati(pgconn, tmp_path, caplog):
         conn=pgconn,
         extractor=extractor,
         multiplexer=mux,
-        model_name="deepseek-ocr-2",
+        model_name="glm-ocr",
         schema=SCHEMA,
     )
 
@@ -190,11 +190,11 @@ def test_watchdog_eviction_al_cambio_modello(pgconn, tmp_path, caplog):
         conn=pgconn,
         extractor=extractor,
         multiplexer=mux,
-        model_name="deepseek-ocr-2",
+        model_name="glm-ocr",
         schema=SCHEMA,
     )
 
     # Il multiplexer deve aver caricato il modello (invariante watchdog).
-    assert ("load", "deepseek-ocr-2", 16000) in rt.calls
+    assert ("load", "glm-ocr", 16000) in rt.calls
     # Il runner deve aver loggato il cambio di contesto (modello in RAM).
-    assert "deepseek-ocr-2" in caplog.text
+    assert "glm-ocr" in caplog.text

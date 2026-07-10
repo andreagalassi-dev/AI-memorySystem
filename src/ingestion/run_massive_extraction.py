@@ -160,7 +160,7 @@ def run_document_massive(
     Args:
       filepath: percorso del PDF sorgente.
       conn: connessione psycopg3 alla SSOT (iniettata).
-      extractor: port di estrazione tabelle (FakeExtractor nei test; DeepSeek in prod).
+      extractor: port di estrazione tabelle (FakeExtractor nei test; GLM-OCR in prod).
       multiplexer: watchdog che gestisce load/unload dei modelli in RAM.
       model_name: nome del modello da caricare via multiplexer per l'estrazione HEAVY.
       schema: schema Postgres di destinazione (override per test).

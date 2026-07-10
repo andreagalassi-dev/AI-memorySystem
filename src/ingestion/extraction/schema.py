@@ -3,7 +3,7 @@
 Due modelli distinti (design: docs/superpowers/specs/2026-07-09-fase1.2-estrazione-
 massiva-design.md):
 
-  - `RigaGrezza`  : cio' che il modello DeepSeek-OCR-2 DEVE produrre (response_model
+  - `RigaGrezza`  : cio' che il modello GLM-OCR DEVE produrre (response_model
                     di Instructor). `extra="forbid"` e' la guardia anti-invenzione
                     di STRUTTURA: un campo in piu' inventato dal modello -> errore.
   - `RigaListino` : la riga persistita = grezza + metadati calcolati da NOI. Il

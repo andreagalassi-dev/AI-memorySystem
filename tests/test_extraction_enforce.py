@@ -54,13 +54,13 @@ class TestEnforceWiring:
                 RigaGrezza(codice_originale="AB-9000")]
         client = _FakeClient(rows)
 
-        out = enforce_page(client, "…testo listino…", model="deepseek-ocr", max_retries=3)
+        out = enforce_page(client, "…testo listino…", model="glm-ocr", max_retries=3)
 
         assert out is rows
         kw = client.chat.completions.last_kwargs
         assert kw["response_model"] == list[RigaGrezza]   # lo schema forzato
         assert kw["max_retries"] == 3
-        assert kw["model"] == "deepseek-ocr"
+        assert kw["model"] == "glm-ocr"
 
     def test_passa_system_e_user_message(self):
         client = _FakeClient([])
