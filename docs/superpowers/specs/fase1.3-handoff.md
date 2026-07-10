@@ -3,13 +3,40 @@
 > Branch: `feature/fase1-pipeline`. Spec completa: `docs/superpowers/specs/2026-07-09-fase1.3-cervello-unificatore-design.md`.
 > Leggi anche `src/graph/pipeline.py` (il grafo) e le memorie `fase1.1-pixelrag.md` / `fase1.2-estrazione-massiva.md`.
 
-## STATO: Fase 1.3 (logica) COMPLETA — Passi 1→6 committati
+## STATO: Fase 1.3 COMPLETA AL 100% — orchestratore a tre rami su adapter REALI
 
-L'architettura logica del Cervello Unificatore e' **chiusa e testata dietro i Fake**.
-Residuo: **solo il wiring degli adapter reali** (vedi §5). Nessuna regressione: full
-suite **verde salvo i 3 rossi ambientali noti** (Qdrant-corpus: `test_rbac`
-TestLeakAsimmetrico ×2, `test_search_filter` — asseriscono conteggi punti su una
-collection non caricata, indipendenti dal grafo).
+Il Cervello Unificatore e' **chiuso end-to-end**: tutti e tre i rami sono cablati con
+adapter reali e verificati (unit test + grounding loop col modello/DB veri). Nessuna
+regressione: full suite **626 passed** + i 3 rossi ambientali noti (Qdrant-corpus:
+`test_rbac` TestLeakAsimmetrico ×2, `test_search_filter` — conteggi punti su corpus
+non caricato, indipendenti dal grafo).
+
+- **STRUCTURED**: `PgSqlExecutor` su ruolo Postgres **read-only** (`aike_ro`) + render
+  `OllamaModel` (qwen2.5:14b, decoding deterministico). Grounding loop reale: ALTA,
+  prezzo ancorato, doppia barriera PASS.
+- **VISUAL**: `QdrantVisualIndex` + `ColQwen2Embedder` sulla collection reale
+  `aike_pages_visual` (1035 pagine). Grounding loop col modello vero: RBAC asimmetrico
+  end-to-end (tecnico e commerciale ricevono set disgiunti, zero leak).
+- **NARRATIVE**: RAG testuale preesistente.
+
+Ogni adapter e' cablato in `_default_deps` in **try/except fail-safe**: se il backend
+manca, il ramo degrada a NARRATIVE (mai crash).
+
+Commit chiave: `50b45f0` (PgSqlExecutor RO), `96c8d1f` (OllamaModel + STRUCTURED on),
+`6e2d66e` (QdrantVisualIndex + VISUAL on). Test infra: `a0e0301` (gate ruolo RO + init-db).
+
+### Tech-debt / migliorie future (NON bloccanti — Fase 1.3 e' chiusa)
+1. **MLXModel**: adapter alternativo a `OllamaModel` sullo stesso Port `LanguageModel`
+   (Gemma/Nemotron via mlx-lm). Drop-in, zero impatto sul grafo. Oggi il render usa
+   Ollama (verificabile subito); MLX resta scelta di performance su Apple Silicon.
+2. **Re-ingestion visiva tile-level**: `aike_pages_visual` e' page-level (P2.7). Il
+   `pixelrag/ingest.py` supporta tile-level con payload RBAC; una re-ingestion darebbe
+   granularita' tile + `pages_from_tiles` non-degenere. Non necessaria: il ramo VISUAL
+   funziona gia' su dato reale page-level.
+3. **Connection pool / leak** (`_default_deps`): oggi si apre una connessione Postgres
+   RO per `answer()` (TODO gia' nel codice). Da gestire quando la UI girera' in continuo.
+4. **doc_hint_filter** (P2.7): filtro deterministico per nome-doc, miglioria di recall
+   sul ramo VISUAL, non ancora portata nel percorso pixelrag.
 
 ## 1. Design (approvato dall'utente)
 
@@ -76,27 +103,27 @@ l'intent degrada al RAG testuale (NARRATIVE) — zero regressione.
 - `pipeline.py`: `visual_node` (role→visual_search; eccezione→system_error; 0 pagine o
   RBAC-filtra-tutto→BASSA; pagine→MEDIA). Deps: `visual_search`. State: `visual_pages`.
 
-## 4. Test (tutti DB/GPU/MLX-free, dietro i Fake)
+## 4. Test
 
-- `test_graph_sql_tool.py` (20), `test_router_intent.py` (18), `test_graph_render.py`
-  (17), `test_graph_structured.py` (13), `test_graph_visual_tool.py` (8),
-  `test_graph_visual.py` (8), `test_graph_triintent.py` (7 — contratto e2e tri-intent).
+- Dietro i Fake (DB/GPU/MLX-free): `test_graph_sql_tool.py` (20), `test_router_intent.py`
+  (18), `test_graph_render.py` (17), `test_graph_structured.py` (13),
+  `test_graph_visual_tool.py` (8), `test_graph_visual.py` (8), `test_graph_ollama_model.py`
+  (3), `test_graph_triintent.py` (7 — contratto e2e tri-intent).
+- Integrazione adapter reali: `test_sql_tool_pg.py` (`needs_pg` — gate ruolo read-only +
+  wiring `_default_deps`), `test_pixelrag_qdrant_index.py` (`needs_qdrant` — RBAC no-leak
+  su collection usa-e-getta + asimmetria RBAC su dato reale + wiring).
 
-## 5. PROSSIMO COMPITO — wiring adapter reali (l'orchestratore e' pronto)
+## 5. Adapter reali — CABLATI (`_default_deps`, tutti fail-safe)
 
-`_default_deps` in produzione ha oggi `llm=None`, `sql_query=None`, `visual_search=None`
-→ tutto passa da NARRATIVE. Attaccare un adapter alla volta, ognuno col suo mini-gate:
-
-1. **`PgSqlExecutor` reale (consigliato per primo — no GPU/serving)**: cablare in
-   `_default_deps` con connessione al DB Fase 1.2 su **ruolo Postgres read-only**
-   (difesa in profondita': anche se qualcosa aggirasse la whitelist, il DB rifiuta le
-   scritture). Test `needs_pg` sulla query reale con **schema usa-e-getta** (pattern
-   `tests/conftest.py` + `test_extraction_load.py`): seed di `righe_listino`, verifica
-   lookup per `codice_normalizzato`, e un test che il ruolo read-only **respinge** un
-   INSERT/UPDATE. Verificare che i `needs_pg` girino (marker in conftest).
-2. **`MLXModel`** (`LanguageModel`) per il render STRUCTURED — serving MLX reale.
-3. **`QdrantVisualIndex` + `Qwen3VLEmbedder`** (`VisualIndex`/`VisualEmbedder`) per
-   VISUAL — residuo noto di 1.1.
+1. **`PgSqlExecutor`** (STRUCTURED) su ruolo Postgres **read-only** `aike_ro`. Il ruolo
+   nasce con l'init-db (`docker/init-db/10-readonly-role.sh`, solo volume nuovo); sul
+   volume dev esistente e' stato creato a mano (stesso SQL). Difesa in profondita': il
+   DB rifiuta INSERT/UPDATE/DELETE (provato in `test_sql_tool_pg.py`).
+2. **`OllamaModel`** (`LanguageModel`, render STRUCTURED) su `qwen2.5:14b`, decoding
+   deterministico (`SAFE_OPTIONS`: temp 0.1 + seed). MLXModel resta drop-in futuro (§debt).
+3. **`QdrantVisualIndex` + `ColQwen2Embedder`** (VISUAL) sulla collection reale
+   `aike_pages_visual`. (NB: l'embedder reale del progetto e' **ColQwen2**, non
+   "Qwen3VL" come indicava una vecchia nota.)
 
 ### Riferimenti utili nel repo
 - `src/ingestion/codes.py::canonical` — normalizzazione codici (riusata).
