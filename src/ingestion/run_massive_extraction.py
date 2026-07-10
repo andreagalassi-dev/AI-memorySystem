@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import logging
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -41,6 +42,7 @@ from src.ingestion.extraction.grounding import partition
 from src.ingestion.extraction.load import DEFAULT_SCHEMA
 from src.ingestion.extraction.schema import RigaListino, Scarto
 from src.ingestion.extraction.table_detect import is_table_page
+from src.ingestion.extraction.text_table import reliable_text_layer
 from src.ingestion.fast_dispatch import DocumentDispatch, Route, dispatch_pdf
 from src.ingestion.ocr_fallback import OcrProvider, needs_ocr
 from src.serving.multiplexer import ModelMultiplexer
@@ -123,10 +125,31 @@ class MassivePageOutcome:
     """Esito di UNA pagina nel runner massivo."""
 
     page: int
-    route: str  # "FAST_TEXT" | "HEAVY_TABLE" | "HEAVY_NON_TABLE"
+    # "FAST_TEXT" | "HEAVY_TABLE_TEXT" | "HEAVY_TABLE_VLM" | "HEAVY_NON_TABLE"
+    route: str
     n_valide: int = 0
     n_scarti: int = 0
     reason: str = ""
+
+
+def route_table_page(
+    page,
+    *,
+    text_extractor: TableExtractor | None,
+    vlm_extractor: TableExtractor,
+) -> tuple[TableExtractor, str]:
+    """Sceglie l'estrattore per una pagina-tabella HEAVY (regola architetturale).
+
+    Una pagina born-digital (text-layer affidabile) va all'estrattore testuale
+    (codici ESATTI): GLM-OCR corromperebbe i codici alfanumerici. Solo le VERE
+    scansioni (senza testo nativo) — o l'assenza di un text-extractor iniettato —
+    restano sul VLM. Pura e DB-free per l'unit test.
+
+    Ritorna: (estrattore scelto, etichetta di rotta per l'audit).
+    """
+    if text_extractor is not None and reliable_text_layer(page):
+        return text_extractor, "HEAVY_TABLE_TEXT"
+    return vlm_extractor, "HEAVY_TABLE_VLM"
 
 
 @dataclass(frozen=True)
@@ -154,6 +177,7 @@ def run_document_massive(
     dpi: int = 200,
     max_pages: int = 0,
     ocr: OcrProvider | None = None,
+    text_extractor_factory: Callable[[fitz.Document], TableExtractor] | None = None,
 ) -> MassiveDocumentOutcome:
     """Processa UN PDF attraverso la pipeline a triplo binario.
 
@@ -168,6 +192,10 @@ def run_document_massive(
       max_pages: se >0, elabora solo le prime N pagine (spike/test su PDF grandi).
       ocr: provider OCR fallback per pagine senza text-layer (scan puro). Se None,
            le pagine scan puro restano senza text-layer e il grounding scarta tutto.
+      text_extractor_factory: costruisce l'estrattore testuale per-documento dal
+           `fitz.Document` aperto internamente (es. `TextTableExtractor`). Se dato,
+           le pagine-tabella born-digital passano di qua (codici esatti) e GLM-OCR
+           resta relegato alle vere scansioni. Se None, tutte le tabelle vanno al VLM.
 
     Ritorna: MassiveDocumentOutcome con conteggi aggregati e esito per-pagina.
 
@@ -206,6 +234,8 @@ def run_document_massive(
 
     # 2. Apri il PDF per il rendering e l'estrazione testo (servira' per HEAVY).
     doc = fitz.open(filepath)
+    # Estrattore testuale per-documento (codici esatti sulle born-digital), se richiesto.
+    text_extractor = text_extractor_factory(doc) if text_extractor_factory else None
 
     page_outcomes: list[MassivePageOutcome] = []
     tot_valide = tot_scarti = table_pages = 0
@@ -284,19 +314,28 @@ def run_document_massive(
 
                 table_pages += 1
 
-                # WATCHDOG: garantisce che il modello sia in RAM prima di estrarre.
-                # Il multiplexer scarica i modelli inattivi (eviction LRU) se necessario.
-                eff_ctx = multiplexer.use(model_name)
-                logger.info(
-                    "runner: doc_stem=%s page=%d HEAVY_TABLE model=%s ctx=%d",
-                    doc_stem,
-                    page_no,
-                    model_name,
-                    eff_ctx,
+                # ROUTING: born-digital (text-layer affidabile) -> estrattore
+                # testuale (codici esatti); scansione vera -> GLM-OCR (VLM).
+                chosen, route_label = route_table_page(
+                    page, text_extractor=text_extractor, vlm_extractor=extractor
                 )
 
-                # Estrazione (porta iniettata) + grounding + persist
-                grezze = extractor.extract(PageRef(doc_stem, page_no))
+                if chosen is extractor:
+                    # WATCHDOG: il modello serve in RAM solo sul percorso VLM.
+                    # Il multiplexer evicta i modelli inattivi (LRU) se necessario.
+                    eff_ctx = multiplexer.use(model_name)
+                    logger.info(
+                        "runner: doc_stem=%s page=%d %s model=%s ctx=%d",
+                        doc_stem, page_no, route_label, model_name, eff_ctx,
+                    )
+                else:
+                    logger.info(
+                        "runner: doc_stem=%s page=%d %s (text-layer nativo, no modello)",
+                        doc_stem, page_no, route_label,
+                    )
+
+                # Estrazione (porta scelta dal routing) + grounding + persist
+                grezze = chosen.extract(PageRef(doc_stem, page_no))
                 righe = [
                     RigaListino.from_grezza(g, doc_stem=doc_stem, page=page_no) for g in grezze
                 ]
@@ -312,7 +351,7 @@ def run_document_massive(
                 page_outcomes.append(
                     MassivePageOutcome(
                         page=page_no,
-                        route="HEAVY_TABLE",
+                        route=route_label,
                         n_valide=summary["righe_upsert"],
                         n_scarti=summary["scarti"],
                         reason=verdict.reason,

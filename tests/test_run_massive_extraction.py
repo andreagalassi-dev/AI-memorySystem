@@ -198,3 +198,37 @@ def test_watchdog_eviction_al_cambio_modello(pgconn, tmp_path, caplog):
     assert ("load", "glm-ocr", 16000) in rt.calls
     # Il runner deve aver loggato il cambio di contesto (modello in RAM).
     assert "glm-ocr" in caplog.text
+
+
+def test_born_digital_routing_usa_text_extractor_e_non_carica_vlm(pgconn, tmp_path):
+    """ROUTING: una pagina-tabella born-digital passa dal text-extractor (codici
+    esatti) e NON carica il modello VLM (che ne corromperebbe i codici)."""
+    pdf = tmp_path / "tab.pdf"
+    _make_table_pdf(str(pdf), n_table_pages=1)  # born-digital, codici AB-1234...
+
+    rt = FakeModelRuntime()
+    mux = ModelMultiplexer(rt, max_resident=1, ctx_cap=16000)
+
+    class ExplodingVlm:
+        def extract(self, ref: PageRef):
+            raise AssertionError("il VLM non deve essere chiamato su pagina born-digital")
+
+    # codice ancorato nel testo nativo della pagina (grounding lo valida)
+    text_ex = FakeExtractor(
+        {("tab", 1): [RigaGrezza(codice_originale="AB-1234", descrizione="Valvola A", prezzo="12.50")]}
+    )
+
+    result = run_document_massive(
+        str(pdf),
+        conn=pgconn,
+        extractor=ExplodingVlm(),
+        multiplexer=mux,
+        model_name="glm-ocr",
+        schema=SCHEMA,
+        text_extractor_factory=lambda _doc: text_ex,
+    )
+
+    assert result.righe_upsert == 1, "la riga born-digital non e' stata estratta dal text path"
+    assert any(p.route == "HEAVY_TABLE_TEXT" for p in result.pages)
+    # nessun caricamento di modello: il VLM resta a riposo sul percorso testuale
+    assert all(c[0] != "load" for c in rt.calls), f"il VLM e' stato caricato: {rt.calls}"

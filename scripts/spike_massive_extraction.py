@@ -136,7 +136,7 @@ def main() -> int:
             )
             # dettaglio per-pagina
             for po in result.pages:
-                if po.route == "HEAVY_TABLE":
+                if po.route.startswith("HEAVY_TABLE"):
                     logger.info(
                         "  p%d %s valide=%d scarti=%d (%s)",
                         po.page,
@@ -173,7 +173,7 @@ def main() -> int:
         if r is None:
             continue
         for po in r.pages:
-            if po.route == "HEAVY_TABLE" and po.n_scarti > 0:
+            if po.route.startswith("HEAVY_TABLE") and po.n_scarti > 0:
                 logger.info(
                     "  %s p%d: %d righe scartate (codici non ancorati)",
                     r.doc_stem,
