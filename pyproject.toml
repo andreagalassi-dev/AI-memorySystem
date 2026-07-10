@@ -26,6 +26,11 @@ dev = [
     "pytest>=8.0",
     "ruff>=0.4",
 ]
+# Apple Silicon: adapter MLX per Gemma 4 (Fase 1 BLOCCO 1). Lazy-importato nel
+# runtime reale; non richiesto per i test di invarianti (che usano FakeModelRuntime).
+mlx = [
+    "mlx-lm>=0.22",
+]
 
 [tool.uv]
 package = false
