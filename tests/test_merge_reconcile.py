@@ -118,3 +118,16 @@ def test_rerun_purga_scarti_obsoleti(pgconn, qc):
     rep = reconcile_corpus(pgconn, catalog, role=Role.COMMERCIALE, schema=SCHEMA)
     assert rep.scarti == 0
     assert _count_scarti(pgconn) == 0   # gli scarti obsoleti sono stati purgati
+
+
+def test_dry_run_non_scrive_ma_conta(pgconn, qc):
+    _seed_mixed(pgconn, qc)
+    catalog = QdrantVisualCatalog(qc, collection=COLLECTION)
+
+    rep = reconcile_corpus(pgconn, catalog, role=Role.COMMERCIALE, schema=SCHEMA,
+                           dry_run=True)
+
+    # il report riflette la realta' (1 associazione, 2 orfani)...
+    assert (rep.docs, rep.associazioni, rep.scarti) == (1, 1, 2)
+    # ...ma il dry-run e' read-only: niente scritto in scarti_merge
+    assert _count_scarti(pgconn) == 0

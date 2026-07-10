@@ -42,16 +42,22 @@ class ReconcileReport:
 
 
 def reconcile_corpus(conn: psycopg.Connection, catalog: VisualCatalog, *, role: Role,
-                     schema: str = DEFAULT_SCHEMA) -> ReconcileReport:
+                     schema: str = DEFAULT_SCHEMA,
+                     dry_run: bool = False) -> ReconcileReport:
     """Riconcilia l'intero listino documento-per-documento. Idempotente (re-run non
-    duplica), commit per `doc_stem`. Ritorna i conteggi aggregati."""
+    duplica), commit per `doc_stem`. Ritorna i conteggi aggregati.
+
+    `dry_run=True`: **read-only** — calcola il report (documenti, associazioni virtuali,
+    orfani) senza scrivere nulla in `scarti_merge`. Utile per stimare l'ordine di
+    grandezza prima della scrittura definitiva."""
     doc_stems = get_distinct_doc_stems(conn, schema=schema)
     tot_assoc = tot_scarti = 0
     for doc_stem in doc_stems:
         reader = PgRigheListino(conn, schema=schema)
         rows = list(reader.iter_righe(doc_stem=doc_stem))   # chiude il cursore prima di scrivere
         res = merge(rows, catalog, role=role)
-        replace_scarti_for_doc(conn, doc_stem, res.scarti, schema=schema)
+        if not dry_run:
+            replace_scarti_for_doc(conn, doc_stem, res.scarti, schema=schema)
         tot_assoc += len(res.associazioni)
         tot_scarti += len(res.scarti)
     return ReconcileReport(docs=len(doc_stems), associazioni=tot_assoc, scarti=tot_scarti)
@@ -65,20 +71,27 @@ def main(argv: list[str] | None = None) -> None:
     from src.backend.clients.qdrant_client import get_qdrant_client
     from src.common.roles import parse_role
     from src.merge.relational import QdrantVisualCatalog
+    from src.merge.store import init_schema
 
     ap = argparse.ArgumentParser(
         description="Riconciliazione Catalogo x Listino (Fase 2.1).")
     ap.add_argument("--role", required=True,
                     help="ruolo RBAC (back-office: 'amministrazione' -> vede tutte le pagine)")
     ap.add_argument("--schema", default=DEFAULT_SCHEMA, help="schema Postgres (default: estrazione)")
+    ap.add_argument("--dry-run", action="store_true",
+                    help="read-only: stampa il report senza scrivere in scarti_merge")
     args = ap.parse_args(argv)
 
     role = parse_role(args.role)                     # fail-closed su ruolo ignoto
     catalog = QdrantVisualCatalog(get_qdrant_client())
     with psycopg.connect(conninfo()) as conn:
-        rep = reconcile_corpus(conn, catalog, role=role, schema=args.schema)
+        if not args.dry_run:
+            init_schema(conn, schema=args.schema)    # garantisce scarti_merge nello schema target
+        rep = reconcile_corpus(conn, catalog, role=role, schema=args.schema,
+                               dry_run=args.dry_run)
+    suffix = "  (dry-run: nessuna scrittura)" if args.dry_run else ""
     print(f"riconciliazione: doc={rep.docs} associazioni={rep.associazioni} "
-          f"scarti={rep.scarti}")
+          f"scarti={rep.scarti}{suffix}")
 
 
 if __name__ == "__main__":
