@@ -31,6 +31,7 @@ from typing import Protocol, runtime_checkable
 
 from src.common.roles import Role
 from src.ingestion.extraction.schema import RigaListino
+from src.retrieval.pixelrag.index import DEFAULT_VISUAL_COLLECTION
 
 
 class MotivoScartoMerge(str, Enum):
@@ -107,6 +108,54 @@ class FakeVisualCatalog:
             for stem, page, ruoli in self.pages
             if stem == doc_stem and role in ruoli
         }
+
+
+class QdrantVisualCatalog:
+    """Adapter reale `VisualCatalog` su Qdrant `aike_pages_visual` (Fase 2.1).
+
+    `pages_for` NON e' una vector-search: e' uno **scroll** per payload che raccoglie
+    i numeri di pagina distinti del documento visibili al ruolo. Client e collection
+    INIETTATI (come `QdrantVisualIndex`/`PgSqlExecutor`): testabile su collection
+    usa-e-getta. Import di qdrant **lazy** (il modulo resta importabile senza qdrant).
+
+    RBAC non-divergente (DRY): il dict di sicurezza e' quello di `access_filter` — la
+    stessa sorgente del retrieval — tradotto con lo STESSO `MatchValue` di
+    `QdrantVisualIndex._to_filter` (su campo-lista Qdrant fa il "contiene"). Fail-closed:
+    nessun default apre l'accesso; se il ruolo non compare, la pagina non entra."""
+
+    def __init__(self, client, collection: str = DEFAULT_VISUAL_COLLECTION,
+                 scroll_batch: int = 256):
+        self._client = client
+        self._collection = collection
+        self._scroll_batch = scroll_batch
+
+    def pages_for(self, doc_stem: str, *, role: Role) -> set[int]:
+        from qdrant_client import models
+
+        from src.retrieval.pixelrag.search import access_filter
+
+        # doc-scoping + RBAC/versione dal medesimo dict del retrieval; traduzione
+        # identica a QdrantVisualIndex._to_filter (MatchValue, "contiene" su lista).
+        flt = {**access_filter(role), "doc": doc_stem}
+        must = [models.FieldCondition(key=key, match=models.MatchValue(value=str(val)))
+                for key, val in flt.items() if val is not None]
+        qfilter = models.Filter(must=must)
+
+        pages: set[int] = set()
+        offset = None
+        while True:  # scroll loop: cicla su next_page_offset, mai troncare -> no falsi orfani
+            points, offset = self._client.scroll(
+                self._collection, scroll_filter=qfilter, limit=self._scroll_batch,
+                offset=offset, with_payload=True, with_vectors=False)
+            for p in points:
+                raw = (p.payload or {}).get("page")
+                try:
+                    pages.add(int(raw))
+                except (TypeError, ValueError):
+                    continue  # dato sporco/mancante: fail-closed, pagina non esposta
+            if offset is None:
+                break
+        return pages
 
 
 def merge(rows: Iterable[RigaListino], catalog: VisualCatalog, *, role: Role) -> MergeResult:
