@@ -15,10 +15,13 @@ Gli identificatori sono composti con `psycopg.sql` (mai f-string sul nome schema
 from __future__ import annotations
 
 import logging
+from collections.abc import Iterator
+from dataclasses import dataclass
 
 import psycopg
 from psycopg import sql
 
+from src.ingestion.extraction.schema import RigaListino
 from src.merge.relational import ScartoMerge
 
 logger = logging.getLogger(__name__)
@@ -48,6 +51,44 @@ _INSERT_SCARTI_MERGE = sql.SQL(
     VALUES (%s, %s, %s, %s, %s)
     """
 )
+
+
+_SELECT_RIGHE = sql.SQL(
+    "SELECT codice_originale, descrizione, prezzo, codice_normalizzato, doc_stem, page "
+    "FROM {schema}.righe_listino ORDER BY doc_stem, page, codice_normalizzato"
+)
+
+
+@dataclass
+class PgRigheListino:
+    """Reader read-only STREAMING di `righe_listino` -> `RigaListino` (input di `merge`).
+
+    Anti-OOM: un listino da migliaia di righe non entra in RAM in una lista. `iter_righe`
+    e' un generatore che scorre un **server-side cursor** Postgres (`conn.cursor(name=...)`,
+    fetch a `chunk_size`), mai un `fetchall()` unico. Il cursore nominato esige una
+    transazione: `with conn.transaction()` la garantisce anche se `conn` e' in autocommit
+    (e usa un savepoint se una transazione e' gia' aperta). Connessione INIETTATA e schema
+    parametrizzabile (test usa-e-getta), come `PgSqlExecutor`. Solo SELECT: read-only."""
+
+    conn: psycopg.Connection
+    schema: str = DEFAULT_SCHEMA
+    chunk_size: int = 1000
+
+    def iter_righe(self) -> Iterator[RigaListino]:
+        q = _SELECT_RIGHE.format(schema=sql.Identifier(self.schema))
+        with self.conn.transaction():
+            with self.conn.cursor(name="righe_listino_stream") as cur:
+                cur.itersize = self.chunk_size
+                cur.execute(q)
+                for cod_orig, descr, prezzo, cod_norm, doc_stem, page in cur:
+                    yield RigaListino(
+                        codice_originale=cod_orig,
+                        descrizione=descr,
+                        prezzo=prezzo,
+                        codice_normalizzato=cod_norm,
+                        doc_stem=doc_stem,
+                        page=page,
+                    )
 
 
 def init_schema(conn: psycopg.Connection, *, schema: str = DEFAULT_SCHEMA) -> None:
