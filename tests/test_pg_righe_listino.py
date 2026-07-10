@@ -75,3 +75,16 @@ class TestPgRigheListino:
         pages = [r.page for r in reader.iter_righe()]
 
         assert pages == [1, 2, 3, 4, 5]  # tutte le righe, ordine deterministico
+
+    def test_iter_righe_filtra_per_doc_stem(self, pgconn):
+        # l'orchestratore cicla un documento alla volta: il filtro isola le righe del doc
+        upsert_righe(pgconn, [
+            _riga("A1", "doc_uno", 1), _riga("A2", "doc_uno", 2),
+            _riga("B1", "doc_due", 1),
+        ], schema=SCHEMA)
+        reader = PgRigheListino(pgconn, schema=SCHEMA)
+
+        righe = list(reader.iter_righe(doc_stem="doc_uno"))
+
+        assert {r.doc_stem for r in righe} == {"doc_uno"}
+        assert [r.page for r in righe] == [1, 2]
