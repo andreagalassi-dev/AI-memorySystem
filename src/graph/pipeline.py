@@ -636,15 +636,19 @@ def _default_deps(role: Role) -> Deps:
     from src.backend.clients.ollama_client import OllamaModel
     llm = OllamaModel()
 
-    # Fase 1.3 — ramo VISUAL: retrieval PixelRAG reale su `aike_pages_visual` (ColQwen2
-    # + Qdrant), RBAC/versioning fail-closed dentro visual_search. Fail-safe come sopra:
-    # se Qdrant/collection/embedder mancano -> None -> VISUAL degrada a NARRATIVE.
-    # Lazy: ColQwen2Embedder non importa torch finche' non si embedda davvero.
+    # Fase 1.3 — ramo VISUAL: retrieval PixelRAG reale su `aike_pages_visual`
+    # (Qwen3-VL + Qdrant), RBAC/versioning fail-closed dentro visual_search.
+    # Fail-safe come sopra: se Qdrant/collection/embedder mancano -> None ->
+    # VISUAL degrada a NARRATIVE. Lazy: Qwen3VLEmbedder non importa torch
+    # finche' non si embedda davvero. Il multiplexer e' opzionale (None in
+    # fase 0 single-tenant): se verra' iniettato, l'embedder ne usera'
+    # l'hook di eviction; oggi resta compatibile (no-op).
     try:
-        from src.retrieval.pixelrag.embedder import ColQwen2Embedder
+        from src.retrieval.pixelrag.embedder import Qwen3VLEmbedder
         from src.retrieval.pixelrag.index import QdrantVisualIndex
         from src.graph.tools.visual_tool import make_visual_search
-        visual_search = make_visual_search(ColQwen2Embedder(), QdrantVisualIndex(qc))
+        visual_search = make_visual_search(
+            Qwen3VLEmbedder(), QdrantVisualIndex(qc))
     except Exception:
         visual_search = None
 
