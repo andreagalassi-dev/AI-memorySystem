@@ -42,6 +42,7 @@ from src.ingestion.extraction.load import DEFAULT_SCHEMA
 from src.ingestion.extraction.schema import RigaListino, Scarto
 from src.ingestion.extraction.table_detect import is_table_page
 from src.ingestion.fast_dispatch import DocumentDispatch, Route, dispatch_pdf
+from src.ingestion.ocr_fallback import OcrProvider, needs_ocr
 from src.serving.multiplexer import ModelMultiplexer
 
 logger = logging.getLogger(__name__)
@@ -152,6 +153,7 @@ def run_document_massive(
     schema: str = DEFAULT_SCHEMA,
     dpi: int = 200,
     max_pages: int = 0,
+    ocr: OcrProvider | None = None,
 ) -> MassiveDocumentOutcome:
     """Processa UN PDF attraverso la pipeline a triplo binario.
 
@@ -164,6 +166,8 @@ def run_document_massive(
       schema: schema Postgres di destinazione (override per test).
       dpi: DPI per il rendering delle pagine HEAVY (default 200).
       max_pages: se >0, elabora solo le prime N pagine (spike/test su PDF grandi).
+      ocr: provider OCR fallback per pagine senza text-layer (scan puro). Se None,
+           le pagine scan puro restano senza text-layer e il grounding scarta tutto.
 
     Ritorna: MassiveDocumentOutcome con conteggi aggregati e esito per-pagina.
 
@@ -228,9 +232,43 @@ def run_document_massive(
                 # --- HEAVY: pagina con immagini/tabelle -> binario estrazione ---
                 page = doc.load_page(page_no - 1)
 
-                # table_detect: salta le pagine HEAVY che non sono tabelle
+                # OCR FALLBACK: se la pagina ha un text-layer insufficiente (scan
+                # puro), il table_detect e il grounding non hanno nulla su cui
+                # lavorare. L'OCR genera un text-layer "invisibile" che alimenta
+                # entrambi. Senza OCR, le pagine scan puro vengono saltate dal
+                # table_detect (fail-closed: nessuna riga fabbricata).
+                page_text = page.get_text("text")
+                ocr_used = False
+                if needs_ocr(page) and ocr is not None:
+                    ocr_text = ocr.extract_text(page)
+                    if ocr_text:
+                        page_text = ocr_text
+                        ocr_used = True
+                        logger.info(
+                            "runner: doc_stem=%s page=%d OCR fallback attivato "
+                            "(text-layer insufficiente, %d chars da OCR)",
+                            doc_stem,
+                            page_no,
+                            len(ocr_text),
+                        )
+                    else:
+                        logger.warning(
+                            "runner: doc_stem=%s page=%d OCR fallback fallito — "
+                            "grounding senza text-layer (tutto scartato)",
+                            doc_stem,
+                            page_no,
+                        )
+
+                # table_detect: salta le pagine HEAVY che non sono tabelle.
+                # Nota: per le pagine scan puro con OCR, il table_detect usa
+                # feature geometriche (linee/colonne) che non dipendono dal
+                # text-layer, ma ha una guardia n_words >= MIN_WORDS. Se l'OCR
+                # ha prodotto testo ma n_words e' ancora 0 (perche' table_detect
+                # legge dal text-layer nativo, non dall'OCR), bypassiamo il check
+                # quando abbiamo testo OCR: una pagina HEAVY con OCR text e'
+                # candidata all'estrazione.
                 verdict = is_table_page(page)
-                if not verdict.is_table:
+                if not verdict.is_table and not ocr_used:
                     page_outcomes.append(
                         MassivePageOutcome(
                             page=page_no, route="HEAVY_NON_TABLE", reason=verdict.reason
@@ -263,9 +301,9 @@ def run_document_massive(
                     RigaListino.from_grezza(g, doc_stem=doc_stem, page=page_no) for g in grezze
                 ]
 
-                # Grounding: il text-layer e' la fonte di verita' INDIPENDENTE.
-                # Le scansioni pure (text-layer vuoto) falliscono correttamente qui.
-                page_text = page.get_text("text")
+                # Grounding: il text-layer (o l'OCR fallback) e' la fonte di
+                # verita' INDIPENDENTE dal modello. I codici estratti dal VLM
+                # devono essere ancorati a token presenti nel testo della pagina.
                 valide, scarti = partition(righe, page_text)
                 summary = _persist_tx(conn, valide, scarti, schema=schema)
 
