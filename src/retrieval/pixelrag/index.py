@@ -137,3 +137,57 @@ class FakeVisualIndex:
                                     kind=p.kind, row=p.row, col=p.col, score=score))
         scored.sort(key=lambda h: (-h.score, h.point_id))
         return scored[:k]
+
+
+DEFAULT_VISUAL_COLLECTION = "aike_pages_visual"
+
+
+class QdrantVisualIndex:
+    """Adapter reale `VisualIndex` su Qdrant (Fase 1.3, ramo VISUAL).
+
+    Punta di default sulla collection `aike_pages_visual` (P2.7/P4): un punto = una
+    PAGINA, multivettore ColQwen2, comparator MaxSim. Client e collection INIETTATI
+    (come `PgSqlExecutor`): l'adapter e' testabile su una collection usa-e-getta.
+
+    Il filtro RBAC/versioning generico (`{ruoli_consentiti, version_status}`, prodotto
+    da `search.access_filter`) viene tradotto in `models.Filter` con `MatchValue`: su
+    un campo-lista Qdrant fa il "contiene", quindi `ruoli_consentiti=<ruolo>` matcha le
+    pagine che ammettono quel ruolo. Fail-closed: nessun default che apra l'accesso —
+    se il ruolo non compare, la pagina non torna. La ricomposizione pagina (MaxSim tra
+    tile) la fa Qdrant; `pages_from_tiles` a valle e' un pass-through (1 hit = 1 pagina).
+    """
+
+    def __init__(self, client, collection: str = DEFAULT_VISUAL_COLLECTION):
+        self._client = client
+        self._collection = collection
+
+    @staticmethod
+    def _to_filter(flt: dict | None):
+        from qdrant_client import models
+        if not flt:
+            return None
+        must = [models.FieldCondition(key=key, match=models.MatchValue(value=str(val)))
+                for key, val in flt.items() if val is not None]
+        return models.Filter(must=must) if must else None
+
+    def upsert(self, points: Sequence[VisualPoint]) -> int:
+        from qdrant_client import models
+        structs = [models.PointStruct(id=p.point_id, vector=p.vector, payload=p.payload)
+                   for p in points]
+        if structs:
+            self._client.upsert(self._collection, points=structs)
+        return len(structs)
+
+    def search(self, query_vector: Sequence[float], k: int,
+               *, flt: dict | None = None) -> list[VisualHit]:
+        res = self._client.query_points(
+            self._collection, query=query_vector, query_filter=self._to_filter(flt),
+            limit=k, with_payload=True)
+        hits = []
+        for sp in res.points:
+            pl = sp.payload or {}
+            hits.append(VisualHit(
+                point_id=str(sp.id), doc=pl.get("doc"), page=pl.get("page"),
+                kind=pl.get("kind", KIND_THUMB), row=pl.get("row", -1),
+                col=pl.get("col", -1), score=sp.score))
+        return hits

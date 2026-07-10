@@ -636,8 +636,21 @@ def _default_deps(role: Role) -> Deps:
     from src.backend.clients.ollama_client import OllamaModel
     llm = OllamaModel()
 
+    # Fase 1.3 — ramo VISUAL: retrieval PixelRAG reale su `aike_pages_visual` (ColQwen2
+    # + Qdrant), RBAC/versioning fail-closed dentro visual_search. Fail-safe come sopra:
+    # se Qdrant/collection/embedder mancano -> None -> VISUAL degrada a NARRATIVE.
+    # Lazy: ColQwen2Embedder non importa torch finche' non si embedda davvero.
+    try:
+        from src.retrieval.pixelrag.embedder import ColQwen2Embedder
+        from src.retrieval.pixelrag.index import QdrantVisualIndex
+        from src.graph.tools.visual_tool import make_visual_search
+        visual_search = make_visual_search(ColQwen2Embedder(), QdrantVisualIndex(qc))
+    except Exception:
+        visual_search = None
+
     return Deps(retrieve=_retrieve("current"), synthesize=synthesize,
                 catalog_lookup=catalog_lookup, thresholds=CALIBRATED_V1,
                 retrieve_superseded=_retrieve("superseded"),
                 retrieve_deleted=_retrieve("deleted"),
-                expand=expand_query, sql_query=sql_query, llm=llm)
+                expand=expand_query, sql_query=sql_query, llm=llm,
+                visual_search=visual_search)
