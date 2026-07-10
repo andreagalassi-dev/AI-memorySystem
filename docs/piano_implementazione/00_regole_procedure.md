@@ -12,7 +12,7 @@ Il sistema adotta una **gerarchia di modelli** che scala in base all'hardware:
 | Ruolo | Modello Primario Locale | Futuro (Produzione/Server dedicati) |
 |-------|------------------------|------------------------------------|
 | **Cervello / Ragionatore** | Google Gemma 4 (12B o 26B MoE) con Multi-Token Prediction (tramite `mlx`) | NVIDIA Nemotron-Cascade-2 (30B MoE) o Modelli >70B su GPU |
-| **Estrazione Tabelle** | DeepSeek-OCR-2 (3B) — ~3 GB a Q4 | MinerU 2.5 / olmOCR-2 |
+| **Estrazione Tabelle** | GLM-OCR (3B) — ~3 GB a Q4 | MinerU 2.5 / olmOCR-2 |
 | **Retrieval Visivo** | PixelRAG (Qwen3-VL-Embedding) | — |
 
 **Ottimizzazione Hardware-Aware:**

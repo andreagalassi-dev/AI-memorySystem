@@ -12,7 +12,7 @@ reali. Per la Fase 2 conta lo stato dei dati persistiti — verificato con query
 
 - **DB Prezzi (relazionale, ESISTE):** `estrazione.righe_listino(doc_stem, page,
   codice_normalizzato, codice_originale, descrizione, prezzo, updated_at)`. Popolato dal
-  binario di estrazione 1.2 (DeepSeek-OCR-2 → doppia barriera Fail-Closed). **Ha già la
+  binario di estrazione 1.2 (GLM-OCR → doppia barriera Fail-Closed). **Ha già la
   chiave `codice_normalizzato`** (da `src/ingestion/codes.py::canonical`, `[0-9A-Z]`).
 - **Scarti estrazione (ESISTE):** `estrazione.scarti_estrazione(id, doc_stem, page,
   codice_originale, codice_normalizzato_tentato, payload_raw jsonb, motivo, created_at)`.

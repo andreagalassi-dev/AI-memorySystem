@@ -27,7 +27,7 @@ Questa fase rappresenta lo scaglione finale e si attiva **solo dopo** che il pro
 ```
 [Infrastruttura Dati Preesistente (Fase 0)]
         │
-        ├──→ Fase 1: Pipeline Doppio Binario (PixelRAG + DeepSeek-OCR + Gemma 4)
+        ├──→ Fase 1: Pipeline Doppio Binario (PixelRAG + GLM-OCR + Gemma 4)
         │       │
         │       ├──→ Fase 2: Merge Cataloghi/Listini
         │       │

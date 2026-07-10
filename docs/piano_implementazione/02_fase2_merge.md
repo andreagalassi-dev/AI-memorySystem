@@ -1,6 +1,6 @@
 # Fase 2 — Esportazione Massiva Incrociata (Catalogo + Listino)
 
-> **Dipende da:** Fase 1.2 (DeepSeek-OCR-2 funzionante e validato)
+> **Dipende da:** Fase 1.2 (GLM-OCR funzionante e validato)
 > **Obiettivo:** Unire le informazioni lette dai cataloghi grafici (esplosi) con i dati letti dai listini prezzi (griglie) in un database relazionale unico con codici normalizzati.
 
 ## 2.1 Funzione di Merge e Cucitura Relazionale (SQL)

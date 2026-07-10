@@ -14,7 +14,7 @@ Il sistema adotta una **gerarchia di modelli** che scala in base all'hardware:
 | Ruolo | Modello Primario Locale | Futuro (Produzione/Server dedicati) |
 |-------|------------------------|------------------------------------|
 | **Cervello / Ragionatore** | Google Gemma 4 (12B o 26B MoE) con Multi-Token Prediction (tramite `mlx`) | NVIDIA Nemotron-Cascade-2 (30B MoE) o Modelli >70B su GPU dedicate |
-| **Estrazione Tabelle** | DeepSeek-OCR-2 (3B) — ~3 GB a Q4 | MinerU 2.5 / olmOCR-2 |
+| **Estrazione Tabelle** | GLM-OCR (3B) — ~3 GB a Q4 | MinerU 2.5 / olmOCR-2 |
 | **Retrieval Visivo** | PixelRAG (Qwen3-VL-Embedding) | — |
 
 **Ottimizzazione Hardware-Aware (Framework di Inferenza):**
@@ -43,7 +43,7 @@ L'intuizione architetturale è confermata: usare un solo modello per due task op
 
 ### 1.0 Fast-Dispatch (Puro Testo)
 - **Classificazione iniziale:** Un micro-step verifica se il PDF è "born-digital" e se la pagina contiene solo testo (es. introduzioni, indici, normative).
-- **Estrazione rapida:** In caso positivo, il testo viene estratto istantaneamente tramite librerie ultra-leggere (es. `PyMuPDF`), bypassando completamente i modelli AI pesanti (PixelRAG e DeepSeek-OCR) e risparmiando enormi quantità di compute e RAM.
+- **Estrazione rapida:** In caso positivo, il testo viene estratto istantaneamente tramite librerie ultra-leggere (es. `PyMuPDF`), bypassando completamente i modelli AI pesanti (PixelRAG e GLM-OCR) e risparmiando enormi quantità di compute e RAM.
 
 ### 1.1 Binario Ricerca/RAG (PixelRAG)
 - Tutti i PDF vengono ingeriti visivamente da PixelRAG: ogni pagina è renderizzata in tile screenshot ad alta risoluzione.
@@ -51,26 +51,26 @@ L'intuizione architetturale è confermata: usare un solo modello per due task op
 - Il Chatbot per rispondere alle domande visive (esplosi, schemi) userà **esclusivamente** questo database per avere il contesto perfetto della pagina originale.
 - **Il retrieval testuale/BM25 resta attivo in parallelo** per le query su codici alfanumerici (`AB-12345-X`) — la ricerca ibrida è indispensabile.
 
-### 1.2 Binario Estrazione Massiva Dati (DeepSeek-OCR-2 + Generazione Strutturata)
-- Gli stessi PDF (soprattutto listini e griglie) vengono processati da DeepSeek-OCR-2 (3B parametri).
+### 1.2 Binario Estrazione Massiva Dati (GLM-OCR + Generazione Strutturata)
+- Gli stessi PDF (soprattutto listini e griglie) vengono processati da GLM-OCR (3B parametri).
 - Lo scopo *non* è rispondere alle domande della chat, ma estrarre tabelle CSV/JSON strutturate per popolare PostgreSQL.
 - **Enforcement dello Schema:** Per evitare output imperfetti, l'estrazione verrà supportata da framework come **PydanticAI** o **Instructor**, forzando rigorosamente il modello a rispettare gli schemi JSON/Tabelle desiderati prima dell'ingestion nel DB.
 - Questo abilita il Merge accurato di Cataloghi/Listini e l'allineamento dei codici per l'ERP aziendale.
-- **Gestione celle unite, tabelle multi-pagina, intestazioni ripetute**: DeepSeek-OCR-2 usa Visual Causal Flow per determinarle automaticamente — va comunque validato sul corpus reale (è il Gate P1).
+- **Gestione celle unite, tabelle multi-pagina, intestazioni ripetute**: GLM-OCR usa Visual Causal Flow per determinarle automaticamente — va comunque validato sul corpus reale (è il Gate P1).
 
 ### 1.3 Il Cervello Unificatore
 - **Primario:** NVIDIA Nemotron-Cascade-2 (30B MoE, solo 3B attivi per token) — ~24 GB a Q4_K_M, compatibile con 32 GB di memoria unificata a 15-35 t/s su Apple Silicon.
 - **Fallback:** Google Gemma 4 12B (~8-12 GB a Q4) o Gemma 4 26B MoE (~18 GB a Q4) con Multi-Token Prediction (1.4-2.2x velocità) — se Nemotron è troppo lento o la RAM è insufficiente per caricare anche gli altri modelli.
 - L'LLM riceve i task dal grafo LangGraph:
   - Sbircia le immagini trovate da PixelRAG per le domande visive.
-  - Interroga le righe CSV lette da DeepSeek-OCR-2 tramite **Text-to-SQL** per le domande su codici/prezzi/quantità.
+  - Interroga le righe CSV lette da GLM-OCR tramite **Text-to-SQL** per le domande su codici/prezzi/quantità.
   - Il routing è gestito dal nodo Router del grafo (P3).
 
 ---
 
 ## Fase 2 — Esportazione Massiva Incrociata (Catalogo + Listino)
 
-> **Dipende da:** Fase 1.2 (DeepSeek-OCR-2 funzionante e validato)
+> **Dipende da:** Fase 1.2 (GLM-OCR funzionante e validato)
 > **Obiettivo:** unire cataloghi e listini in un database unico con codici normalizzati.
 
 ### 2.1 Funzione di Merge e Cucitura Relazionale (SQL)
@@ -218,7 +218,7 @@ Questa fase si attiva **solo dopo** aver dimostrato il valore del sistema e aver
 ```
 P0-P4 (SPEC.md)
   │
-  ├──→ Fase 1: Pipeline Doppio Binario (PixelRAG + DeepSeek-OCR-2 + Cervello)
+  ├──→ Fase 1: Pipeline Doppio Binario (PixelRAG + GLM-OCR + Cervello)
   │       │
   │       ├──→ Fase 2: Merge Cataloghi/Listini
   │       │
