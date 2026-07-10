@@ -41,7 +41,7 @@ from src.ingestion.extraction.grounding import partition
 from src.ingestion.extraction.load import DEFAULT_SCHEMA
 from src.ingestion.extraction.schema import RigaListino, Scarto
 from src.ingestion.extraction.table_detect import is_table_page
-from src.ingestion.fast_dispatch import Route, dispatch_pdf
+from src.ingestion.fast_dispatch import DocumentDispatch, Route, dispatch_pdf
 from src.serving.multiplexer import ModelMultiplexer
 
 logger = logging.getLogger(__name__)
@@ -151,6 +151,7 @@ def run_document_massive(
     model_name: str,
     schema: str = DEFAULT_SCHEMA,
     dpi: int = 200,
+    max_pages: int = 0,
 ) -> MassiveDocumentOutcome:
     """Processa UN PDF attraverso la pipeline a triplo binario.
 
@@ -162,6 +163,7 @@ def run_document_massive(
       model_name: nome del modello da caricare via multiplexer per l'estrazione HEAVY.
       schema: schema Postgres di destinazione (override per test).
       dpi: DPI per il rendering delle pagine HEAVY (default 200).
+      max_pages: se >0, elabora solo le prime N pagine (spike/test su PDF grandi).
 
     Ritorna: MassiveDocumentOutcome con conteggi aggregati e esito per-pagina.
 
@@ -175,6 +177,18 @@ def run_document_massive(
 
     # 1. Fast-Dispatch: classifica ogni pagina (born-digital solo-testo vs HEAVY).
     dispatch = dispatch_pdf(filepath, extract_text=False)
+    # Limita alle prime max_pages pagine se richiesto (spike su PDF grandi).
+    if max_pages and max_pages < dispatch.n_pages:
+        dispatch = DocumentDispatch(
+            filepath=dispatch.filepath,
+            born_digital=dispatch.born_digital,
+            n_pages=max_pages,
+            pages=dispatch.pages[:max_pages],
+            fast_pages=sum(1 for p in dispatch.pages[:max_pages] if p.route is Route.FAST_TEXT),
+            heavy_pages=sum(
+                1 for p in dispatch.pages[:max_pages] if p.route is not Route.FAST_TEXT
+            ),
+        )
     fast_pages = dispatch.fast_pages
     heavy_pages = dispatch.heavy_pages
     logger.info(
