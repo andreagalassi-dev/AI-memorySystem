@@ -92,11 +92,44 @@ def test_mlx_model_real():
     
     runtime = MlxModelRuntime()
     multiplexer = ModelMultiplexer(runtime)
-    llm = MLXModel(settings.logic_model, multiplexer, options={"max_tokens": 5})
+    llm = MLXModel(settings.logic_model, multiplexer, options={"max_tokens": 300})
     
     # Questo fara' il load vero e proprio e generera' 1 token.
     # Se il modello non esiste o la RAM non basta, DEVE fallire rumorosamente.
     out = llm.generate("Sei un assistente.", "Ciao")
     assert isinstance(out, str)
-    assert len(out) > 0
-    print(f"Generato: {out!r}")
+    assert out.strip() != ""
+    print(f"\nGenerato: {repr(out)}")
+
+class TestMlxReasoningParsing:
+    def test_parsing_casi_reasoning(self, monkeypatch):
+        from src.serving.multiplexer import MlxModelRuntime
+        
+        # Fake mlx_lm
+        class FakeMlxLm:
+            def __init__(self):
+                self.sample_utils = type("SampleUtils", (), {"make_sampler": lambda temp: None})()
+            def load(self, name):
+                return "fake_model", type("FakeTok", (), {"apply_chat_template": lambda msgs, **k: "prompt"})()
+            def generate(self, model, tokenizer, prompt, **kwargs):
+                return self.mock_output
+        
+        fake_mlx = FakeMlxLm()
+        
+        runtime = MlxModelRuntime()
+        # Mocking lazy import
+        monkeypatch.setattr(runtime, "_load_mlx", lambda: fake_mlx)
+        runtime.load("test-model", 1000)
+        
+        # Caso 1: solo risposta (niente reasoning tags)
+        fake_mlx.mock_output = "Risposta diretta"
+        assert runtime.generate("test-model", messages=[]) == "Risposta diretta"
+        
+        # Caso 2: thought + risposta
+        fake_mlx.mock_output = "<|channel>thought\nSto pensando...\n<channel|>Risposta vera"
+        assert runtime.generate("test-model", messages=[]) == "Risposta vera"
+        
+        # Caso 3: solo thought (es. max_tokens raggiunto prima della fine) -> solleva
+        fake_mlx.mock_output = "<|channel>thought\nSto pensando ma non finisco"
+        with pytest.raises(RuntimeError, match="Formato reasoning incompleto"):
+            runtime.generate("test-model", messages=[])

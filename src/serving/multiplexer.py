@@ -202,7 +202,21 @@ class MlxModelRuntime:
         generate_kwargs.update(kwargs)
         
         if messages:
-            prompt = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+            prompt = tokenizer.apply_chat_template(
+                messages, 
+                tokenize=False, 
+                add_generation_prompt=True,
+                enable_thinking=True
+            )
             
         response = mlx_lm.generate(model, tokenizer, prompt=prompt, **generate_kwargs)
+        
+        # Parsing del canale di ragionamento (es. Gemma 4)
+        # Formato atteso: <|channel>thought\n...<channel|>Risposta finale
+        if "<|channel>thought" in response:
+            parts = response.split("<channel|>", 1)
+            if len(parts) < 2:
+                raise RuntimeError("Formato reasoning incompleto: impossibile estrarre la risposta finale")
+            response = parts[1].lstrip("\n")
+            
         return response
