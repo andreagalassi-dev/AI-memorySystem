@@ -542,7 +542,22 @@ def _default_deps(role: Role) -> Deps:
     from src.retrieval.synthesis import synthesize as _synth
 
     qc = get_qdrant_client()
-    oc = get_ollama_client()
+
+    import logging
+    from src.graph.llm import MLXModel, FallbackLLM
+    from src.serving.multiplexer import ModelMultiplexer, MlxModelRuntime
+    from src.backend.clients.ollama_client import OllamaModel
+    from src.backend.config import settings
+
+    logger = logging.getLogger(__name__)
+
+    mlx_runtime = MlxModelRuntime(default_num_ctx=settings.local_ctx_cap)
+    multiplexer = ModelMultiplexer(mlx_runtime, max_resident=1, ctx_cap=settings.local_ctx_cap)
+    
+    primary_llm = MLXModel(settings.logic_model, multiplexer)
+    fallback_llm = OllamaModel()
+    
+    llm = FallbackLLM(primary_llm, fallback_llm)
 
     def _to_ev(hit, score) -> Evidence:
         p = hit.payload
@@ -612,7 +627,7 @@ def _default_deps(role: Role) -> Deps:
         return r.count > 0
 
     def synthesize(query: str, ev: list[Evidence]) -> str:
-        return _synth(oc, query, [e._asdict() for e in ev], model=None)
+        return _synth(llm, query, [e._asdict() for e in ev])
 
     from src.retrieval.expansion import expand_query
 
@@ -628,13 +643,6 @@ def _default_deps(role: Role) -> Deps:
         sql_query = PgSqlExecutor(get_pg_conn_readonly())
     except Exception:
         sql_query = None
-
-    # Fase 1.3 — LLM del render STRUCTURED: OllamaModel (reasoner locale gia' attivo).
-    # Costruzione lazy (nessuna connessione qui); se Ollama e' giu' l'errore emerge in
-    # render_node -> system_error (fail-closed). Con sql_query != None il ramo STRUCTURED
-    # e' ora ACCESO. L'MLXModel sara' un drop-in futuro sullo stesso Port.
-    from src.backend.clients.ollama_client import OllamaModel
-    llm = OllamaModel()
 
     # Fase 1.3 — ramo VISUAL: retrieval PixelRAG reale su `aike_pages_visual`
     # (Qwen3-VL + Qdrant), RBAC/versioning fail-closed dentro visual_search.
