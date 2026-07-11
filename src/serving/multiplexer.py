@@ -171,13 +171,38 @@ class MlxModelRuntime:
     def resident(self) -> set[str]:
         return set(self._models)
 
-    def generate(self, name: str, prompt: str, max_tokens: int = 512) -> str:
+    def generate(self, name: str, prompt: str = "", messages: list[dict] | None = None, **kwargs) -> str:
         """Genera testo con un modello residente (fail-closed se non caricato)."""
         if name not in self._models:
             raise RuntimeError(
                 f"modello {name!r} non residente: chiamare use() via il Multiplexer prima"
             )
         mlx_lm = self._load_mlx()
+        import mlx.core as mx
+        
         model, tokenizer, num_ctx = self._models[name]
-        response = mlx_lm.generate(model, tokenizer, prompt=prompt, max_tokens=max_tokens)
+        
+        # Estrai opzioni Port -> mappa ai veri parametri mlx_lm
+        max_tokens = kwargs.pop("max_tokens", 512)
+        temp = kwargs.pop("temp", None)
+        seed = kwargs.pop("seed", None)
+        
+        # Mappa opzioni MLX
+        generate_kwargs = {"max_tokens": max_tokens}
+        
+        if seed is not None:
+            mx.random.seed(seed)
+        
+        if temp is not None:
+            # Crea un sampler. temp > 0 o 0.0 gestito dal make_sampler di mlx_lm
+            sampler = mlx_lm.sample_utils.make_sampler(temp=temp)
+            generate_kwargs["sampler"] = sampler
+            
+        # Altre kwargs rimanenti (es. per future estensioni) le accodiamo
+        generate_kwargs.update(kwargs)
+        
+        if messages:
+            prompt = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+            
+        response = mlx_lm.generate(model, tokenizer, prompt=prompt, **generate_kwargs)
         return response
