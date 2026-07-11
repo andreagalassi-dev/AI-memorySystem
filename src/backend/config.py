@@ -34,9 +34,9 @@ class Settings(BaseSettings):
     postgres_ro_password: str = "aike_ro_dev"  # dev-only; override da .env
 
     # --- Modelli (Fase 1, allineato a PIANO-IMPLEMENTAZIONE.md) ---
-    # Cervello / ragionatore: Google Gemma 4 12B servito via MLX da HuggingFace
-    # (non Ollama). Caricato/scaricato dal ModelMultiplexer (src/serving).
-    logic_model: str = "google/gemma-4-12b-it"
+    # Cervello / ragionatore: Google Gemma 4 12B servito via MLX da HuggingFace.
+    # Alternativa più capace (se serve maggior reasoning): mlx-community/Nemotron-Cascade-2-30B-A3B-4bit
+    logic_model: str = "mlx-community/gemma-4-12B-it-qat-4bit"
     # Estrazione visiva tabelle: GLM-OCR (zai-org/GLM-OCR, ~2GB BF16, 1B params).
     # Standard transformers (AutoModelForImageTextToText), no custom_code, MPS-safe.
     extraction_model: str = "zai-org/GLM-OCR"
@@ -45,13 +45,11 @@ class Settings(BaseSettings):
     # RAM libera per gli embedder residenti. Clampato dal ModelMultiplexer.
     local_ctx_cap: int = 16000
 
-    # --- Ollama legacy (transizionale) ---
-    # Usato ancora dal client Ollama (src/backend/clients/ollama_client.py) per il
-    # grafo P3.4 in attesa del drop-in dell'adapter MLX sul Port LanguageModel.
-    # NON e' piu' il model di logica (ora logic_model via MLX). Verra' rimosso a
-    # completamento del BLOCCO 3, quando il runner massivo usera' il Multiplexer.
+    # --- Ollama fallback ---
+    # Ollama resta ESCLUSIVAMENTE come fallback di transizione nel caso in cui
+    # MLXModel fallisca o mlx-lm non sia disponibile.
     ollama_host: str = "http://localhost:11434"  # env OLLAMA_HOST
-    ollama_model: str = "qwen2.5:14b"  # legacy grafo P3.4 (non logica)
+    ollama_model: str = "qwen2.5:14b"  # fallback model
 
     # --- Backend ---
     backend_host: str = "0.0.0.0"
