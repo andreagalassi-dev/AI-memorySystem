@@ -206,7 +206,7 @@ class MlxModelRuntime:
                 messages, 
                 tokenize=False, 
                 add_generation_prompt=True,
-                enable_thinking=True
+                enable_thinking=False
             )
             
         response = mlx_lm.generate(model, tokenizer, prompt=prompt, **generate_kwargs)

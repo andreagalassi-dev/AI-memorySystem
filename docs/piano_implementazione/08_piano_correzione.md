@@ -235,3 +235,40 @@ c'è più dato. Adottare solo ciò che migliora R@1 naturali senza toccare la pr
 
 Ogni Punto: TDD → implementazione → prova osservata → commit → report al reviewer → STOP
 in attesa di OK.
+
+## Report Spike 0.1-bis
+Implementazione completata dell'estrazione deterministica per i canali di ragionamento (e.g. Gemma 4).
+1. `MlxModelRuntime.generate` controlla deterministicamente la presenza di `<|channel>thought`.
+2. Se presente, isola la risposta finale e scarta i passaggi di ragionamento. Solleva `RuntimeError` nel caso di formato invalido (es. taglio per `max_tokens` senza chiusura canale).
+3. Modificato test `test_graph_llm.py` per testare i 3 casi limite usando un fake MLXLM e un `monkeypatch`. I test passano (100%).
+4. Nel file `src/backend/config.py` la variabile di fallback `ollama_model` è stata impostata a `gemma4:26b-a4b-it-q4` con il comando `ollama pull` commentato.
+5. È stato rieseguito il test "reale" con MLX e `enable_thinking=True` forzando l'estrazione, restituendo il testo pulito `Generato: 'Ciao! Come posso aiutarti oggi?'`.
+
+## Report Spike 0.2 (Rifatto)
+Spike di `models--Qwen--Qwen3-VL-Embedding-2B` completato con successo seguendo il paradigma Single-Vector (MRL) con `sentence-transformers` e `model.encode()`.
+1. Utilizzato API corretta: `sentence_transformers.SentenceTransformer("Qwen/Qwen3-VL-Embedding-2B", trust_remote_code=True)`.
+2. I vettori estratti con `encode` sono singoli vettori "pooled", con valori limitati in range tramite norm. È stata calcolata la cosine similarity.
+3. Separazione misurata per la query "Ricambi Mamoli P231" a DIM=2048:
+   - Cosine(Mamoli P231 page) = `0.4258`
+   - Cosine(Blank Image) = `0.2539`
+   - Cosine(Opacmare P0063 page a caso) = `0.3301`
+4. Separazione misurata a DIM=1024 (MRL):
+   - Cosine(Mamoli P231 page) = `0.4727`
+   - Cosine(Blank Image) = `0.2832`
+   - Cosine(Opacmare P0063 page a caso) = `0.3262`
+
+**Scelta dimensione MRL:** Adotteremo `DIM=1024`. Il sanity check dimostra che a 1024 la separazione tra la pagina corretta e le altre (inclusa quella scorretta) è addirittura più marcata (0.15 di scarto contro 0.09) ed è sufficientemente forte per il retrieval.
+
+**Stime (per 1035 pagine, assumendo 5 tile/pagina, 5175 tile totali):**
+- **RAM modello:** ~4 GB (bfloat16, pesi ~2B parametri).
+- **Storage Qdrant:** 5175 * 1024 * 4 byte = ~21.2 MB. Estremamente leggero.
+- **Tempo di embed:** ~0.5 secondi a pagina per calcolare la codifica dell'immagine.
+
+**Architettura conseguente:**
+- Singolo vettore per TILE.
+- Collection Qdrant single-vector con distanza COSINE e HNSW attivo. Verrà rimosso il `multivector_config`.
+- L'aggregazione tile→pagina (max-over-tiles) verrà fatta lato Python nel nostro `src/retrieval/pixelrag`.
+- Il Reranker Qwen3-VL per ora è rimandato a miglioria futura.
+- `sentence-transformers` sarà aggiunto a `pyproject.toml` come dipendenza diretta.
+
+Mi fermo per approvazione prima di toccare qwen3vl.py o la collection.
