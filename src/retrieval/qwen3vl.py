@@ -1,77 +1,69 @@
-"""Fase 1.1 — Backend torch/transformers per l'embedder visivo Qwen3-VL.
+"""Fase 1.1 — Backend sentence-transformers per l'embedder visivo Qwen3-VL.
 
-Backend unificato per PixelRAG: embedding visivi (patch-level multivettore) +
-gestione collection Qdrant + ricerca MaxSim. Sostituisce completamente il vecchio
-`src/retrieval/visual.py` (ColQwen2, P2.7, rimosso nella migrazione a Qwen3-VL).
+Backend unificato per PixelRAG: embedding visivi (single-vector MRL) +
+gestione collection Qdrant + ricerca Cosine. Sostituisce completamente il vecchio
+`src/retrieval/visual.py` e il paradigma multivettore MaxSim.
 
 Caricamento lazy (`lru_cache`): costruire l'adapter (e testarlo con fake) non
-importa mai torch; il backend pesante si tocca solo alla prima chiamata reale,
-dopo che il ModelMultiplexer ha garantito lo spazio RAM/VRAM (eviction dei
-modelli inattivi).
-
-Il checkpoint Qwen3-VL-Embedding e' **parametrico e spike-pending** (vedi
-PIANO-IMPLEMENTAZIONE riga 18 + §Fase 1.1). Cambiare checkpoint = cambiare
-`QWEN3VL_MODEL`, zero impatto sul resto.
+importa mai torch/sentence_transformers; il backend pesante si tocca solo alla
+prima chiamata reale, dopo che il ModelMultiplexer ha garantito lo spazio RAM/VRAM
+(eviction dei modelli inattivi).
 """
 
 from __future__ import annotations
 
 from functools import lru_cache
 
-# Checkpoint parametrico: placeholder, NON hardcodato. Lo spike P1 conferma
-# l'ID HuggingFace reale di "Qwen3-VL-Embedding" e la classe retrieval.
-# Tenuto qui (non nel costruttore dell'adapter) perche' e' una costante del
-# backend di inferenza, come VISUAL_MODEL in visual.py.
-QWEN3VL_MODEL = "qwen-vl-embedding"
-PATCH_DIM = 128
+QWEN3VL_MODEL = "Qwen/Qwen3-VL-Embedding-2B"
+EMBED_DIM = 1024  # MRL: tronca a 1024
 RENDER_DPI = 150
 MAX_SIDE_PX = 1540
+QUERY_INSTRUCTION = "Given a visual query, find the corresponding image."
 
 
 @lru_cache(maxsize=1)
-def _model_and_processor():
-    """Carica modello + processor torch (lazy). Spike-pending sul checkpoint.
+def _model():
+    """Carica modello sentence-transformers (lazy)."""
+    from sentence_transformers import SentenceTransformer
 
-    Speculare a `visual._model_and_processor`: device MPS su Apple Silicon,
-    dtype bfloat16. La classe retrieval-specializzata sara' determinata dal
-    checkpoint confermato allo spike (oggi si evita di bindare una classe
-    non verificata: il SEAM e' questo, il binding e' del gate P1).
+    # trust_remote_code is necessary for Qwen3-VL models
+    model = SentenceTransformer(QWEN3VL_MODEL, trust_remote_code=True)
+    return model
+
+
+def embed_pages(images) -> list[list[float]]:
+    """Vettore singolo MRL-1024 per una lista di PIL.Image (batch piccoli!).
+
+    Lista di immagini -> lista di vettori (1024-d).
     """
     import torch
-    from transformers import AutoModel, AutoProcessor
+    import torch.nn.functional as F
 
-    device = "mps" if torch.backends.mps.is_available() else "cpu"
-    model = AutoModel.from_pretrained(QWEN3VL_MODEL, trust_remote_code=True,
-                                     torch_dtype=torch.bfloat16).to(device).eval()
-    processor = AutoProcessor.from_pretrained(QWEN3VL_MODEL, trust_remote_code=True)
-    return model, processor, device
+    model = _model()
+    # convert_to_tensor to use PyTorch tensor operations
+    embeddings = model.encode(images, convert_to_tensor=True)
+    
+    # MRL: tronca a 1024 e normalizza (L2) per distance=COSINE
+    embeddings_trunc = embeddings[:, :EMBED_DIM]
+    embeddings_norm = F.normalize(embeddings_trunc, p=2, dim=1)
+    
+    return embeddings_norm.cpu().numpy().tolist()
 
 
-def embed_pages(images) -> list[list[list[float]]]:
-    """Multivettori patch-level per una lista di PIL.Image (batch piccoli!).
-
-    Stesso contratto di `visual.embed_pages`: lista di immagini -> lista
-    (una per immagine) di liste di patch-vettori (128-d). Il downstream
-    (QdrantVisualIndex) e' identico al path del predecessore.
-    """
+def embed_query(text: str) -> list[float]:
+    """Vettore singolo della query testuale (MRL-1024) con instruction."""
     import torch
+    import torch.nn.functional as F
 
-    model, processor, device = _model_and_processor()
-    batch = processor.process_images(images).to(device)
-    with torch.no_grad():
-        out = model(**batch).embeddings
-    return [e.to(torch.float32).cpu().numpy().tolist() for e in out]
-
-
-def embed_query(text: str) -> list[list[float]]:
-    """Multivettore della query testuale (stesso spazio patch/token)."""
-    import torch
-
-    model, processor, device = _model_and_processor()
-    batch = processor.process_queries([text]).to(device)
-    with torch.no_grad():
-        out = model(**batch).embeddings
-    return out[0].to(torch.float32).cpu().numpy().tolist()
+    model = _model()
+    # model is instruction-aware
+    embeddings = model.encode([text], prompt=QUERY_INSTRUCTION, convert_to_tensor=True)
+    
+    # MRL: tronca a 1024 e normalizza
+    embeddings_trunc = embeddings[:, :EMBED_DIM]
+    embeddings_norm = F.normalize(embeddings_trunc, p=2, dim=1)
+    
+    return embeddings_norm[0].cpu().numpy().tolist()
 
 
 # ----------------------------------------------------------- Qdrant collection
@@ -80,11 +72,9 @@ VISUAL_COLLECTION = "aike_pages_visual"
 
 
 def ensure_visual_collection(client, recreate: bool = False) -> None:
-    """Crea (o ricrea) la collection visiva multivettore su Qdrant.
+    """Crea (o ricrea) la collection visiva single-vector su Qdrant.
 
-    Un punto = una PAGINA (multivettore ~700-800 patch x 128 dim, comparator
-    MaxSim). HNSW disabilitato (m=0): a questo volume la scansione brute-force
-    e' rapida e azzera il costo RAM di build dell'indice multivettore.
+    Un punto = un TILE. HNSW attivo, distance COSINE, size EMBED_DIM (1024).
     """
     from qdrant_client import models
 
@@ -94,20 +84,14 @@ def ensure_visual_collection(client, recreate: bool = False) -> None:
         client.create_collection(
             collection_name=VISUAL_COLLECTION,
             vectors_config=models.VectorParams(
-                size=PATCH_DIM,
-                # DOT come scorer ufficiale: la norma dei patch e' informativa
-                # (patch vuoti = norma piccola); la normalizzazione cosine li
-                # amplificherebbe
-                distance=models.Distance.DOT,
-                multivector_config=models.MultiVectorConfig(
-                    comparator=models.MultiVectorComparator.MAX_SIM),
-                hnsw_config=models.HnswConfigDiff(m=0),  # brute-force MaxSim
+                size=EMBED_DIM,
+                distance=models.Distance.COSINE,
             ),
         )
-        for f in ("doc", "cat", "page"):
+        for f in ("doc", "cat", "page", "tile"):
             client.create_payload_index(
                 VISUAL_COLLECTION, field_name=f,
-                field_schema=models.PayloadSchemaType.INTEGER if f == "page"
+                field_schema=models.PayloadSchemaType.INTEGER if f in ("page", "tile")
                 else models.PayloadSchemaType.KEYWORD)
 
 
@@ -127,14 +111,7 @@ def _indexed_docs_cache() -> tuple[str, ...]:
 
 
 def doc_hint_filter(query: str):
-    """Filtro deterministico: token della query che matchano il NOME documento.
-
-    Il retrieval visivo e' ancorato al testo VISIBILE sulla pagina: gli esplosi
-    muti non contengono il brand, che pero' sta nel nome del documento — e il
-    tecnico la macchina la nomina ("...della pompa Iwaki"). Token alfabetici
-    >=4 char confrontati con gli stem dei doc indicizzati; nessun match ->
-    nessun filtro (ricerca globale).
-    """
+    """Filtro deterministico: token della query che matchano il NOME documento."""
     from qdrant_client import models
 
     tokens = {t.lower() for t in query.replace("-", " ").split()
@@ -148,7 +125,9 @@ def doc_hint_filter(query: str):
 
 
 def search_visual(client, query: str, limit: int = 10):
-    """Ricerca MaxSim (+ doc-hint): pagine citabili (doc+pagina+render)."""
+    """Ricerca tile in Qdrant (Single Vector Cosine). 
+    
+    Il ritorno sara' aggregato lato Python."""
     return client.query_points(
         VISUAL_COLLECTION, query=embed_query(query),
         query_filter=doc_hint_filter(query),
