@@ -68,6 +68,17 @@ def _point_id(natural: str) -> str:
     return str(uuid.uuid5(_NS, natural))
 
 
+def decide_recreate(progress_exists: bool, env_recreate: str | None) -> bool:
+    """Logica pura: decide se droppare la collection in base al progress o all'ambiente."""
+    return not progress_exists or env_recreate == "1"
+
+
+def get_successful_pages(batch: list[tuple[str, int]], failed_stems_pages: set[tuple[str, int]]) -> list[tuple[str, int]]:
+    """Logica pura: filtra il batch escludendo le pagine fallite."""
+    return [(r, p) for r, p in batch if (r, p) not in failed_stems_pages]
+
+
+
 def ingest_document(doc, *, doc_stem: str, roles: list[Role], embedder: VisualEmbedder,
                     index: VisualIndex, version_status: str = CURRENT,
                     dpi: int = DEFAULT_DPI, tile_px: int = DEFAULT_TILE_PX,

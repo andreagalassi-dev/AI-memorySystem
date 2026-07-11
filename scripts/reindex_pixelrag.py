@@ -24,7 +24,7 @@ from src.retrieval.pixelrag.index import QdrantVisualIndex, VisualPoint, KIND_TI
 from src.retrieval.pixelrag.embedder import Qwen3VLEmbedder
 from src.retrieval.pixelrag.tiling import render_page_tiles
 from src.serving.multiplexer import ModelMultiplexer
-from src.retrieval.pixelrag.ingest import _point_id
+from src.retrieval.pixelrag.ingest import _point_id, decide_recreate, get_successful_pages
 
 ROUTE = Path(os.environ.get("VISUAL_ROUTE", ROOT / "output" / "spike" / "page_classes" / "_route_colpali.txt"))
 RENDERS = ROOT / "output" / "visual" / "renders"
@@ -46,9 +46,6 @@ def render_page(pdf_path: Path, pno: int, out_png: Path):
     
     doc.close()
     return crops, thumb
-
-def decide_recreate(progress_exists: bool, env_recreate: str | None) -> bool:
-    return not progress_exists or env_recreate == "1"
 
 def main() -> int:
     refs = []
@@ -146,14 +143,13 @@ def main() -> int:
         el = time.time() - t0
         
         # update progress per page
-        for ref, pno in batch:
-            if (ref, pno) in failed_renders:
-                continue
+        successful = get_successful_pages(batch, failed_renders)
+        for ref, pno in successful:
             stem = Path(ref).stem
             progress.write(json.dumps({"doc": stem, "page": pno, "ok": True}) + "\n")
             progress.flush()
             
-        done += len(batch) - len(failed_renders)
+        done += len(successful)
         if done % 20 < BATCH:
             rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1e9
             tot = time.time() - t_start
