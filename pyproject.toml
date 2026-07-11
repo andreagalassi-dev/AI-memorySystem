@@ -38,6 +38,9 @@ package = false
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+markers = [
+    "needs_mlx: richiede il vero adapter MLX e il download dei pesi (run con RUN_MLX=1)"
+]
 
 [tool.ruff]
 line-length = 100

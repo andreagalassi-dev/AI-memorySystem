@@ -37,6 +37,13 @@ needs_qdrant = pytest.mark.skipif(
 )
 
 
+import os
+needs_mlx = pytest.mark.skipif(
+    os.environ.get("RUN_MLX") != "1",
+    reason="richiede env RUN_MLX=1 per non scaricare pesi MLX in CI normale",
+)
+
+
 @pytest.fixture()
 def conn():
     """Connessione su schema temporaneo: il registro reale non viene toccato."""
