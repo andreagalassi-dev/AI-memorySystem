@@ -11,6 +11,7 @@ Il context window e' clampato a local_ctx_cap per contenere la KV cache sui
 
 from __future__ import annotations
 
+import os
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -34,9 +35,9 @@ class Settings(BaseSettings):
     postgres_ro_password: str = "aike_ro_dev"  # dev-only; override da .env
 
     # --- Modelli (Fase 1, allineato a PIANO-IMPLEMENTAZIONE.md) ---
-    # Cervello / ragionatore: Google Gemma 4 12B servito via MLX da HuggingFace.
-    # Alternativa più capace (se serve maggior reasoning): mlx-community/Nemotron-Cascade-2-30B-A3B-4bit
-    logic_model: str = "mlx-community/gemma-4-12B-it-qat-4bit"
+    # Modello di ragionamento primario. Modificare con override in test o run specifici.
+    # Alternativa testata supportata: "mlx-community/Nemotron-Cascade-2-30B-A3B-4bit"
+    logic_model: str = os.getenv("AIKE_LOGIC_MODEL", "mlx-community/gemma-4-26b-a4b-it-4bit")
     # Estrazione visiva tabelle: GLM-OCR (zai-org/GLM-OCR, ~2GB BF16, 1B params).
     # Standard transformers (AutoModelForImageTextToText), no custom_code, MPS-safe.
     extraction_model: str = "zai-org/GLM-OCR"

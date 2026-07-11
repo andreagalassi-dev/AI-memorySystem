@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import pytest
 
 
@@ -37,7 +38,6 @@ needs_qdrant = pytest.mark.skipif(
 )
 
 
-import os
 needs_mlx = pytest.mark.skipif(
     os.environ.get("RUN_MLX") != "1",
     reason="richiede env RUN_MLX=1 per non scaricare pesi MLX in CI normale",

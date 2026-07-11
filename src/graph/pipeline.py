@@ -534,7 +534,6 @@ def _default_deps(role: Role) -> Deps:
     """Wiring di produzione: Qdrant (routed_rr) + Ollama. Import lazy."""
     from qdrant_client import models
 
-    from src.backend.clients.ollama_client import get_ollama_client
     from src.backend.clients.qdrant_client import get_qdrant_client
     from src.retrieval.confidence import CALIBRATED_V1
     from src.retrieval.rerank import RERANK_TOPK, _reranker
@@ -542,14 +541,10 @@ def _default_deps(role: Role) -> Deps:
     from src.retrieval.synthesis import synthesize as _synth
 
     qc = get_qdrant_client()
-
-    import logging
     from src.graph.llm import MLXModel, FallbackLLM
     from src.serving.multiplexer import ModelMultiplexer, MlxModelRuntime
     from src.backend.clients.ollama_client import OllamaModel
     from src.backend.config import settings
-
-    logger = logging.getLogger(__name__)
 
     mlx_runtime = MlxModelRuntime(default_num_ctx=settings.local_ctx_cap)
     multiplexer = ModelMultiplexer(mlx_runtime, max_resident=1, ctx_cap=settings.local_ctx_cap)
@@ -573,7 +568,8 @@ def _default_deps(role: Role) -> Deps:
         for e in ev_list:
             if e.code not in seen:
                 grouped.append(e)
-                if e.code: seen.add(e.code)
+                if e.code:
+                    seen.add(e.code)
         
         children = []
         if grouped and grouped[0].is_assembly and grouped[0].code:

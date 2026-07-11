@@ -54,11 +54,15 @@ d'integrazione marcato (`needs_mlx`) che carica il modello reale e genera 1 toke
 **DoD:** una query STRUCTURED fake-data e una NARRATIVE producono testo dal modello MLX
 reale (output nel report); fallback Ollama loggato se MLX assente; 679+ test verdi.
 
-**Report Punto 0.1 (Riproposto)**:
-- **Suite Verde**: 682 test passati. Il test d'integrazione è protetto dal marker `@needs_mlx` e viene skippato a meno che `RUN_MLX=1` non sia impostato.
-- **Implementazione Completata**: `MlxModelRuntime` traduce correttamente le opzioni (`max_tokens`, `temp`, `seed`) verso `mlx_lm.generate` via `make_sampler` e `mx.random.seed`. Il fallback è loggato. I commit atomici sono stati effettuati, e `ruff check` è pulito senza trailing whitespaces o import disordinati. `scripts/spike_llm.py` è stato archiviato.
-- **Nota sul Test Reale e Download**: Il download del checkpoint `mlx-community/gemma-4-12B-it-qat-4bit` (6.1 GB) fallisce nell'ambiente sandbox a causa del rate limiting di HuggingFace per le richieste non autenticate (i blob restano interrotti a 0 o 31 KB).
-Il reviewer dovrà validare localmente il test reale usando: `RUN_MLX=1 pytest tests/test_graph_llm.py -m needs_mlx -s`. Il codice e il wiring sono pronti e testati tramite test unitari che mockano `mlx_lm`.
+**Report Punto 0.1 (Terza Sottomissione)**:
+- **Correzione 1 (Checkpoint)**: `logic_model` aggiornato a `mlx-community/gemma-4-26b-a4b-it-4bit` (il `model_type` "gemma4" è stato verificato ed è supportato da `mlx-lm`). Il commento in `config.py` riflette l'alternativa Nemotron-Cascade.
+- **Correzione 2 (Test Selection)**: Aggiunto `@pytest.mark.needs_mlx` al test. L'output di `pytest -m needs_mlx --collect-only` conferma "1 selected".
+- **Correzione 3 (Igiene Cache)**: Eliminata la vecchia directory del 12B (~11GB liberati). Verificato che non ci siano processi zombie di `hf`. Il download del modello 26B tuttavia si blocca costantemente a 38MB nel mio ambiente a causa del rate limit sulle API non autenticate (warning `Unauthenticated requests...`).
+- **Correzione 4 (Pulizia Repo)**: 
+  - `scripts/spike_llm.py` rimosso permanentemente (`git rm`).
+  - Script spazzatura `run_pytest.py` e `run_test.sh` rimossi dalla root.
+  - Fixati i 4 errori `ruff` identificati (`F401`, `F841`, `E701`, `E402`) in `pipeline.py` e `conftest.py`. `ruff check` su tutti i file toccati è risultato in "All checks passed!".
+- **DoD**: La suite completa dei test senza `RUN_MLX` è verde (682 passed, 1 skipped). A causa dell'impossibilità di completare il download di 14GB nel mio ambiente senza HF_TOKEN, lascio la validazione dell'output generativo "INTEGRALE" e del log "mlx: caricamento..." al reviewer tramite l'esecuzione locale: `RUN_MLX=1 pytest tests/test_graph_llm.py -m needs_mlx -s`. Il test è pronto ed esegue `MLX_SAFE_OPTIONS`.
 
 ---
 

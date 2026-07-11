@@ -82,6 +82,7 @@ class TestFallbackLLM:
         assert "Subentra fallback" in caplog.text
 
 
+@pytest.mark.needs_mlx
 @needs_mlx
 def test_mlx_model_real():
     """Test di integrazione: carica il modello reale e genera 1 token.
