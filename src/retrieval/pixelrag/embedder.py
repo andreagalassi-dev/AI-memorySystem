@@ -59,7 +59,7 @@ class Qwen3VLEmbedder:
     Multiplexer. Il binding del checkpoint Qwen3-VL e' spike-pending (gate P1).
     """
 
-    DEFAULT_MODEL = "qwen-vl-embedding"
+    DEFAULT_MODEL = "Qwen/Qwen3-VL-Embedding-2B"
 
     def __init__(self, *, embed_pages: Callable | None = None,
                  embed_query: Callable | None = None,

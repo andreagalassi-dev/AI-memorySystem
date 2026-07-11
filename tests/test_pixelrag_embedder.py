@@ -34,11 +34,10 @@ class TestContratto:
                               model_name="org/custom-vl-emb")
         assert emb.model_name == "org/custom-vl-emb"
 
-    def test_default_model_name_è_placeholder_non_verificato(self):
+    def test_default_model_name_e_risolto(self):
         emb = Qwen3VLEmbedder(embed_pages=lambda x: [], embed_query=lambda t: [])
-        # placeholder, NON un ID HuggingFace verificato: lo spike P1 lo binda
-        assert emb.model_name and not emb.model_name.startswith("Qwen/")
-        assert "/" not in emb.model_name  # non e' un HF id reale (spike-pending)
+        # Spike P1 concluso, l'ID HuggingFace è stato verificato
+        assert emb.model_name and emb.model_name.startswith("Qwen/")
 
 
 class TestDelega:
