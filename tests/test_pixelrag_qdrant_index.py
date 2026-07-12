@@ -104,16 +104,16 @@ class TestQdrantVisualIndexDatoReale:
 
     def test_tecnico_trova_pagine_reali(self):
         idx = QdrantVisualIndex(get_qdrant_client())  # default aike_pages_visual
-        hits = idx.search(_mv([0.1] * 128), 5, flt=access_filter(Role.TECNICO))
+        hits = idx.search([0.1] * 1024, 5, flt=access_filter(Role.TECNICO))
         assert hits, "il tecnico deve vedere pagine reali"
 
     def test_rbac_asimmetrico_filtra_su_dato_reale(self):
         idx = QdrantVisualIndex(get_qdrant_client())
-        q = _mv([0.1] * 128)
+        q = [0.1] * 1024
         com = {(h.doc, h.page) for h in
-               idx.search(q, 2000, flt=access_filter(Role.COMMERCIALE))}
+               idx.search(q, 10000, flt=access_filter(Role.COMMERCIALE))}
         tec = {(h.doc, h.page) for h in
-               idx.search(q, 2000, flt=access_filter(Role.TECNICO))}
+               idx.search(q, 10000, flt=access_filter(Role.TECNICO))}
         # il filtro RBAC e' applicato: il commerciale e' limitato alle sue 43 pagine
         assert 0 < len(com) <= 43
         # ...e vede STRETTAMENTE meno del tecnico (no leak delle pagine solo-tecnico)

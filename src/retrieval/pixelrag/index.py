@@ -73,7 +73,7 @@ class VisualIndex(Protocol):
         ...
 
     def search(self, query_vector: Sequence[float], k: int,
-               *, flt: dict | None = None) -> list[VisualHit]:
+               *, flt: dict | None = None, query_text: str | None = None) -> list[VisualHit]:
         ...
 
 
@@ -127,7 +127,7 @@ class FakeVisualIndex:
         return len(points)
 
     def search(self, query_vector: Sequence[float], k: int,
-               *, flt: dict | None = None) -> list[VisualHit]:
+               *, flt: dict | None = None, query_text: str | None = None) -> list[VisualHit]:
         scored: list[VisualHit] = []
         for p in self._points.values():
             if not _matches(p.payload, flt):
@@ -179,10 +179,36 @@ class QdrantVisualIndex:
         return len(structs)
 
     def search(self, query_vector: Sequence[float], k: int,
-               *, flt: dict | None = None) -> list[VisualHit]:
+               *, flt: dict | None = None, query_text: str | None = None) -> list[VisualHit]:
+        from src.retrieval.qwen3vl import doc_hint_filter
+        from qdrant_client import models
+        
+        base_filter = self._to_filter(flt)
+        hint_filter = doc_hint_filter(query_text) if query_text else None
+        
+        # Combine base_filter (RBAC) and hint_filter
+        combined_filter = base_filter
+        if hint_filter:
+            musts = []
+            if base_filter and base_filter.must:
+                musts.extend(base_filter.must)
+            if hint_filter.must:
+                musts.extend(hint_filter.must)
+            combined_filter = models.Filter(must=musts)
+            
         res = self._client.query_points(
-            self._collection, query=query_vector, query_filter=self._to_filter(flt),
+            self._collection, query=query_vector, query_filter=combined_filter,
             limit=k, with_payload=True)
+            
+        if hint_filter is not None:
+            # Fallback logic: check distinct pages
+            distinct_pages = len({(p.payload.get("doc"), p.payload.get("page")) 
+                                 for p in res.points if p.payload and "doc" in p.payload and "page" in p.payload})
+            if distinct_pages < 10:
+                res = self._client.query_points(
+                    self._collection, query=query_vector, query_filter=base_filter,
+                    limit=k, with_payload=True)
+                    
         hits = []
         for sp in res.points:
             pl = sp.payload or {}

@@ -46,8 +46,7 @@ def embed_pages(images) -> list[list[float]]:
     # MRL: tronca a 1024 e normalizza (L2) per distance=COSINE
     embeddings_trunc = embeddings[:, :EMBED_DIM]
     embeddings_norm = F.normalize(embeddings_trunc, p=2, dim=1)
-    
-    return embeddings_norm.cpu().numpy().tolist()
+    return embeddings_norm.to(torch.float32).cpu().numpy().tolist()
 
 
 def embed_query(text: str) -> list[float]:
@@ -57,13 +56,12 @@ def embed_query(text: str) -> list[float]:
 
     model = _model()
     # model is instruction-aware
-    embeddings = model.encode([text], prompt=QUERY_INSTRUCTION, convert_to_tensor=True)
+    embeddings = model.encode([text], prompt_name="query", convert_to_tensor=True)
     
     # MRL: tronca a 1024 e normalizza
     embeddings_trunc = embeddings[:, :EMBED_DIM]
     embeddings_norm = F.normalize(embeddings_trunc, p=2, dim=1)
-    
-    return embeddings_norm[0].cpu().numpy().tolist()
+    return embeddings_norm[0].to(torch.float32).cpu().numpy().tolist()
 
 
 # ----------------------------------------------------------- Qdrant collection
@@ -115,7 +113,7 @@ def doc_hint_filter(query: str):
     from qdrant_client import models
 
     tokens = {t.lower() for t in query.replace("-", " ").split()
-               if len(t) >= 4 and t.isalpha()}
+               if len(t) >= 3 and t.isalpha()}
     matched = [d for d in _indexed_docs_cache()
                if any(tok in d.lower() for tok in tokens)]
     if not matched:
@@ -124,11 +122,4 @@ def doc_hint_filter(query: str):
         key="doc", match=models.MatchAny(any=matched))])
 
 
-def search_visual(client, query: str, limit: int = 10):
-    """Ricerca tile in Qdrant (Single Vector Cosine). 
-    
-    Il ritorno sara' aggregato lato Python."""
-    return client.query_points(
-        VISUAL_COLLECTION, query=embed_query(query),
-        query_filter=doc_hint_filter(query),
-        with_payload=True, limit=limit).points
+
