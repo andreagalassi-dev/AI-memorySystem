@@ -181,11 +181,23 @@ def search_unified(client: QdrantClient, query: str, limit: int = 10, *,
     P4.5/A6 — `role` è obbligatorio (keyword-only, fail-closed) e viene
     propagato fino all'Hop 2 per il filtro RBAC sui figli.
     """
-    from src.retrieval.qwen3vl import search_visual
-
     route = classify_query(query)
     if route.query_type == "visual":
-        visual = search_visual(client, query, limit)
+        from src.retrieval.pixelrag.search import visual_search
+        from src.retrieval.pixelrag.index import QdrantVisualIndex
+        from src.retrieval.pixelrag.embedder import Qwen3VLEmbedder
+        from src.retrieval.pixelrag.reranker import Qwen3VLReranker
+        from src.serving.multiplexer import ModelMultiplexer, FakeModelRuntime
+        
+        # Imposta max_resident=2 affinche' la coppia visiva embedder+reranker
+        # coesista senza evincersi a vicenda. FakeModelRuntime per l'adapter Qwen.
+        mux = ModelMultiplexer(runtime=FakeModelRuntime(), max_resident=2)
+        embedder = Qwen3VLEmbedder(multiplexer=mux)
+        reranker = Qwen3VLReranker(multiplexer=mux)
+        index = QdrantVisualIndex(client)
+        
+        visual = visual_search(query, embedder=embedder, index=index, role=role, k=limit, reranker=reranker)
+        
         text = (search(client, route.code_token, "sparse", limit)
                 if route.code_token else [])
         text, children, hop2_warning = apply_hop2(client, text, role)

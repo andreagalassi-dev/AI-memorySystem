@@ -33,7 +33,8 @@ def access_filter(role: Role, version_status: str = CURRENT) -> dict:
 
 def visual_search(query: str, *, embedder: VisualEmbedder, index: VisualIndex,
                   role: Role, k: int = 10, version_status: str = CURRENT,
-                  tile_k: int | None = None) -> list[PageHit]:
+                  tile_k: int | None = None,
+                  reranker=None) -> list[PageHit]:
     """Cerca le pagine visivamente piu' pertinenti alla query, filtrate per ruolo.
 
     Args:
@@ -44,13 +45,28 @@ def visual_search(query: str, *, embedder: VisualEmbedder, index: VisualIndex,
       k: numero di PAGINE da restituire.
       version_status: stato versione ammesso (default 'current').
       tile_k: quanti TILE recuperare prima della ricomposizione (default k*OVERFETCH).
+      reranker: opzionale Port del reranker visivo (Qwen3VLReranker in prod).
 
-    Ritorna: pagine `PageHit` ordinate per score (MaxSim dei tile), al massimo `k`.
+    Ritorna: pagine `PageHit` ordinate per score (MaxSim dei tile o score del reranker).
     """
     if not isinstance(role, Role):  # fail-closed: mai una query senza ruolo valido
         raise TypeError(f"role deve essere Role, non {type(role).__name__}")
 
     query_vec = embedder.embed_query(query)
-    flt = access_filter(role, version_status)
-    hits = index.search(query_vec, tile_k or k * OVERFETCH, flt=flt)
-    return pages_from_tiles(hits)[:k]
+    flt = access_filter(role, version_status) if role else None
+    
+    # Se c'e' un reranker, la pipeline recupera piu' tile e ne estrae 30 candidati
+    if reranker is not None:
+        eff_tile_k = 100
+        eff_page_k = 30
+    else:
+        eff_tile_k = tile_k or k * OVERFETCH
+        eff_page_k = k
+        
+    hits = index.search(query_vec, eff_tile_k, flt=flt, query_text=query)
+    candidate_pages = pages_from_tiles(hits)[:eff_page_k]
+    
+    if reranker is not None:
+        return reranker.rerank(query, candidate_pages, k)
+        
+    return candidate_pages
