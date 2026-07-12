@@ -32,9 +32,9 @@ class _FakeEmbedder:
 class _RecordingIndex(FakeVisualIndex):
     """FakeVisualIndex che registra gli argomenti dell'ultima search (per gli assert)."""
 
-    def search(self, query_vector, k, *, flt=None):
+    def search(self, query_vector, k, *, flt=None, query_text=None):
         self.last = {"k": k, "flt": flt, "qvec": query_vector}
-        return super().search(query_vector, k, flt=flt)
+        return super().search(query_vector, k, flt=flt, query_text=query_text)
 
 
 def _pt(pid, doc, page, row, col, vec, **payload):
@@ -58,7 +58,7 @@ class TestFlusso:
 
         pages = visual_search("esploso pompa", embedder=emb, index=idx, role=Role.TECNICO)
 
-        assert emb.seen == ["esploso pompa"]                 # query embeddata
+        assert emb.seen == ["esploso pompa", "esploso pompa exploded view pump"]
         assert [(p.doc, p.page) for p in pages] == [("D", 1), ("D", 2)]
         assert pages[0].score == 1.0                         # MaxSim tile della pagina
 

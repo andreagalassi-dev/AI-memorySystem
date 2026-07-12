@@ -78,7 +78,7 @@ def visual_search(query: str, *, embedder: VisualEmbedder, index: VisualIndex,
         # Merge con max score
         merged_hits = {}
         for h in hits + hits_en:
-            key = h.tile_id
+            key = h.point_id
             if key not in merged_hits or h.score > merged_hits[key].score:
                 merged_hits[key] = h
         hits = sorted(merged_hits.values(), key=lambda x: x.score, reverse=True)
