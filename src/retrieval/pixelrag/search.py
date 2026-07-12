@@ -55,10 +55,10 @@ def visual_search(query: str, *, embedder: VisualEmbedder, index: VisualIndex,
     query_vec = embedder.embed_query(query)
     flt = access_filter(role, version_status) if role else None
     
-    # Se c'e' un reranker, la pipeline recupera piu' tile e ne estrae 30 candidati
+    # Se c'e' un reranker, la pipeline recupera piu' tile e ne estrae 60 candidati
     if reranker is not None:
-        eff_tile_k = 100
-        eff_page_k = 30
+        eff_tile_k = 300
+        eff_page_k = 60
     else:
         eff_tile_k = tile_k or k * OVERFETCH
         eff_page_k = k

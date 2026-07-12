@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import sys
+import os
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -28,7 +29,7 @@ from src.retrieval.qwen3vl import VISUAL_COLLECTION
 from src.retrieval.pixelrag.reranker import Qwen3VLReranker
 from src.serving.multiplexer import ModelMultiplexer, FakeModelRuntime
 
-EVAL = ROOT / "data" / "eval" / "eval_visual_v0.jsonl"
+EVAL = Path(os.environ.get("EVAL_FILE", ROOT / "data" / "eval" / "eval_visual_v0.jsonl"))
 OUT = ROOT / "output/eval/p27_visual_results.json"
 KS = (1, 3, 5)
 
@@ -71,14 +72,14 @@ def main() -> int:
     for pair in pairs:
         expected = {(c["doc"], p) for c in pair["expected"] for p in c["pages"]}
         
-        # Prima del reranker (30 candidate pages da 100 tile)
+        # Prima del reranker (60 candidate pages da 300 tile)
         hits_before = visual_search(
             pair["query"],
             embedder=visual_embedder,
             index=visual_index,
             role=Role.TECNICO,
-            k=30,
-            tile_k=100,
+            k=60,
+            tile_k=300,
             reranker=None
         )
         

@@ -1,0 +1,10 @@
+{"qa_id": "V001", "query": "exploded view of the Branson tractor crankshaft and piston", "lang": "IT", "expected": [{"doc": "branson_4520R_parts", "pages": [22]}], "note": "translated from IT"}
+{"qa_id": "V002", "query": "exploded view of the Branson 4520 clutch release", "lang": "IT", "expected": [{"doc": "branson_4520R_parts", "pages": [68]}], "note": "translated from IT"}
+{"qa_id": "V004", "query": "Gehl V270 chassis wiring harness", "lang": "IT", "expected": [{"doc": "gehl_v270_parts", "pages": [94]}], "note": "translated from IT"}
+{"qa_id": "V006", "query": "exploded view of the industrial Kohler engine controller", "lang": "IT", "expected": [{"doc": "kohler_industrial_tp7120", "pages": [24]}], "note": "translated from IT"}
+{"qa_id": "V007", "query": "cross-section view of the Iwaki pump", "lang": "IT", "expected": [{"doc": "iwaki_TC-X101SH-NPT", "pages": [2]}, {"doc": "iwaki_TC-X500PH-FLA", "pages": [2]}, {"doc": "iwaki_TC-X501VT-FLA", "pages": [2]}, {"doc": "iwaki_TC-X252PH-NPT", "pages": [2]}, {"doc": "iwaki_TC-X031VTN", "pages": [2]}], "note": "translated from IT"}
+{"qa_id": "V009", "query": "exploded view of the KBS gastronomy oven", "lang": "IT", "expected": [{"doc": "kbs_gastrotechnik_1717", "pages": [3, 4]}], "note": "translated from IT"}
+{"qa_id": "V011", "query": "exploded view of the Benassi T623 flail mower", "lang": "IT", "expected": [{"doc": "benassi_t623_flail_mower", "pages": [2, 4, 6, 8, 12, 16, 18, 20, 22]}], "note": "translated from IT"}
+{"qa_id": "V013", "query": "exploded view of the Silca Triax key cutting machine with spare parts table", "lang": "IT", "expected": [{"doc": "Silca_TriaxPro_Ricambi_Multilingua", "pages": [2]}], "note": "translated from IT"}
+{"qa_id": "V014", "query": "spare parts table of the Rimoldi 327 sewing machine", "lang": "IT", "expected": [{"doc": "rimoldi_327_spareparts", "pages": [7, 9, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31, 33, 39, 44, 54]}], "note": "translated from IT"}
+{"qa_id": "V015", "query": "flywheel drawing of the Kohler marine engine", "lang": "IT", "expected": [{"doc": "kohler_marine_tp6954", "pages": [14]}], "note": "translated from IT"}
