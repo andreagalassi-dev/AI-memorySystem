@@ -36,8 +36,9 @@ from src.ingestion.embedding import COLLECTION, DENSE_NAME, embed_dense  # noqa:
 from src.registry.registry import backfill_payload, export_backfill  # noqa: E402
 from src.registry.sync import NEW_KEYS, facet_docs, sync_collection  # noqa: E402
 from src.retrieval.qwen3vl import VISUAL_COLLECTION  # noqa: E402
+from src.retrieval.colqwen3 import VISUAL_COLLECTION_COLQWEN3  # noqa: E402
 
-COLLECTIONS = (COLLECTION, VISUAL_COLLECTION)
+COLLECTIONS = (COLLECTION, VISUAL_COLLECTION, VISUAL_COLLECTION_COLQWEN3)
 SMOKE_QUERY = "codice ricambio cilindro"  # riferimento arbitrario ma FISSO
 
 
