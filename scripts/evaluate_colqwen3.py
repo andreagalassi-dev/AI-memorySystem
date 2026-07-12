@@ -12,6 +12,7 @@ from __future__ import annotations
 import json
 import sys
 import os
+import psutil
 from pathlib import Path
 from collections import defaultdict
 
@@ -27,10 +28,15 @@ from src.retrieval.expansion import expand_query
 
 EVAL = Path(os.environ.get("EVAL_FILE", ROOT / "data" / "eval" / "eval_visual_v0.jsonl"))
 OUT = ROOT / "output" / "eval" / "p27_colqwen3_results.json"
+TEMP_CANDIDATES = ROOT / "output" / "eval" / "temp_candidates.json"
 KS = (1, 3, 5)
 
 mux = ModelMultiplexer(runtime=FakeModelRuntime(), max_resident=2)
 visual_reranker = Qwen3VLReranker(multiplexer=mux)
+
+def print_mem(phase_name):
+    process = psutil.Process(os.getpid())
+    print(f"[{phase_name}] RSS: {process.memory_info().rss / 1024 / 1024:.2f} MB")
 
 def main() -> int:
     client = get_qdrant_client()
@@ -57,6 +63,12 @@ def main() -> int:
     results = {"a": [], "b": [], "c": [], "d": []}
     langs = []
     
+    print_mem("INIZIO FASE A (Retrieval)")
+    # --- PHASE 1: Retrieval with ColQwen3 ---
+    # To avoid loading both 4B and 2B models in RAM simultaneously and causing heavy swapping,
+    # we first do all retrievals.
+    retrieval_data = []
+    
     for pair in pairs:
         query = pair["query"]
         expected = {(c["doc"], p) for c in pair["expected"] for p in c["pages"]}
@@ -65,14 +77,14 @@ def main() -> int:
         en_terms = expand_query(query, target_lang="EN")
         en_query = query + " " + " ".join(en_terms) if en_terms else None
         
-        # Base retrievals
+        # Base retrievals (uses ColQwen3-4B)
         hits_it_raw = search_visual_colqwen3(client, query, limit=60)
-        hits_it = [PageHit(doc=p.payload["doc"], page=p.payload["page"], score=p.score) for p in hits_it_raw]
+        hits_it = [PageHit(doc=p.payload["doc"], page=p.payload["page"], score=p.score, n_tiles=1) for p in hits_it_raw]
         
         hits_en = []
         if en_query:
             hits_en_raw = search_visual_colqwen3(client, en_query, limit=60)
-            hits_en = [PageHit(doc=p.payload["doc"], page=p.payload["page"], score=p.score) for p in hits_en_raw]
+            hits_en = [PageHit(doc=p.payload["doc"], page=p.payload["page"], score=p.score, n_tiles=1) for p in hits_en_raw]
             
         # (a) Puro IT
         a_hits = hits_it[:10]
@@ -86,7 +98,39 @@ def main() -> int:
         b_hits_all = sorted(merged.values(), key=lambda x: x.score, reverse=True)
         b_hits = b_hits_all[:10]
         
-        # (c) Puro IT + Reranker
+        retrieval_data.append({
+            "query": query,
+            "expected": list(expected),
+            "hits_it": [h.__dict__ for h in hits_it],
+            "b_hits_all": [h.__dict__ for h in b_hits_all],
+            "a_hits": [h.__dict__ for h in a_hits],
+            "b_hits": [h.__dict__ for h in b_hits]
+        })
+
+    TEMP_CANDIDATES.parent.mkdir(parents=True, exist_ok=True)
+    TEMP_CANDIDATES.write_text(json.dumps(retrieval_data, indent=2), encoding="utf-8")
+    print_mem("FINE FASE A (Retrieval)")
+
+    # --- MEMORY CLEANUP ---
+    from src.retrieval.colqwen3 import _model_and_processor
+    _model_and_processor.cache_clear()
+    import gc; gc.collect()
+    import torch; torch.mps.empty_cache() if torch.backends.mps.is_available() else None
+    print_mem("DOPO CLEANUP")
+    
+    # --- PHASE 2: Reranking ---
+    print_mem("INIZIO FASE B (Reranking)")
+    retrieval_data = json.loads(TEMP_CANDIDATES.read_text(encoding="utf-8"))
+
+    for data in retrieval_data:
+        query = data["query"]
+        expected = {tuple(x) for x in data["expected"]}
+        hits_it = [PageHit(**h) for h in data["hits_it"]]
+        b_hits_all = [PageHit(**h) for h in data["b_hits_all"]]
+        a_hits = [PageHit(**h) for h in data["a_hits"]]
+        b_hits = [PageHit(**h) for h in data["b_hits"]]
+
+        # (c) Puro IT + Reranker (uses Qwen3VLReranker-2B)
         c_hits = visual_reranker.rerank(query, hits_it, top_k=10)
         
         # (d) Espansione + Reranker
@@ -103,6 +147,7 @@ def main() -> int:
         results["b"].append(rank_b)
         results["c"].append(rank_c)
         results["d"].append(rank_d)
+    print_mem("FINE FASE B (Reranking)")
 
     def print_metrics(name, rows):
         n = len(rows)
@@ -125,7 +170,6 @@ def main() -> int:
     OUT.write_text(json.dumps(results, indent=2), encoding="utf-8")
 
     return 0
-
 
 if __name__ == "__main__":
     sys.exit(main())
