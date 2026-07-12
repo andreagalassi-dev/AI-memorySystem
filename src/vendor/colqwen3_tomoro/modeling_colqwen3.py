@@ -2,8 +2,7 @@
 # Repo: TomoroAI/tomoro-colqwen3-embed-4b
 # Revision: bf790bd8780b098b86453444632a184bb770be1a
 # License: Apache-2.0
-# Reason for vendoring: Patches applied: #1 ClassVar sub_configs (in configuration_colqwen3.py), #2 firma tie_weights
-"""
+# Reason for vendoring: Patches applied: #1 ClassVar sub_configs (in configuration_colqwen3.py), #2 tie_weights firma+traduzione namespace
 # Copyright 2025 The HuggingFace Inc. team.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -244,8 +243,11 @@ class ColQwen3(ColQwen3PreTrainedModel):
 
     def tie_weights(self, missing_keys: set[str] | None = None,
                     recompute_mapping: bool = True):
-        # Allineamento alla firma di transformers 5.12.1 (modeling_utils.tie_weights);
-        # self.vlm e' un modello transformers standard: inoltra gli argomenti.
+        # Il wrapper espone i parametri col prefisso "vlm."; il modello interno
+        # ragiona coi propri nomi: traduci i missing_keys nel suo namespace.
+        if missing_keys is not None:
+            missing_keys = {k.removeprefix("vlm.") for k in missing_keys
+                            if k.startswith("vlm.")}
         return self.vlm.tie_weights(missing_keys, recompute_mapping)
 
     def resize_token_embeddings(
