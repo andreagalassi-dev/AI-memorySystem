@@ -2,7 +2,7 @@
 # Repo: TomoroAI/tomoro-colqwen3-embed-4b
 # Revision: bf790bd8780b098b86453444632a184bb770be1a
 # License: Apache-2.0
-# Reason for vendoring: Required to work with patched configuration_colqwen3.py without trust_remote_code
+# Reason for vendoring: Patches applied: #1 ClassVar sub_configs (in configuration_colqwen3.py), #2 firma tie_weights
 """
 # Copyright 2025 The HuggingFace Inc. team.
 #
@@ -242,8 +242,11 @@ class ColQwen3(ColQwen3PreTrainedModel):
     def set_output_embeddings(self, new_embeddings):
         self.vlm.set_output_embeddings(new_embeddings)
 
-    def tie_weights(self):
-        return self.vlm.tie_weights()
+    def tie_weights(self, missing_keys: set[str] | None = None,
+                    recompute_mapping: bool = True):
+        # Allineamento alla firma di transformers 5.12.1 (modeling_utils.tie_weights);
+        # self.vlm e' un modello transformers standard: inoltra gli argomenti.
+        return self.vlm.tie_weights(missing_keys, recompute_mapping)
 
     def resize_token_embeddings(
         self,
