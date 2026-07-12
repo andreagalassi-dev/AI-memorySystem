@@ -40,6 +40,10 @@ def main():
             model_name,
             revision=revision,
         )
+        
+        metas = [n for n, p in model.named_parameters() if p.device.type == "meta"]
+        assert not metas, f"Parametri non materializzati: {metas[:5]}"
+        
     except Exception as e:
         import traceback
         traceback.print_exc()

@@ -3,6 +3,7 @@
 # Revision: bf790bd8780b098b86453444632a184bb770be1a
 # License: Apache-2.0
 # Reason for vendoring: Patches applied: #1 ClassVar sub_configs (in configuration_colqwen3.py), #2 tie_weights firma+traduzione namespace
+"""
 # Copyright 2025 The HuggingFace Inc. team.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
