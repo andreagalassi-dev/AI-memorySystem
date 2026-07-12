@@ -64,6 +64,25 @@ def visual_search(query: str, *, embedder: VisualEmbedder, index: VisualIndex,
         eff_page_k = k
         
     hits = index.search(query_vec, eff_tile_k, flt=flt, query_text=query)
+    
+    # Variante EN (Query Expansion deterministica)
+    from src.retrieval.expansion import expand_query
+    en_terms = expand_query(query, target_lang="EN")
+    if en_terms:
+        # TODO(debt): Fallback futuro LLM (Gemma) per i termini fuori dizionario.
+        # Per ora costruiamo una variante EN accodando i termini trovati.
+        en_query = query + " " + " ".join(en_terms)
+        query_vec_en = embedder.embed_query(en_query)
+        hits_en = index.search(query_vec_en, eff_tile_k, flt=flt, query_text=en_query)
+        
+        # Merge con max score
+        merged_hits = {}
+        for h in hits + hits_en:
+            key = h.tile_id
+            if key not in merged_hits or h.score > merged_hits[key].score:
+                merged_hits[key] = h
+        hits = sorted(merged_hits.values(), key=lambda x: x.score, reverse=True)
+
     candidate_pages = pages_from_tiles(hits)[:eff_page_k]
     
     if reranker is not None:
