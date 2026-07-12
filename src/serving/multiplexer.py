@@ -166,7 +166,13 @@ class MlxModelRuntime:
         # Rilascia i riferimenti e forza il gc: libera la memoria unificata Apple.
         del entry
         gc.collect()
-        logger.info("mlx: scaricato %s (memoria rilasciata)", name)
+        try:
+            import torch
+            if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+                torch.mps.empty_cache()
+        except ImportError:
+            pass
+        logger.info("mlx: scaricato %s (memoria rilasciata e cache MPS svuotata)", name)
 
     def resident(self) -> set[str]:
         return set(self._models)

@@ -12,6 +12,7 @@ import resource
 import sys
 import time
 from pathlib import Path
+import torch
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
@@ -141,6 +142,19 @@ def main() -> int:
             
         index.upsert(points)
         el = time.time() - t0
+        
+        # Memory Hygiene su MPS: svuota cache e logga uso swap ogni 10 batch
+        if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+            # PYTORCH_MPS_HIGH_WATERMARK_RATIO aiuta a limitare la saturazione della memoria unificata
+            if (start // BATCH) % 10 == 0:
+                torch.mps.empty_cache()
+                try:
+                    import subprocess
+                    swap = subprocess.check_output(["sysctl", "-n", "vm.swapusage"], text=True).strip()
+                    print(f"  [mem] swap: {swap}")
+                except Exception:
+                    pass
+
         
         # update progress per page
         successful = get_successful_pages(batch, failed_renders)
