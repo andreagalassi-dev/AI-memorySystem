@@ -205,7 +205,7 @@ class ColQwen3Processor(ProcessorMixin):
         )
         suffix = output_kwargs["text_kwargs"].pop("suffix", None)
         return_tensors = output_kwargs["text_kwargs"].pop("return_tensors", None)
-        return_mm_token_type_ids = output_kwargs["text_kwargs"].pop("return_mm_token_type_ids", None)
+        return_mm_token_type_ids = output_kwargs["text_kwargs"].pop("return_mm_token_type_ids", True)
 
         if images is not None and videos is not None:
             raise ValueError("Provide only one of `images` or `videos`, not both.")

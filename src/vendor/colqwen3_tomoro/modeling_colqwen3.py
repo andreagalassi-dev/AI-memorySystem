@@ -2,7 +2,7 @@
 # Repo: TomoroAI/tomoro-colqwen3-embed-4b
 # Revision: bf790bd8780b098b86453444632a184bb770be1a
 # License: Apache-2.0
-# Reason for vendoring: Patches applied: #1 ClassVar sub_configs (in configuration_colqwen3.py), #2 tie_weights firma+traduzione namespace
+# Reason for vendoring: Patches applied: #1 ClassVar sub_configs (in configuration_colqwen3.py), #2 tie_weights firma+traduzione namespace, #3 mm_token_type_ids in forward
 """
 # Copyright 2025 The HuggingFace Inc. team.
 #
@@ -178,6 +178,7 @@ class ColQwen3(ColQwen3PreTrainedModel):
         cache_position: Optional[torch.LongTensor] = None,
         pixel_values_videos: Optional[torch.Tensor] = None,
         video_grid_thw: Optional[torch.LongTensor] = None,
+        mm_token_type_ids: Optional[torch.LongTensor] = None,
     ) -> ColQwen3ForRetrievalOutput:
         r"""
         image_grid_thw (`torch.LongTensor` of shape `(num_images, 3)`, *optional*):
@@ -206,6 +207,7 @@ class ColQwen3(ColQwen3PreTrainedModel):
             image_grid_thw=image_grid_thw,
             video_grid_thw=video_grid_thw,
             cache_position=cache_position,
+            mm_token_type_ids=mm_token_type_ids,
         )
 
         vlm_hidden_states = vlm_output.hidden_states if output_hidden_states else None
