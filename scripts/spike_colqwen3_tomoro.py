@@ -34,11 +34,13 @@ def main():
             revision=revision,
             attn_implementation="sdpa",
             torch_dtype=torch.bfloat16,
+            trust_remote_code=False,
         ).to(device).eval()
         
         processor = ColQwen3Processor.from_pretrained(
             model_name,
             revision=revision,
+            trust_remote_code=False,
         )
         
         metas = [n for n, p in model.named_parameters() if p.device.type == "meta"]
@@ -77,7 +79,7 @@ def main():
             else:
                 batch_images = processor(images=images, return_tensors="pt", padding=True).to(device)
             
-            image_embeddings = model(**batch_images)
+            image_embeddings = model(**batch_images).embeddings
             
             t1 = time.time()
             print(f"Time for {len(images)} images: {t1 - t0:.2f} s -> {(t1 - t0) / len(images):.2f} s/img")
@@ -86,7 +88,7 @@ def main():
                 batch_queries = processor.process_queries(queries).to(device)
             else:
                 batch_queries = processor(text=queries, return_tensors="pt", padding=True).to(device)
-            query_embeddings = model(**batch_queries)
+            query_embeddings = model(**batch_queries).embeddings
         except Exception as e:
             import traceback
             traceback.print_exc()
