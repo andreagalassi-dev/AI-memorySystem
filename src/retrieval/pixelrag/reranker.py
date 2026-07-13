@@ -85,7 +85,7 @@ class Qwen3VLReranker:
             return []
             
         model = self._get_model()
-        scores = model.predict(pairs, prompt="Retrieve images or text relevant to the user's query.")
+        scores = model.predict(pairs, prompt="Retrieve images or text relevant to the user's query.", batch_size=2, show_progress_bar=True)
         
         # Update scores and sort
         reranked = []

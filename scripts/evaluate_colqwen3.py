@@ -31,7 +31,7 @@ OUT = ROOT / "output" / "eval" / "p27_colqwen3_results.json"
 TEMP_CANDIDATES = ROOT / "output" / "eval" / "temp_candidates.json"
 KS = (1, 3, 5)
 
-mux = ModelMultiplexer(runtime=FakeModelRuntime(), max_resident=2)
+mux = ModelMultiplexer(runtime=FakeModelRuntime(), max_resident=1)
 visual_reranker = Qwen3VLReranker(multiplexer=mux)
 
 def print_mem(phase_name):
@@ -78,12 +78,12 @@ def main() -> int:
         en_query = query + " " + " ".join(en_terms) if en_terms else None
         
         # Base retrievals (uses ColQwen3-4B)
-        hits_it_raw = search_visual_colqwen3(client, query, limit=60)
+        hits_it_raw = search_visual_colqwen3(client, query, limit=30)
         hits_it = [PageHit(doc=p.payload["doc"], page=p.payload["page"], score=p.score, n_tiles=1) for p in hits_it_raw]
         
         hits_en = []
         if en_query:
-            hits_en_raw = search_visual_colqwen3(client, en_query, limit=60)
+            hits_en_raw = search_visual_colqwen3(client, en_query, limit=30)
             hits_en = [PageHit(doc=p.payload["doc"], page=p.payload["page"], score=p.score, n_tiles=1) for p in hits_en_raw]
             
         # (a) Puro IT
@@ -131,17 +131,16 @@ def main() -> int:
         b_hits = [PageHit(**h) for h in data["b_hits"]]
 
         # (c) Puro IT + Reranker (uses Qwen3VLReranker-2B)
-        c_hits = visual_reranker.rerank(query, hits_it, top_k=10)
+        c_hits = [] # visual_reranker.rerank(query, hits_it[:30], top_k=10)
         
         # (d) Espansione + Reranker
-        # Usa la query originale IT per il reranker, ma applicata ai candidati espansi
-        d_hits = visual_reranker.rerank(query, b_hits_all[:60], top_k=10)
+        d_hits = [] # visual_reranker.rerank(query, b_hits_all[:30], top_k=10)
         
         # Calc ranks
         rank_a = next((i for i, h in enumerate(a_hits, 1) if (h.doc, h.page) in expected), None)
         rank_b = next((i for i, h in enumerate(b_hits, 1) if (h.doc, h.page) in expected), None)
-        rank_c = next((i for i, h in enumerate(c_hits, 1) if (h.doc, h.page) in expected), None)
-        rank_d = next((i for i, h in enumerate(d_hits, 1) if (h.doc, h.page) in expected), None)
+        rank_c = None
+        rank_d = None
         
         results["a"].append(rank_a)
         results["b"].append(rank_b)
@@ -158,7 +157,7 @@ def main() -> int:
 
     def eval_group(mask_fn, title):
         print(f"\n=== {title} ===")
-        for conf, name in [("a", "Puro"), ("b", "+Espansione"), ("c", "+Reranker"), ("d", "+Entrambi")]:
+        for conf, name in [("a", "Puro"), ("b", "+Espansione")]:
             filtered_rows = [r for r, l in zip(results[conf], langs) if mask_fn(l)]
             print_metrics(name, filtered_rows)
 
