@@ -1031,3 +1031,5 @@ textile/stoll_CMS830C_spareparts.pdf#p125
 textile/stoll_CMS830C_spareparts.pdf#p127
 textile/stoll_CMS830C_spareparts.pdf#p129
 textile/stoll_CMS830C_spareparts.pdf#p130
+construction_agricultural/branson_4520R_parts.pdf#p68
+pumps/iwaki_TC-X031VTN.pdf#p2
