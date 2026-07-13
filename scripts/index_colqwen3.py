@@ -53,6 +53,18 @@ def preflight_memory_check():
     import psutil
     my_pid = os.getpid()
     heavy_pids = []
+    
+    import subprocess
+    try:
+        ollama_ps = subprocess.run(["ollama", "ps"], capture_output=True, text=True, check=False)
+        if ollama_ps.returncode == 0:
+            lines = ollama_ps.stdout.strip().split("\n")
+            if len(lines) > 1:
+                print(f"ABORT: Trovati modelli caricati in Ollama. Libera la memoria prima (ollama stop <model>). Output:\n{ollama_ps.stdout}", file=sys.stderr)
+                sys.exit(1)
+    except FileNotFoundError:
+        pass
+
     for proc in psutil.process_iter(['pid', 'name', 'memory_info']):
         try:
             if proc.info['pid'] == my_pid:
@@ -97,45 +109,69 @@ def check_roundtrip(client, point_id: str, original_vector: list[list[float]], t
 
 def validation_gate(client, done_meta: list[dict]) -> bool:
     import random
+    from qdrant_client import QdrantClient
+    from src.backend.config import settings
+
     if not done_meta:
         return True
+        
+    gate_client = QdrantClient(
+        host=settings.qdrant_host,
+        port=settings.qdrant_port,
+        api_key=settings.qdrant_api_key or None,
+        timeout=300.0,
+    )
         
     samples = random.sample(done_meta, min(10, len(done_meta)))
     
     success = True
     tested = 0
+    failures = []
+    audit_data = {"samples": []}
+    
     for m in samples:
         pid = page_id(m["doc"], m["page"])
         png_path = ROOT / m["render"]
         img = Image.open(png_path).convert("RGB")
         embs = embed_pages([img])
         emb = embs[0]
+        n_vettori_query = len(emb)
         
-        hits = client.query_points(
+        hits = gate_client.query_points(
             VISUAL_COLLECTION_COLQWEN3, 
             query=emb,
             limit=2,
             with_payload=False
         ).points
         
+        sample_audit = {
+            "pid": pid,
+            "n_vettori": n_vettori_query,
+            "top1_id": hits[0].id if hits else None,
+            "top1_score": hits[0].score if hits else None,
+            "score_per_token": (hits[0].score / n_vettori_query) if hits and n_vettori_query else None
+        }
+        audit_data["samples"].append(sample_audit)
+        
         if not hits or hits[0].id != pid:
             print(f"Validation Gate failed for {pid}: non è top-1", file=sys.stderr)
             success = False
-            break
+            failures.append(pid)
+        elif sample_audit["score_per_token"] < 0.85:
+            print(f"Validation Gate failed for {pid}: score_per_token {sample_audit['score_per_token']:.3f} < 0.85", file=sys.stderr)
+            success = False
+            failures.append(pid)
             
-        if len(hits) > 1:
-            score1 = hits[0].score
-            score2 = hits[1].score
-            if score1 < 5 * score2:
-                print(f"Validation Gate failed for {pid}: score {score1} non è >= 5 * {score2}", file=sys.stderr)
-                success = False
-                break
         tested += 1
                 
+    audit_data["passed"] = success
+    audit_data["samples_tested"] = tested
+    audit_data["failures"] = failures
+    
     out_path = ROOT / "output" / "eval" / "colqwen3_ingest_gate.json"
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with out_path.open("w") as f:
-        json.dump({"passed": success, "samples_tested": tested}, f)
+        json.dump(audit_data, f, indent=2)
         
     return success
 
