@@ -49,6 +49,97 @@ def page_id(doc: str, page: int) -> str:
     return str(uuid.uuid5(uuid.NAMESPACE_URL, f"visual_colqwen3/{doc}/p{page}"))
 
 
+def preflight_memory_check():
+    import psutil
+    my_pid = os.getpid()
+    heavy_pids = []
+    for proc in psutil.process_iter(['pid', 'name', 'memory_info']):
+        try:
+            if proc.info['pid'] == my_pid:
+                continue
+            name = proc.info['name']
+            if name and 'python' in name.lower():
+                rss_mb = proc.info['memory_info'].rss / (1024 * 1024)
+                if rss_mb > 1024:
+                    heavy_pids.append((proc.info['pid'], rss_mb))
+        except (psutil.NoSuchProcess, psutil.AccessDenied, KeyError):
+            pass
+    if heavy_pids:
+        print(f"ABORT: Trovati processi Python pesanti in memoria (>1GB): {heavy_pids}", file=sys.stderr)
+        sys.exit(1)
+
+
+def check_roundtrip(client, point_id: str, original_vector: list[list[float]], tolerance: float = 1e-2) -> bool:
+    import numpy as np
+    res = client.retrieve(VISUAL_COLLECTION_COLQWEN3, ids=[point_id], with_vectors=True)
+    if not res or not res[0].vector:
+        print(f"Round-trip failed: point {point_id} not found", file=sys.stderr)
+        return False
+        
+    retrieved = res[0].vector
+    if isinstance(retrieved, dict):
+        retrieved = retrieved.get("", retrieved.get("colqwen3", retrieved))
+        
+    orig_np = np.array(original_vector, dtype=np.float32)
+    retr_np = np.array(retrieved, dtype=np.float32)
+    
+    if orig_np.shape != retr_np.shape:
+        print(f"Round-trip shape mismatch: {orig_np.shape} vs {retr_np.shape}", file=sys.stderr)
+        return False
+        
+    diff = np.abs(orig_np - retr_np).mean()
+    if diff >= tolerance:
+        print(f"Round-trip diff {diff} >= {tolerance}", file=sys.stderr)
+        return False
+        
+    return True
+
+
+def validation_gate(client, done_meta: list[dict]) -> bool:
+    import random
+    if not done_meta:
+        return True
+        
+    samples = random.sample(done_meta, min(10, len(done_meta)))
+    
+    success = True
+    tested = 0
+    for m in samples:
+        pid = page_id(m["doc"], m["page"])
+        png_path = ROOT / m["render"]
+        img = Image.open(png_path).convert("RGB")
+        embs = embed_pages([img])
+        emb = embs[0]
+        
+        hits = client.query_points(
+            VISUAL_COLLECTION_COLQWEN3, 
+            query=emb,
+            limit=2,
+            with_payload=False
+        ).points
+        
+        if not hits or hits[0].id != pid:
+            print(f"Validation Gate failed for {pid}: non è top-1", file=sys.stderr)
+            success = False
+            break
+            
+        if len(hits) > 1:
+            score1 = hits[0].score
+            score2 = hits[1].score
+            if score1 < 5 * score2:
+                print(f"Validation Gate failed for {pid}: score {score1} non è >= 5 * {score2}", file=sys.stderr)
+                success = False
+                break
+        tested += 1
+                
+    out_path = ROOT / "output" / "eval" / "colqwen3_ingest_gate.json"
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    with out_path.open("w") as f:
+        json.dump({"passed": success, "samples_tested": tested}, f)
+        
+    return success
+
+
 def render_page(pdf_path: Path, pno: int, out_png: Path) -> Image.Image:
     doc = fitz.open(pdf_path)
     page = doc[pno - 1]
@@ -76,6 +167,7 @@ def print_telemetry(done_count: int, total: int):
 
 
 def main() -> int:
+    preflight_memory_check()
     from qdrant_client import models
     import torch
 
@@ -112,6 +204,8 @@ def main() -> int:
     done = failed = 0
     total_todo = len(todo)
     
+    all_done_meta = []
+    
     for start in range(0, total_todo, BATCH):
         if LIMIT and done >= LIMIT:
             break
@@ -146,9 +240,18 @@ def main() -> int:
                     payload=m,
                 ))
             client.upsert(VISUAL_COLLECTION_COLQWEN3, points=pts, wait=True)
+            
+            # ROUND-TRIP CHECK ogni 50 pagine
+            if done // 50 < (done + len(images)) // 50:
+                last_pt = pts[-1]
+                if not check_roundtrip(client, last_pt.id, last_pt.vector):
+                    print("ABORT: Round-trip check failed!", file=sys.stderr)
+                    sys.exit(1)
+            
             for m in meta:
                 progress.write(json.dumps({"ok": True, "doc": m["doc"],
                                            "page": m["page"]}) + "\n")
+                all_done_meta.append(m)
             progress.flush()
             done += len(images)
             
@@ -180,6 +283,12 @@ def main() -> int:
         print(f"Collection Info: Points count={col_info.points_count}")
     except Exception as e:
         print(f"Impossibile recuperare info collection: {e}")
+        
+    # VALIDATION GATE a fine run
+    if failed == 0 and all_done_meta:
+        if not validation_gate(client, all_done_meta):
+            print("ABORT: Validation gate failed!", file=sys.stderr)
+            return 1
 
     return 0 if failed == 0 else 1
 
