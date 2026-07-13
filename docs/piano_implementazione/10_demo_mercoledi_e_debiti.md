@@ -133,6 +133,8 @@ Nessun commit, nessun aggiornamento, solo prova generale con lo script demo.
   passa da T4.
 - Eventuali fix "solo demo" fatti in D1.4 vanno riportati/rifatti puliti sul branch vero.
 - Il worktree demo symlinka output/visual/renders del repo principale: i render on-demand generati dalla UI demo scrivono nella directory di produzione (additivo). Rimuovere il symlink insieme al worktree.
+- app.py demo contiene un input di test nascosto attivato da `PYTEST_CURRENT_TEST` (shim per la suite del worktree dopo il passaggio a chat_input): hack demo-only, NON portarlo nel branch vero.
+- Tarature demo-only in app.py: pool visivo ridotto (`tile_k=75`, ~15 pagine al reranker, smoke 4/4 verde riverificato dal reviewer) + cache dei risultati visivi per (query, ruolo). In produzione la taratura del pool va rifatta con l'eval completa (T7 latenza reranker).
 
 ## T9 — Igiene di sistema (Priorità 3 del piano madre, invariata)
 - ruff pulito su tutto il repo (erano 51 errori; i file nuovi sono puliti, il pregresso no).

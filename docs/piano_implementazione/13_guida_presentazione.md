@@ -66,12 +66,15 @@ Apri `http://localhost:8501` nel browser.
 
 ### 3.2 Riscaldamento (fondamentale)
 
-- [ ] Lancia una query codice qualsiasi (es. `codice 1560000`) → scalda Ollama
+- [ ] Lancia una query codice qualsiasi (es. `codice 877615`) → scalda Ollama
       (il primo caricamento del 14B richiede decine di secondi).
-- [ ] Lancia UNA query visiva (es. `exploded view of the Gehl foot valve`) → carica
-      embedder e reranker visivi in RAM. **Aspetta che finisca senza cliccare altro**
-      (decine di secondi). Da qui in poi le query visive saranno molto più rapide.
+- [ ] Lancia TUTTE le query visive dello script (Gehl, poi Micron) UNA volta:
+      la prima impiega **2-5 minuti** (carica i modelli + reranking), le successive
+      ~1,5 minuti. I risultati finiscono in cache: in demo saranno ISTANTANEI.
+      **Aspetta ogni risposta senza cliccare altro.**
 - [ ] Verifica che l'immagine dell'esploso compaia davvero a schermo.
+- [ ] ⚠️ Da qui in poi NON riavviare streamlit (la cache vive nel processo):
+      se il terminale muore, rifai il riscaldamento visivo da capo.
 
 ### 3.3 Igiene macchina
 
@@ -90,9 +93,9 @@ Apri `http://localhost:8501` nel browser.
 | # | Query da digitare | Cosa dire mentre gira | Cosa deve apparire |
 |---|---|---|---|
 | 1 | `Qual è la capitale della Francia?` | "Prima verifichiamo che NON allucini: gli chiedo una cosa fuori dai manuali." | Rifiuto: "Non ho evidenza sufficiente" → **venderlo**: "non inventa mai" |
-| 2 | `codice 1560000` | "Ora un codice reale dai nostri manuali." | Codice trovato con fonte (sassinterizzati_cilindri_2025, pag. 62), fiducia ALTA |
-| 3 | `codice 140-08-13-RIISO0003` | "Anche codici complessi con formattazioni difficili." | Misura 1'1/4 = 42,4mm con fonte (nargesa_catalogo_2026, pag. 33) |
-| 4 | `exploded view of the Gehl foot valve` | "A volte serve lo spaccato tecnico: chiediamo l'esploso di una valvola." | Immagine esploso da gehl_v270_parts pag. 167 (già scaldata: pochi secondi) |
+| 2 | `codice 877615` | "Ora un codice reale dai nostri manuali." | EXTRACTOR ASSY. con fonte (rotax_912iS_IPC, pag. 15), fiducia ALTA |
+| 3 | `codice PD16T10-40AL-F` | "Anche codici complessi con formattazioni difficili." | Codice puleggia con fonte (pi_pulley_listino_pulegge_2025, pag. 29), fiducia ALTA |
+| 4 | `exploded view of the Gehl foot valve` | "A volte serve lo spaccato tecnico: chiediamo l'esploso di una valvola." | Immagine esploso da gehl_v270_parts pag. 167 (pre-riscaldata: istantanea dalla cache) |
 | 5 | `exploded view of the Kids MICRON sweeper` | "Stessa cosa su un manuale completamente diverso." | Immagine esploso da flow_exploded_2022 pag. 16 |
 | 6 | `chiusura di scarico con la retina per i capelli, diametro 72` | "L'utente non sa il termine tecnico: descrive. Il sistema capisce che è un 'tappo con filtro'." | Riferimento al tappo con filtro diametro 72 |
 | 7 (opz.) | `quale norma indica il montaggio B3 o B5 di un motore elettrico?` | Solo se c'è tempo e tutto è filato liscio. | Riferimento alla normativa IEC 34-7 |
