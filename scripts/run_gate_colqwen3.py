@@ -15,6 +15,14 @@ import uuid
 def page_id(doc: str, page: int) -> str:
     return str(uuid.uuid5(uuid.NAMESPACE_URL, f"visual_colqwen3/{doc}/p{page}"))
 
+def check_sample(pid: str, hits: list, n_vettori: int) -> tuple[bool, str | None]:
+    if not hits or hits[0].id != pid:
+        return False, "non-top1"
+    score_per_token = hits[0].score / n_vettori if n_vettori else 0
+    if score_per_token < 0.85:
+        return False, "score_per_token"
+    return True, None
+
 def main():
     samples_file = sys.argv[1]
     with open(samples_file) as f:
@@ -57,12 +65,12 @@ def main():
         }
         audit_data["samples"].append(sample_audit)
         
-        if not hits or hits[0].id != pid:
-            print(f"Validation Gate failed for {pid}: non è top-1", file=sys.stderr)
-            success = False
-            failures.append(pid)
-        elif sample_audit["score_per_token"] < 0.85:
-            print(f"Validation Gate failed for {pid}: score_per_token {sample_audit['score_per_token']:.3f} < 0.85", file=sys.stderr)
+        ok, reason = check_sample(pid, hits, n_vettori_query)
+        if not ok:
+            if reason == "non-top1":
+                print(f"Validation Gate failed for {pid}: non è top-1", file=sys.stderr)
+            elif reason == "score_per_token":
+                print(f"Validation Gate failed for {pid}: score_per_token {sample_audit['score_per_token']:.3f} < 0.85", file=sys.stderr)
             success = False
             failures.append(pid)
             
