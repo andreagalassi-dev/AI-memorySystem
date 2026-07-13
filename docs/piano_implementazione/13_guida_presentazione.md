@@ -69,8 +69,9 @@ Apri `http://localhost:8501` nel browser.
 - [ ] Lancia una query codice qualsiasi (es. `codice 877615`) → scalda Ollama
       (il primo caricamento del 14B richiede decine di secondi).
 - [ ] Lancia TUTTE le query visive dello script (Gehl, poi Micron) UNA volta:
-      la prima impiega **2-5 minuti** (carica i modelli + reranking), le successive
-      ~1,5 minuti. I risultati finiscono in cache: in demo saranno ISTANTANEI.
+      OGNI query visiva nuova impiega **~2,5-5 minuti** (ricarica i modelli +
+      reranking). I risultati finiscono in cache persistente: in demo le stesse
+      query saranno ISTANTANEE (anche dopo un reload della pagina).
       **Aspetta ogni risposta senza cliccare altro.**
 - [ ] Verifica che l'immagine dell'esploso compaia davvero a schermo.
 - [ ] ⚠️ Da qui in poi NON riavviare streamlit (la cache vive nel processo):
