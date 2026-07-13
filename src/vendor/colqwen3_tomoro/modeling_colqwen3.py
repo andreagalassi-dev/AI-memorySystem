@@ -157,7 +157,74 @@ class ColQwen3(ColQwen3PreTrainedModel):
         if key_mapping is None:
             key_mapping = getattr(cls, "_checkpoint_conversion_mapping", None)
 
-        return super().from_pretrained(*args, config=config, **kwargs, key_mapping=key_mapping)
+        output_loading_info = kwargs.pop("output_loading_info", False)
+        
+        # We enforce output_loading_info=True internally to check missing_keys
+        model, loading_info = super().from_pretrained(
+            *args, config=config, output_loading_info=True, **kwargs, key_mapping=key_mapping
+        )
+        
+        missing_keys = set(loading_info.get("missing_keys", []))
+        if missing_keys != {"vlm.lm_head.weight"}:
+            raise RuntimeError(
+                f"Fail-closed guardrail: missing_keys must be exactly {{'vlm.lm_head.weight'}}. "
+                f"Got: {missing_keys}"
+            )
+
+        # Workaround for transformers dropping/re-initializing embedding_proj_layer
+        # We manually load it from the checkpoint. hf_hub_download will use the cache.
+        try:
+            import os
+            import json
+            from huggingface_hub import hf_hub_download
+            from safetensors.torch import load_file
+            
+            model_id = args[0] if args else kwargs.get("pretrained_model_name_or_path")
+            if isinstance(model_id, str):
+                index_path = None
+                if os.path.isdir(model_id):
+                    index_path = os.path.join(model_id, "model.safetensors.index.json")
+                else:
+                    try:
+                        index_path = hf_hub_download(repo_id=model_id, filename="model.safetensors.index.json")
+                    except Exception:
+                        pass
+                
+                st_dicts = {}
+                if index_path and os.path.exists(index_path):
+                    with open(index_path) as f:
+                        idx = json.load(f)
+                    proj_weight_file = idx.get("weight_map", {}).get("embedding_proj_layer.weight")
+                    if proj_weight_file:
+                        if os.path.isdir(model_id):
+                            st_file = os.path.join(model_id, proj_weight_file)
+                        else:
+                            st_file = hf_hub_download(repo_id=model_id, filename=proj_weight_file)
+                        if os.path.exists(st_file):
+                            st_dicts = load_file(st_file)
+                else:
+                    # Not sharded
+                    st_file = None
+                    if os.path.isdir(model_id):
+                        st_file = os.path.join(model_id, "model.safetensors")
+                    else:
+                        try:
+                            st_file = hf_hub_download(repo_id=model_id, filename="model.safetensors")
+                        except Exception:
+                            pass
+                    if st_file and os.path.exists(st_file):
+                        st_dicts = load_file(st_file)
+                
+                if "embedding_proj_layer.weight" in st_dicts:
+                    model.embedding_proj_layer.weight.data.copy_(st_dicts["embedding_proj_layer.weight"])
+                if "embedding_proj_layer.bias" in st_dicts and model.embedding_proj_layer.bias is not None:
+                    model.embedding_proj_layer.bias.data.copy_(st_dicts["embedding_proj_layer.bias"])
+        except Exception as e:
+            logger.warning(f"Failed to manually load embedding_proj_layer: {e}")
+
+        if output_loading_info:
+            return model, loading_info
+        return model
 
     @can_return_tuple
     @auto_docstring
