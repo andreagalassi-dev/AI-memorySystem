@@ -132,6 +132,7 @@ Nessun commit, nessun aggiornamento, solo prova generale con lo script demo.
 - Branch `demo-mercoledi`: throwaway — niente merge diretto su main; il lavoro vero
   passa da T4.
 - Eventuali fix "solo demo" fatti in D1.4 vanno riportati/rifatti puliti sul branch vero.
+- Il worktree demo symlinka output/visual/renders del repo principale: i render on-demand generati dalla UI demo scrivono nella directory di produzione (additivo). Rimuovere il symlink insieme al worktree.
 
 ## T9 — Igiene di sistema (Priorità 3 del piano madre, invariata)
 - ruff pulito su tutto il repo (erano 51 errori; i file nuovi sono puliti, il pregresso no).
