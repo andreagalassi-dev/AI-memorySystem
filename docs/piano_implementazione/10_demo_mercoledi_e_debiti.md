@@ -70,11 +70,11 @@ Nessun commit, nessun aggiornamento, solo prova generale con lo script demo.
 - **Nota:** riportare quale documento era il falso positivo "Altro2" nel sanity Kohler.
 
 ## T2 — Punto 0.3: estrazione massiva → righe_listino (ramo STRUCTURED)
-- **Stato:** `righe_listino` = 0 righe. Lancio previsto in D2/D3 come best-effort demo.
+- **Stato:** `righe_listino` ha tentato un'estrazione best-effort per la demo. **ESITO FALLITO**: l'estrazione non è verbatim. Mamoli p230-231 sono completamente assenti dal DB (max page 185) e le righe presenti contengono testo concatenato male e allucinazioni. L'innesto del lookup prezzi in UI (D3) è stato **cancellato** ("mai sbagliato in silenzio").
 - **Da fare (completo, post-demo):** run completo con verifica campioni manuali
   (Mamoli p230-231 verbatim vs PDF), censimento scarti con motivo, riconciliazione
   Fase 2 (`python -m src.merge.reconcile --dry-run` → numeri linked/orphan/ambiguous),
-  query STRUCTURED e2e con prezzo ancorato. DoD in 08_piano_correzione §0.3.
+  query STRUCTURED e2e con prezzo ancorato. DoD in 08_piano_correzione §0.3. Rivedere prompt e pipeline OCR per risolvere le allucinazioni.
 
 ## T3 — Punto 0.4: fine dei fail-safe silenziosi
 - `pipeline.py::_default_deps`: ogni `except Exception: dep=None` deve loggare warning
