@@ -109,71 +109,25 @@ def check_roundtrip(client, point_id: str, original_vector: list[list[float]], t
 
 def validation_gate(client, done_meta: list[dict]) -> bool:
     import random
-    from qdrant_client import QdrantClient
-    from src.backend.config import settings
-
+    import subprocess
+    import tempfile
+    
     if not done_meta:
         return True
         
-    gate_client = QdrantClient(
-        host=settings.qdrant_host,
-        port=settings.qdrant_port,
-        api_key=settings.qdrant_api_key or None,
-        timeout=300.0,
-    )
-        
     samples = random.sample(done_meta, min(10, len(done_meta)))
     
-    success = True
-    tested = 0
-    failures = []
-    audit_data = {"samples": []}
-    
-    for m in samples:
-        pid = page_id(m["doc"], m["page"])
-        png_path = ROOT / m["render"]
-        img = Image.open(png_path).convert("RGB")
-        embs = embed_pages([img])
-        emb = embs[0]
-        n_vettori_query = len(emb)
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        json.dump(samples, f)
+        temp_path = f.name
         
-        hits = gate_client.query_points(
-            VISUAL_COLLECTION_COLQWEN3, 
-            query=emb,
-            limit=2,
-            with_payload=False
-        ).points
-        
-        sample_audit = {
-            "pid": pid,
-            "n_vettori": n_vettori_query,
-            "top1_id": hits[0].id if hits else None,
-            "top1_score": hits[0].score if hits else None,
-            "score_per_token": (hits[0].score / n_vettori_query) if hits and n_vettori_query else None
-        }
-        audit_data["samples"].append(sample_audit)
-        
-        if not hits or hits[0].id != pid:
-            print(f"Validation Gate failed for {pid}: non è top-1", file=sys.stderr)
-            success = False
-            failures.append(pid)
-        elif sample_audit["score_per_token"] < 0.85:
-            print(f"Validation Gate failed for {pid}: score_per_token {sample_audit['score_per_token']:.3f} < 0.85", file=sys.stderr)
-            success = False
-            failures.append(pid)
-            
-        tested += 1
-                
-    audit_data["passed"] = success
-    audit_data["samples_tested"] = tested
-    audit_data["failures"] = failures
-    
-    out_path = ROOT / "output" / "eval" / "colqwen3_ingest_gate.json"
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    with out_path.open("w") as f:
-        json.dump(audit_data, f, indent=2)
-        
-    return success
+    try:
+        script_path = ROOT / "scripts" / "run_gate_colqwen3.py"
+        res = subprocess.run([sys.executable, str(script_path), temp_path], check=False)
+        return res.returncode == 0
+    finally:
+        if os.path.exists(temp_path):
+            os.unlink(temp_path)
 
 
 def render_page(pdf_path: Path, pno: int, out_png: Path) -> Image.Image:
