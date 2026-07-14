@@ -45,12 +45,19 @@
 Tempo a freddo ~1,5-2 min l'una: **vanno TUTTE pre-riscaldate la mattina** (dopo, dalla
 cache, sono istantanee). Nei tab compaiono fino a 8 tavole simili per disambiguare.
 
-## 3. Query NATURALI (2, fiducia MEDIA — provarle nella prova generale)
+## 3. Query NATURALI (4, stabili 3/3 al collaudo ripetuto del 14/07)
 
 | Query | Risposta attesa |
 |---|---|
-| `chiusura di scarico con la retina per i capelli, diametro 72` | tappo con filtro ø72, codice 12045, (Mamoli, pag. 133 — primo tab coerente) |
-| `quale norma indica il montaggio B3 o B5 di un motore elettrico?` | riferimento IEC 34-7 |
+| `il D906969ZR è il filtro dell'aria della ventola?` ⭐ | "Sì, il D906969ZR — FILTRO VENTILATORE (Silca_TriaxPro_Ricambi_Multilingua, pag. 3)" — **ALTA 3/3** |
+| `chiusura di scarico con la retina per i capelli, diametro 72` | tappo con filtro ø72, codice 12045, 17,50 (Mamoli, pag. 133) — MEDIA 3/3 |
+| `vite testa svasata cinque per trenta zincata scura` | 438304 — VITE M5x30 UNI 7688 ZINC NERO (manzoni_comac_spareparts_B, pag. 14) — MEDIA 3/3 |
+| `spia trasparente per controllare l'olio della centralina SCV` | LVA10SAPM10 e componenti correlati (arol/oleodinamica) — MEDIA 3/3 |
+
+⚠️ **RITIRATA**: `quale norma indica il montaggio B3 o B5 di un motore elettrico?` —
+instabile al collaudo ×3 (BASSA/MEDIA/MEDIA: il generatore scrive "IEC 34-7" ma
+l'evidenza riporta EN60034-7 → il guardrail a volte la blocca). Correttezza del
+sistema, inaffidabilità da palco.
 
 ## 4. Rifiuto onesto (da vendere come feature)
 
