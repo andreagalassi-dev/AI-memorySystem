@@ -147,6 +147,43 @@ preparato apposta.
 
 ---
 
+## 6-bis. SU QUALI MANUALI PUÒ RISPONDERE LA DEMO
+
+⚠️ Il corpus su disco ha ~141 PDF ma **l'indice della demo ne contiene 59**: un codice
+preso da un PDF NON in questa lista non verrà MAI trovato (es. bgr_radiator_catalog_2026
+NON è indicizzato — scoperto in prova generale). Regole:
+1. **Mai aprire un PDF a caso davanti al pubblico** e interrogarne un codice.
+2. Se vuoi query extra oltre lo script, scegli SOLO dai documenti sotto, e **provale
+   la sera prima**: essere indicizzato non garantisce che ogni singolo codice del PDF
+   sia estratto (il guardrail al massimo dirà "non lo so" — mai una risposta inventata).
+3. I documenti con più copertura (più chunk indicizzati) sono i più affidabili.
+
+**I più coperti:** Mamoli_Catalogo_Ricambi_2021_IT_EN (7249), gehl_v270_parts (3072),
+kohler_marine_tp6954 (2425), DirectKitchen_Forni_Schemi_IT_EN (1494),
+rotax_912_914_IPC (1428), nargesa_catalogo_2026 (1300), lycoming_IGO540_PC116 (1216),
+opacmare_catalogo_ricambi_idraulica (1196), pi_pulley_listino_pulegge_2025 (1147),
+branson_4520R_parts (1107).
+
+**Lista completa (59):** abco_export_price_list_valves, arol_listino_oleodinamica_2024,
+ave_listino_materiale_elettrico_2023, benassi_t623_flail_mower, branson_4520R_parts,
+cassani_concrete_machinery, castelgarden_tcp102_parts, contexo_automation_brochure,
+crusader_marine_L510008, DeliTools_SpareParts_List.xlsx, DirectKitchen_Forni_Schemi_IT_EN,
+edwards_booster_pump_parts, Electrolux_Distinta_Ricambi.xlsx, flow_exploded_2022,
+fluid_system_cilindri_oleodinamici, gehl_v270_parts, hydrogear_Pseries_pump,
+hytek_guida_ricambi_avvolgitubo, iwaki_TC-X031VTN, iwaki_TC-X101SH-NPT,
+iwaki_TC-X200SSN, iwaki_TC-X252PH-NPT, iwaki_TC-X500PH-FLA, iwaki_TC-X501VT-FLA,
+kaltenbach_steel_processing_2026, kbs_gastrotechnik_1717, kbs_gastrotechnik_20322006,
+kbs_gastrotechnik_4055041, kohler_industrial_tp7120, kohler_marine_tp6954,
+lycoming_IGO540_PC116, Mamoli_Catalogo_Ricambi_2021_IT_EN, manzoni_comac_spareparts_A,
+manzoni_comac_spareparts_B, nargesa_catalogo_2026, nesans_crusher_catalog_2025,
+NordCap_Esploso_Ricambi_DE, oleodinamica_sangro_catalogo_generale,
+opacmare_catalogo_ricambi_idraulica, panciroli_garmec_BL200,
+pi_pulley_listino_pulegge_2025, pierce_industrial_catalog, rimoldi_327_spareparts,
+rimoldi_527_spareparts, rotax_912_914_IPC, rotax_912iS_IPC, sassinterizzati_cilindri_2025,
+Silca_TriaxPro_Ricambi_Multilingua, smem_motori_elettrici_catalogo_2025,
+stoll_CMS830C_spareparts, transtacker_6072_parts, trumpf_bending_brochure_EN,
+westermann_kehrmaschine, yts_pump_D200STN-A (+ 5 voci di test/frammenti minori).
+
 ## 7. COSA NON FARE (mercoledì)
 
 - ❌ Nessun `git commit`, `git pull`, update di librerie o modelli. FREEZE totale.
