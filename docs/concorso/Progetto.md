@@ -63,10 +63,14 @@ al gate di regressione, con l'errore silenzioso trattato sempre come bug da erad
      igienizzazione** (difesa da prompt injection: al cervello arrivano solo fatti crudi).
   3. **Conoscenza dell'LLM** (es. "qual è la capitale della Francia?" → DEVE rispondere):
      utilizzabile, ma **sempre verificata online tramite l'agente di ricerca**, con fonti.
-  Eccezione di sicurezza: **codici ricambio e prezzi SOLO dal corpus** (al più il web
-  agent cerca sui siti ufficiali dei produttori) — dove l'errore costa denaro il
-  guardrail resta corpus-only. Vincolo di deployment: l'uscita web è configurabile per
-  cliente (installazioni air-gapped: cascata ferma al livello 1, lì "non lo so" resta).
+  Regola speciale codici/prezzi (dove l'errore costa denaro): dal corpus la risposta è
+  garantita dal guardrail (ALTA); se trovata SOLO online, viene mostrata con **warning
+  ben visibile e inequivocabile** ("informazione trovata online, correttezza NON
+  verificata" + fonte) e non è mai confusa con una risposta a catalogo. È il **feedback
+  degli utenti a promuoverla**: quando viene confermata come corretta (con soglia di
+  conferme o moderazione — da affinare), entra nella memoria aziendale e diventa la
+  prima risposta per chiunque la richieda dopo. Vincolo di deployment: l'uscita web è
+  configurabile per cliente (installazioni air-gapped: cascata ferma al livello 1).
 - **RAG documentale generico** ⚠️ → **Epiche A/C** — non solo cataloghi ricambi:
   qualunque documento aziendale (es. una brochure: "cosa fa questa azienda?") deve
   produrre una risposta elaborata dal contenuto, senza inventare; se il documento non
@@ -99,9 +103,18 @@ al gate di regressione, con l'errore silenzioso trattato sempre come bug da erad
 - **UI**: ⚠️ → **Epica A** — salto a **Chainlit** (auth, sessioni, feedback nativi);
   React+FastAPI resta il target di lungo periodo. La demo Streamlit congelata resta
   come vetrina permanente.
-- **Memoria utente ("Mario Rossi")** ❌ → **Epica F** — feedback loop (risposta
-  confermata dall'utente → riproposta), profilo utente compresso stile L0-L3 iniettato
-  nel system prompt, RBAC per utente. Il feedback si raccoglie da subito (schema in A).
+- **Memoria a tre livelli e apprendimento dai feedback** ❌ → **Epica F** — il sistema
+  migliora con l'uso. Struttura gerarchica:
+  1. **Memoria aziendale (generale)**: conoscenza condivisa da tutti — es. una risposta
+     trovata online e confermata dagli utenti diventa la prima risposta per chiunque;
+  2. **Memoria di categoria** (amministrazione, tecnici, commerciali…): agganciata al
+     RBAC — decide "cosa si può dire a chi" e memorizza ciò che serve a quel ruolo;
+  3. **Memoria personale ("Mario Rossi")**: se un utente chiede ogni settimana la stessa
+     cosa e ha già indicato via feedback la risposta giusta, il sistema la ripropone.
+  Promozione verso l'alto (personale → categoria → aziendale) SOLO con conferme multiple
+  o moderazione (mai da un singolo feedback: un errore confermato da uno non deve
+  inquinare tutti). Profilo utente compresso stile L0-L3 iniettato nel system prompt.
+  Il feedback si raccoglie da subito (schema progettato in epica A).
 - **SaaS multi-tenant** ❌ — fuori orizzonte corrente (era "Fase 7").
 
 ---

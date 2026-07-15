@@ -78,10 +78,17 @@ Il lavoro vero vive su `feature/fase1-model-multiplexer`; main è 60+ commit ind
   cross-lingua IT (il tallone), tuning tile_k/k su numeri.
 - Opzioni future primo stadio (dal registro): Ops-Colqwen3-4B, Qwen3-VL-8B, 2048d.
 
-### F — Memoria utente e apprendimento ("Mario Rossi")
+### F — Memoria a tre livelli e apprendimento dai feedback
 - Identità reale via auth Chainlit; RBAC per utente.
-- Feedback loop: risposta corretta confermata dall'utente → riproposta alla stessa
-  domanda (per-utente prima, globale con moderazione poi — issue #13 moderazione).
+- **Tre livelli di memoria** (decisione utente 15/07):
+  1. aziendale (generale, condivisa da tutti);
+  2. di categoria (amministrazione/tecnici/commerciali… — agganciata al RBAC:
+     "cosa si può dire a chi");
+  3. personale ("Mario Rossi": domanda ricorrente + feedback → risposta riproposta).
+- Feedback loop con **promozione verso l'alto**: una risposta (anche trovata online,
+  epica H) confermata dagli utenti sale personale→categoria→aziendale e diventa la
+  prima risposta per chi la cerca dopo. Promozione MAI da un singolo feedback:
+  soglia di conferme o moderatore (issue #13) — da affinare in fase di design.
 - Profilo utente compresso (stile L0-L3 della visione) iniettato nel system prompt.
 - Arriva DOPO C/D/E: si memorizza sopra risposte stabili, non sopra difetti mobili.
 
@@ -93,7 +100,10 @@ Il "non lo so" deve diventare RARO: target di prodotto ≥90% risposte corrette 
   agente di ricerca, con fonti.
 - Principio evoluto: da "mai fuori dal corpus" a **"mai un'affermazione senza fonte"**;
   ogni risposta etichetta la provenienza (corpus / web / conoscenza verificata).
-- Eccezione di sicurezza: codici e prezzi SOLO dal corpus (web solo su siti produttori).
+- Codici e prezzi: dal corpus = garantiti dal guardrail (ALTA); trovati SOLO online =
+  mostrati con **warning ben visibile** ("trovato online, correttezza NON verificata"
+  + fonte), mai confusi con le risposte a catalogo; la conferma degli utenti (epica F)
+  li promuove a risposta aziendale condivisa.
 - RAG documentale generico (brochure → "cosa fa questa azienda?"): potenziare NARRATIVE
   su documenti non-catalogo, coperto dal golden gate.
 - Vincoli: uscita web configurabile per cliente (air-gapped ⇒ cascata ferma al liv. 1);
