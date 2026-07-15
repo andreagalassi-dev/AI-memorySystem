@@ -1,0 +1,103 @@
+# Piano Prodotto — dal PoC dimostrato al prodotto definitivo
+
+> **Origine:** brainstorming reviewer+utente del 2026-07-15, il giorno della demo riuscita.
+> **Sostituisce** come piano operativo: `08_piano_correzione.md` (completato) e la vecchia
+> roadmap a fasi `01-07` (archiviati in `docs/archive/`). **Non sostituisce**:
+> `00_regole_procedure.md` (regole valide), `docs/SPEC.md`, il registro `10` (storico demo).
+> La visione prodotto vive in `docs/concorso/Progetto.md` (north star): ogni feature lì
+> promessa è agganciata a un'epica qui.
+
+## Decisioni vincolanti (utente, 15/07)
+
+1. **La demo non si tocca**: worktree `../AI-memorySystem-demo` (branch `demo-mercoledi`
+   @ `788c49b`) è la copia funzionante permanente. Mai rimuoverla, mai mergiarla,
+   ricollaudare le sue query (file 14) dopo ogni re-ingestion delle collections.
+2. **Obiettivo**: prodotto definitivo per contesti reali, margini d'errore bassissimi,
+   "non lo so" onesto dove non arriva. Nessuna scadenza esterna: si lavora bene, non in fretta.
+3. **Target di gate ALTA**: precision **≥ 0.98** sul golden dataset (decisione utente:
+   1.0 come vincolo di gate è troppo rigido). Nota di design del reviewer: il principio
+   fail-closed di CLAUDE.md resta l'obiettivo architetturale — lo 0.98 è la soglia sotto
+   cui il gate BLOCCA, non una licenza di sbagliare; ogni ALTA errato trovato va trattato
+   come bug da eradicare, non come budget da spendere.
+4. **Hardware**: si ottimizza per QUESTO Mac (M1 Pro 32GB). Il DGX Spark (GB10, ARM+CUDA,
+   128GB unificati) arriverà tra mesi se finanziato: l'architettura deve avere **doppio
+   profilo** (mac-ottimizzato ora, nvidia-ottimizzato poi) — mai nuovi hardcode MPS/MLX
+   fuori dagli adapter/Port.
+5. **UI del prodotto**: salto diretto a **Chainlit** (auth, sessioni utente e feedback
+   nativi = fondamenta della memoria utente). Streamlit resta solo nella demo congelata.
+6. **Feedback raccolto da subito**: lo schema si progetta in epica A anche se la memoria
+   utente arriva in F — i dati si accumulano da ora.
+
+## Le epiche (ordine di esecuzione)
+
+### A — Un solo sistema (fondamenta)
+Il lavoro vero vive su `feature/fase1-model-multiplexer`; main è 60+ commit indietro.
+- Merge `feature/fase1-model-multiplexer` → `main`; suite verde prima e dopo.
+- Pulizia ~16 branch mergiati; decisione su `feat/fase-d2-quote` (bozza preventivo).
+- **UI Chainlit** collegata a `answer(query, role)` del grafo tri-intent: chat con
+  cronologia, badge fiducia, citazione, viewer documenti/esplosi (pagina citata SEMPRE
+  per prima — il fix D-3.3 della demo rifatto pulito), fino a 8 candidati, feedback
+  strutturato nativo. Schema feedback: (utente, query, risposta, verdetto, correzione).
+- T3: fine dei fail-safe silenziosi — warning strutturato per ogni ramo degradato,
+  `/health` con stato rami e modello residente.
+- Pool connessioni Postgres RO (TODO noto pipeline.py:623).
+- `scripts/smoke_e2e.py` (3 query, una per ramo, exit≠0 se degrado) come gate pre-merge.
+- Coda docs: aggiornare CLAUDE.md (stack reale) e README; archiviare ciò che A rende obsoleto.
+
+### B — Misura (il metro di "irrifiutabile")
+- **B1 Audit diagnostico** (prima i numeri, poi i target):
+  a. 82 PDF fuori dall'indice (59/141): censimento con motivo per ciascuno;
+  b. 58% dei codici degradati: campione stratificato, root-cause per categoria
+     (estrazione tabelle? normalizzazione? chunking? fusione? generazione?);
+  c. estrazione Mamoli morta a pagina 185: dove e perché;
+  d. visivo 40% sul set eval: analisi errori per lingua e per tipo di pagina.
+- **B2 Golden dataset gate**: comando unico, baseline salvata, fail su regressione,
+  metriche PER LINGUA. Target fissati sui numeri di B1; vincolo già deciso:
+  precision ALTA ≥ 0.98. Include test di stabilità ×N run (lezione B3/B5).
+
+### C — Estrazione di massa affidabile (il cuore: i dati)
+- Ridisegno del binario strutturato sui numeri di B1: copertura 141/141 PDF,
+  campi verbatim garantiti (il collasso multi-riga di Mamoli p8 non deve più esistere).
+- Censimento scarti con motivo + **dashboard di risoluzione umana** (promessa della visione).
+- Riconciliazione Fase 2 ripensata (oggi 11 linked / 2320 orfani per design sbagliato).
+- Il ramo prezzi entra nel prodotto SOLO quando passa il gate B2.
+
+### D — Correttezza e stabilità della risposta
+- Ramo STRUCTURED deterministico: l'LLM **formatta, non genera** (come da visione) —
+  mai più "IEC 34-7" quando l'evidenza dice "EN60034-7".
+- Stabilità ×N nel golden gate; audit del confidence (il caso "margine 1.00 → alta"
+  su retrieval fuori corpus visto in demo va capito).
+- La copertura ALTA sui codici (oggi ~42%) sale col lavoro C+D; target da B2.
+
+### E — Visivo performante (su questo Mac)
+- Latenza: modelli residenti tra le query (multiplexer condiviso nel serving UI, non
+  ricreato per chiamata), batch nel reranker, pool adattivo (grande se margine basso).
+- Recall: eval ampliato oltre le 15 query (anche col feedback della UI), analisi
+  cross-lingua IT (il tallone), tuning tile_k/k su numeri.
+- Opzioni future primo stadio (dal registro): Ops-Colqwen3-4B, Qwen3-VL-8B, 2048d.
+
+### F — Memoria utente e apprendimento ("Mario Rossi")
+- Identità reale via auth Chainlit; RBAC per utente.
+- Feedback loop: risposta corretta confermata dall'utente → riproposta alla stessa
+  domanda (per-utente prima, globale con moderazione poi — issue #13 moderazione).
+- Profilo utente compresso (stile L0-L3 della visione) iniettato nel system prompt.
+- Arriva DOPO C/D/E: si memorizza sopra risposte stabili, non sopra difetti mobili.
+
+### G — Doppio profilo hardware (trasversale, sempre attivo)
+- Ogni epica: nessun nuovo hardcode MPS/MLX/32GB fuori dagli adapter.
+- Config a profili (mac/nvidia): modelli, quantizzazioni, max_resident, batch size.
+- All'arrivo del DGX: epica di migrazione dedicata (serving CUDA: vLLM/TensorRT-LLM/
+  llama.cpp; MLX resta il profilo mac).
+
+## Metodo (quello che ha funzionato)
+- Un'epica alla volta; ogni epica spezzata in punti piccoli con DoD e STOP.
+- Agente esecutore implementa; reviewer verifica OGNI claim con i tool prima del verdetto.
+- Da B2 in poi: nessun punto si chiude senza golden gate verde.
+- Commit piccoli; niente push su main senza smoke e2e.
+
+## Governance documenti
+- **Vivi**: questo file (piano operativo), `concorso/Progetto.md` (visione, aggiornata
+  a fine epica), `00_regole_procedure`, `SPEC.md`, CLAUDE.md/README (aggiornati in A).
+- **Storici** (non si toccano): `10` (registro demo), `12` (handoff), `13`/`14` (demo).
+- **Archiviati** in `docs/archive/`: roadmap `01-07`+`01b`, `08` (completato), `09`,
+  `PIANO-IMPLEMENTAZIONE.md`, eval/report superati.

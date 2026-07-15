@@ -1,84 +1,91 @@
-# AI Knowledge Engine — Documento di Progetto Architetturale (Deep Dive)
+# AI Knowledge Engine — Visione Prodotto (North Star)
 
-Questo documento fornisce un'analisi profonda ed esaustiva dell'architettura, delle funzionalità, dei modelli e delle scelte ingegneristiche alla base dell'**AI Knowledge Engine**. 
+> **Cos'è questo documento:** la descrizione del prodotto definitivo verso cui si lavora.
+> Ogni funzionalità è marcata con lo **stato reale** e con l'**epica** del piano operativo
+> (`docs/piano_implementazione/15_piano_prodotto.md`) che la consegna. Si aggiorna a fine
+> di ogni epica. Ultimo allineamento: **2026-07-15** (giorno della demo riuscita).
+>
+> Legenda: ✅ esiste e funziona · ⚠️ esiste ma parziale/da irrobustire · ❌ da costruire
 
-Il sistema è stato concepito per risolvere un problema critico nel settore industriale (B2B): la frammentazione della conoscenza tecnica e commerciale tra migliaia di PDF (cataloghi, esplosi, manuali) e gestionali aziendali. L'obiettivo non è creare un semplice "chatbot", ma un **Agente Operativo Tecnico-Commerciale**, capace di estrarre Distinte Base (BOM), generare bozze di preventivi e rispondere a quesiti complessi in tempo reale.
+Il sistema risolve un problema critico del settore industriale (B2B): la frammentazione
+della conoscenza tecnica e commerciale tra migliaia di PDF (cataloghi, esplosi, manuali)
+e gestionali aziendali. L'obiettivo non è un "chatbot", ma un **Agente Operativo
+Tecnico-Commerciale**: estrae Distinte Base, genera bozze di preventivi, risponde a
+quesiti complessi — e quando non sa, lo dice.
 
-Tutto il progetto è guidato dal paradigma della **Defensive AI Engineering**: in ambito industriale, un'allucinazione (es. inventare il codice di un ricambio o sbagliarne il prezzo) genera danni economici reali. Per questo, l'Intelligenza Artificiale è incapsulata all'interno di flussi software puramente deterministici.
-
----
-
-## 1. Architettura di Ingestion: Come il sistema impara
-
-Il sistema abbandona il classico approccio RAG (Retrieval-Augmented Generation) "tutto testo", inefficace su documenti industriali, in favore di una **Pipeline a Triplo Binario**.
-
-### 1.1 Binario Fast-Dispatch (Puro Testo)
-- **Cos'è:** Un classificatore in ingresso (basato su `PyMuPDF/fitz`) analizza i PDF pagina per pagina. Se rileva pagine "born-digital" puramente testuali (es. indici, avvertenze, manualistica), estrae il testo istantaneamente.
-- **Perché:** Evita di sprecare preziosa potenza di calcolo (Compute/VRAM) passando il testo semplice a modelli AI pesanti, ottimizzando radicalmente i tempi di ingestion.
-
-### 1.2 Binario Strutturato: GLM-OCR e PydanticAI
-- **Cos'è:** Le pagine contenenti griglie e listini prezzi vengono passate a **GLM-OCR**.
-- **Il Modello:** GLM-OCR è un modello Vision (VLM) specializzato nel *Visual Causal Flow*. Riesce a "capire" la struttura logica di tabelle complesse, celle unite e intestazioni multi-pagina, dove i classici OCR estraggono solo stringhe di testo senza senso.
-- **Enforcement (La Gabbia Pydantic):** Il modello non è lasciato libero. Tramite framework come *PydanticAI* (o Instructor), GLM-OCR è costretto a restituire i dati rispettando uno schema JSON rigidissimo (`extra="forbid"`). Il modello viene usato come un mero "estrattore-passacarte": se prova ad allucinare una colonna o a cambiare formato, il codice rifiuta l'output.
-- **Normalizzazione:** Il `codice_normalizzato` (es. da "0US-123.A" a "0us123a") viene calcolato da script Python deterministici, mai dall'LLM.
-
-### 1.3 Binario Visivo: PixelRAG (Qwen3-VL-Embedding)
-- **Cos'è:** Le pagine con schemi tecnici ed esplosi grafici vengono rasterizzate e passate a un modello di embedding visivo (`Qwen3-VL-Embedding`) che le trasforma in vettori archiviati in `Qdrant`.
-- **Perché:** Quando l'utente chiede "Fammi vedere l'esploso del componente", il sistema non cerca parole, ma usa la similarità semantica visiva per restituire esattamente il ritaglio del PDF originale.
-
-### 1.4 Merge Relazionale (La Single Source of Truth)
-Una volta estratti, i dati del catalogo e i dati del listino prezzi vengono incrociati. Per evitare i ritardi e le incertezze dei database a grafo (GraphRAG), il sistema usa **PostgreSQL**. Il *codice normalizzato* funge da chiave primaria (Primary Key) infallibile per le `SQL JOIN`, collegando istantaneamente il prezzo di un ricambio alla sua immagine in Qdrant. Gli scarti vengono messi in una Dashboard per la risoluzione umana.
+Paradigma guida: **Defensive AI Engineering** — in ambito industriale un'allucinazione
+(un codice inventato, un prezzo sbagliato) genera danni economici reali. L'AI è
+incapsulata in flussi software deterministici. Target di qualità: precision ALTA ≥ 0.98
+al gate di regressione, con l'errore silenzioso trattato sempre come bug da eradicare.
 
 ---
 
-## 2. Il "Cervello Unificatore": Orchestrazione ed Esecuzione
+## 1. Ingestion: come il sistema impara
 
-Quando l'utente pone una domanda, il sistema non la invia "alla cieca" a un LLM. L'esecuzione è governata da una rigida Macchina a Stati Finiti (FSM) costruita con **LangGraph** (`src/graph/pipeline.py`).
+**Pipeline a Triplo Binario:**
 
-### 2.1 I Modelli di Ragionamento
-- Per il cervello principale, l'architettura punta a modelli **MoE (Mixture of Experts)** come `Gemma 4` (12B o 26B) o `Nemotron-Cascade-2`.
-- **Hardware-Aware (Apple Silicon):** Il sistema è ottimizzato per girare in locale su hardware Apple sfruttando il framework `MLX`. La Memoria Unificata dei chip Apple (M2/M3/M4 Ultra) offre una banda passante immensa, permettendo ai modelli MoE di raggiungere velocità di inferenza (token/s) eccellenti a precisione Q4, abbattendo la latenza e mantenendo il sistema privato (on-premise).
+- **1.1 Fast-Dispatch (puro testo)** ✅ — classificatore PyMuPDF pagina-per-pagina,
+  estrazione istantanea del born-digital testuale, zero VRAM sprecata.
+- **1.2 Binario Strutturato (tabelle e listini)** ⚠️ → **Epiche B1+C** — routing
+  born-digital→`TextTableExtractor` (codici esatti) / scansioni→GLM-OCR con gabbia
+  Pydantic (`extra="forbid"`) e grounding verbatim. **Stato reale:** l'estrazione
+  massiva ha prodotto dati non verbatim (descrizioni collassate, coperture mancanti:
+  Mamoli fermo a p185/285) e solo 59 PDF su 141 sono indicizzati. Il ridisegno su
+  audit è l'epica C; i prezzi entrano nel prodotto solo oltre il gate.
+- **1.3 Binario Visivo — PixelRAG** ⚠️ → **Epica E** — pagine grafiche rasterizzate,
+  embedding Qwen3-VL single-vector 1024d + reranker, tile→pagina, RBAC fail-closed.
+  **Stato reale:** funziona (demo), ma recall 40% sul set eval col profilo corrente e
+  1,5-2 min/query a freddo su MPS. Serve: modelli residenti, batch, eval ampliato,
+  cross-lingua IT.
+- **1.4 Merge Relazionale (Single Source of Truth)** ⚠️ → **Epica C** — PostgreSQL,
+  `codice_normalizzato` come chiave, niente GraphDB. **Stato reale:** implementato e
+  provato, ma a corpus reale produce 11 linked / 2320 orfani (le pagine di listino non
+  stanno nell'indice visivo): design della riconciliazione da ripensare. La **dashboard
+  scarti per la risoluzione umana** è da costruire (❌, epica C).
 
-### 2.2 Il Router e gli Agenti Specializzati
-La domanda dell'utente passa dal Nodo Router (LangGraph) che ne deduce l'intento:
-1. **Intento Structured (Text-to-SQL):** Se l'utente chiede *"Quanto costa il pezzo X?"*, la query viene passata a un esecutore SQL. L'LLM *non formula la risposta da zero*, ma formatta i dati recuperati chirurgicamente dal database.
-2. **Intento Visual:** Se chiede un'immagine, si attiva il PixelRAG.
-3. **Intento Narrative:** Usa il RAG ibrido (Dense + BM25) classico per i manuali.
+## 2. Il Cervello Unificatore
 
-### 2.3 Fallback a Cascata a 3 Livelli (Fase 3)
-Se l'informazione non è trovata immediatamente, il Grafo LangGraph attiva dei fallback:
-1. **Livello 1 (RAG Interno):** Massima priorità sui PDF aziendali.
-2. **Livello 2 (Conoscenza LLM):** Usata *esclusivamente* per risposte discorsive ("Come funziona il sistema?"). **Bloccata severamente** per argomenti tecnici per evitare allucinazioni letali.
-3. **Livello 3 (Web Agent Igienizzato):** Un agente (es. Tavily) cerca sui siti dei produttori. I dati web vengono prima passati in una **Sandbox di Igienizzazione**: un LLM secondario pulisce il testo dai comandi dannosi (difesa da *Prompt Injection*) estraendo solo "fatti crudi" da passare al cervello principale.
+- **FSM LangGraph tri-intent** (structured / visual / narrative) ✅ — costruita e provata
+  end-to-end su adapter reali. ⚠️ → **Epica A**: oggi vive su un branch non integrato;
+  la UI di prodotto non ci è ancora collegata.
+- **Modelli di ragionamento** ⚠️ → **Epiche A/G** — MLX Gemma 4 26B MoE sul Mac
+  (implementato, lento per l'uso live), Ollama come fallback. Profilo doppio: 
+  mac-ottimizzato ora, NVIDIA (DGX Spark GB10, 128GB unificati, CUDA) quando arriva.
+- **Fallback a cascata 3 livelli** ❌ (post-epiche, era "Fase 3"): RAG interno →
+  conoscenza LLM (solo discorsiva, mai tecnica) → web agent igienizzato anti-injection.
+
+## 3. Zero-Allucinazioni (l'infrastruttura difensiva)
+
+- **Guardrail deterministico sui codici** ✅ — regex + confronto letterale con
+  l'evidenza; blocco o retrocessione a "verifica manuale". In demo ha bloccato
+  correttamente riferimenti riformulati dal generatore: fa il suo lavoro.
+- **Risposta STRUCTURED deterministica (l'LLM formatta, non genera)** ⚠️ → **Epica D**
+  — il principio è dichiarato ma il generatore oggi riformula (es. "IEC 34-7" vs
+  "EN60034-7" nell'evidenza): la risposta sui dati strutturati deve diventare
+  template-driven, con l'LLM solo come formattatore.
+- **Fail-Closed design** ⚠️ → **Epica A (T3)** — la degradazione oggi è silenziosa
+  (`except: dep=None`): servono warning strutturati e `/health` con stato dei rami.
+- **Watchdog ciclo di vita documenti** ✅ — ingestion per-documento, avviso obsoleto
+  in risposta, cancellazione → alert.
+- **MLOps / Golden Dataset gate** ❌ → **Epica B2** — il gate anti-regressione con
+  baseline e metriche per lingua (IT/EN/DE) non esiste ancora: è il metro di tutto.
+
+## 4. Evoluzione e applicazioni operative
+
+- **BOM (Distinta Base)** ⚠️ — estrazione parent/child implementata (fase D1);
+  da integrare e provare nel prodotto unificato (epica A e oltre).
+- **Bozze di preventivo da liste sporche** ❌ — bozza su branch `feat/fase-d2-quote`,
+  mai integrata; decisione in epica A.
+- **Integrazione ERP sicura (semantic layer, sola lettura)** ❌ — post-epiche ("Fase 6").
+- **UI**: ⚠️ → **Epica A** — salto a **Chainlit** (auth, sessioni, feedback nativi);
+  React+FastAPI resta il target di lungo periodo. La demo Streamlit congelata resta
+  come vetrina permanente.
+- **Memoria utente ("Mario Rossi")** ❌ → **Epica F** — feedback loop (risposta
+  confermata dall'utente → riproposta), profilo utente compresso stile L0-L3 iniettato
+  nel system prompt, RBAC per utente. Il feedback si raccoglie da subito (schema in A).
+- **SaaS multi-tenant** ❌ — fuori orizzonte corrente (era "Fase 7").
 
 ---
 
-## 3. Solidità del Sistema: L'Ingegneria Zero-Allucinazioni
-
-Ciò che distingue questo progetto da un prototipo è l'infrastruttura difensiva (`src/retrieval/guardrail.py`):
-
-- **Guardrail Deterministico sui Codici:** Prima che una risposta venga mostrata all'utente, un modulo Python analizza l'output dell'LLM usando Regex stringenti per trovare ogni singolo codice citato. Questo codice viene confrontato **letteralmente** con i documenti estratti dal DB. Se l'LLM ha citato un codice che non esiste nell'evidenza testuale, la risposta viene `BLOCCATA` (se non a catalogo) o retrocessa a `VERIFICA MANUALE` (se ambiguo). 
-- **Fail-Closed Design:** Se un servizio cade (es. timeout di Postgres o Qdrant), il sistema non tenta di indovinare, né va in crash. LangGraph gestisce l'eccezione tipizzata sollevando un *System Error* e restituendo educatamente *"Sistema non disponibile"*.
-- **Controllo Ciclo di Vita (Watchdog):** Un worker monitora le cartelle. Se un PDF viene spostato nel cestino, il DB lo marca come `deleted`. Il sistema intercetta a livello di grafo questo stato e **inietta obbligatoriamente un alert rosso** ("Documento Eliminato/Obsoleto") nella risposta dell'AI.
-- **MLOps e Regression Testing:** Ogni modifica al codice deve passare una suite di test automatici basati su un "Golden Dataset" di 100 domande/edge-cases complessi. Se un aggiornamento fa regredire il sistema (un codice esatto ieri diventa sbagliato oggi), la modifica non va in produzione.
-
----
-
-## 4. Evoluzione e Applicazioni Operative
-
-Il sistema è progettato per scalare dal PoC iniziale a una piattaforma SaaS Multi-Tenant.
-
-### 4.1 Automazione del Lavoro (BOM e Preventivi)
-Oltre alla ricerca, l'AI è in grado di operare estrazioni logiche (Hop 2). Dato l'identificativo di un assieme (kit), recupera i `parent_id` collegati estraendo la **Distinta Base (BOM)** completa. Accettando liste sporche di richieste testuali dai clienti, l'AI esegue il matching e restituisce **bozze di preventivo** in tabelle pulite pronte per la validazione umana.
-
-### 4.2 Integrazione ERP Sicura (Fase 6)
-Il Knowledge Engine verrà collegato ai gestionali aziendali (SAP, Zucchetti, TeamSystem) per fornire Stock e Prezzi in tempo reale. Per evitare vulnerabilità di sicurezza:
-- L'AI non avrà **mai** accesso in scrittura al DB del gestionale.
-- Le query Text-to-SQL colpiranno un **Semantic Layer** (Viste Materializzate in PostgreSQL aggiornate da Export Batch Notturni), dove le colonne astruse dell'ERP sono state preventivamente tradotte in "linguaggio potabile" per l'Intelligenza Artificiale.
-
-### 4.3 UI e Piramide della Memoria (Fasi 4 e 5)
-L'interfaccia si evolverà da `Chainlit` (stabile per multi-threading e websocket) a `React + FastAPI`. 
-L'esperienza sarà potenziata dall'architettura **TencentDB Agent Memory**, strutturata in 4 livelli (L0-L3). Invece di far leggere all'LLM migliaia di token di storico chat, un job di background distilla un "Profilo Utente L3" (es. 200 token). Questo profilo iper-compresso viene **iniettato nativamente nel System Prompt** all'inizio della sessione, garantendo una personalizzazione estrema e istantanea a costo di latenza (e token) quasi zero. Ad ogni utente saranno applicate policy RBAC (Role-Based Access Control) rigorose, garantendo l'isolamento dei dati.
-
----
-*Conclusione:* L'AI Knowledge Engine unisce i più avanzati modelli multimodali (VLM, MoE) a un layer di ingegneria del software rigorosa, offrendo al settore manifatturiero e commerciale uno strumento autonomo potente, ma soprattutto, intrinsecamente **affidabile e sicuro**.
+*Il divario tra questa visione e lo stato reale è il piano operativo: 
+`docs/piano_implementazione/15_piano_prodotto.md` (epiche A→G).*
