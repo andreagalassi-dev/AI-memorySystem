@@ -52,8 +52,10 @@ Il lavoro vero vive su `feature/fase1-model-multiplexer`; main è 60+ commit ind
   c. estrazione Mamoli morta a pagina 185: dove e perché;
   d. visivo 40% sul set eval: analisi errori per lingua e per tipo di pagina.
 - **B2 Golden dataset gate**: comando unico, baseline salvata, fail su regressione,
-  metriche PER LINGUA. Target fissati sui numeri di B1; vincolo già deciso:
-  precision ALTA ≥ 0.98. Include test di stabilità ×N run (lezione B3/B5).
+  metriche PER LINGUA. Target fissati sui numeri di B1; vincoli già decisi:
+  precision ALTA ≥ 0.98 e (a regime, con l'epica H) **copertura ≥ 90% di risposte
+  corrette e utili — il "non lo so" deve essere raro**. Include test di stabilità
+  ×N run (lezione B3/B5).
 
 ### C — Estrazione di massa affidabile (il cuore: i dati)
 - Ridisegno del binario strutturato sui numeri di B1: copertura 141/141 PDF,
@@ -82,6 +84,22 @@ Il lavoro vero vive su `feature/fase1-model-multiplexer`; main è 60+ commit ind
   domanda (per-utente prima, globale con moderazione poi — issue #13 moderazione).
 - Profilo utente compresso (stile L0-L3 della visione) iniettato nel system prompt.
 - Arriva DOPO C/D/E: si memorizza sopra risposte stabili, non sopra difetti mobili.
+
+### H — Risposta a cascata e conoscenza aperta (decisione utente 15/07)
+Il "non lo so" deve diventare RARO: target di prodotto ≥90% risposte corrette e utili.
+- Cascata: 1) corpus interno (doc+pagina) → 2) **agente di ricerca web** che ragiona,
+  cita SEMPRE le fonti (URL) e passa dalla sandbox di igienizzazione → 3) conoscenza
+  dell'LLM ("capitale della Francia" → risponde) MA sempre verificata online via
+  agente di ricerca, con fonti.
+- Principio evoluto: da "mai fuori dal corpus" a **"mai un'affermazione senza fonte"**;
+  ogni risposta etichetta la provenienza (corpus / web / conoscenza verificata).
+- Eccezione di sicurezza: codici e prezzi SOLO dal corpus (web solo su siti produttori).
+- RAG documentale generico (brochure → "cosa fa questa azienda?"): potenziare NARRATIVE
+  su documenti non-catalogo, coperto dal golden gate.
+- Vincoli: uscita web configurabile per cliente (air-gapped ⇒ cascata ferma al liv. 1);
+  latenza della verifica web non deve rallentare le risposte da corpus.
+- Posizione: dopo D (la cascata si costruisce sopra risposte interne stabili);
+  può intrecciarsi con E/F secondo le priorità del momento.
 
 ### G — Doppio profilo hardware (trasversale, sempre attivo)
 - Ogni epica: nessun nuovo hardcode MPS/MLX/32GB fuori dagli adapter.

@@ -8,10 +8,12 @@
 > Legenda: ✅ esiste e funziona · ⚠️ esiste ma parziale/da irrobustire · ❌ da costruire
 
 Il sistema risolve un problema critico del settore industriale (B2B): la frammentazione
-della conoscenza tecnica e commerciale tra migliaia di PDF (cataloghi, esplosi, manuali)
-e gestionali aziendali. L'obiettivo non è un "chatbot", ma un **Agente Operativo
-Tecnico-Commerciale**: estrae Distinte Base, genera bozze di preventivi, risponde a
-quesiti complessi — e quando non sa, lo dice.
+della conoscenza tecnica e commerciale tra migliaia di PDF (cataloghi, esplosi, manuali,
+brochure) e gestionali aziendali. L'obiettivo non è un "chatbot", ma un **Agente
+Operativo Tecnico-Commerciale**: estrae Distinte Base, genera bozze di preventivi,
+risponde a quesiti complessi in linguaggio naturale o per codice. Target di prodotto:
+**≥90% di risposte corrette e utili**; il "non lo so" è raro e sempre motivato — quando
+il corpus non basta, il sistema cerca online con fonti citate (cascata a 3 livelli, §2).
 
 Paradigma guida: **Defensive AI Engineering** — in ambito industriale un'allucinazione
 (un codice inventato, un prezzo sbagliato) genera danni economici reali. L'AI è
@@ -51,8 +53,25 @@ al gate di regressione, con l'errore silenzioso trattato sempre come bug da erad
 - **Modelli di ragionamento** ⚠️ → **Epiche A/G** — MLX Gemma 4 26B MoE sul Mac
   (implementato, lento per l'uso live), Ollama come fallback. Profilo doppio: 
   mac-ottimizzato ora, NVIDIA (DGX Spark GB10, 128GB unificati, CUDA) quando arriva.
-- **Fallback a cascata 3 livelli** ❌ (post-epiche, era "Fase 3"): RAG interno →
-  conoscenza LLM (solo discorsiva, mai tecnica) → web agent igienizzato anti-injection.
+- **Risposta a cascata 3 livelli — "non lo so" deve diventare RARO** ❌ → **Epica H**
+  (decisione utente 15/07: feature portante). Il principio fondante evolve: da "mai
+  fuori dal corpus" a **"mai un'affermazione senza fonte"** — ogni risposta dichiara
+  la provenienza. La cascata:
+  1. **Corpus interno** (priorità massima): documenti aziendali, con citazione doc+pagina.
+  2. **Agente di ricerca web**: se il corpus non basta, un agente RAGIONA sulla domanda,
+     cerca online, **riporta sempre le fonti (URL)** e passa dalla **sandbox di
+     igienizzazione** (difesa da prompt injection: al cervello arrivano solo fatti crudi).
+  3. **Conoscenza dell'LLM** (es. "qual è la capitale della Francia?" → DEVE rispondere):
+     utilizzabile, ma **sempre verificata online tramite l'agente di ricerca**, con fonti.
+  Eccezione di sicurezza: **codici ricambio e prezzi SOLO dal corpus** (al più il web
+  agent cerca sui siti ufficiali dei produttori) — dove l'errore costa denaro il
+  guardrail resta corpus-only. Vincolo di deployment: l'uscita web è configurabile per
+  cliente (installazioni air-gapped: cascata ferma al livello 1, lì "non lo so" resta).
+- **RAG documentale generico** ⚠️ → **Epiche A/C** — non solo cataloghi ricambi:
+  qualunque documento aziendale (es. una brochure: "cosa fa questa azienda?") deve
+  produrre una risposta elaborata dal contenuto, senza inventare; se il documento non
+  basta, la cascata prosegue al livello 2. Il ramo NARRATIVE esiste; va potenziato
+  su documenti non-catalogo e coperto dal golden gate.
 
 ## 3. Zero-Allucinazioni (l'infrastruttura difensiva)
 
