@@ -19,19 +19,45 @@ app = FastAPI(title="AI Knowledge Engine — Backend", version="0.0.0")
 
 @app.get("/health")
 def health() -> JSONResponse:
-    """Health check con ping a Qdrant.
+    """Health check con ping a Qdrant e stato rami (probe leggero, non e2e).
 
-    200 -> backend ok e Qdrant raggiungibile.
-    503 -> Qdrant irraggiungibile (il backend gira ma la dipendenza critica e' giu').
+    Verifica la raggiungibilita' di Qdrant, le connessioni ai DB (Postgres)
+    e lo stato dei rami (structured, visual) senza caricare i modelli pesanti.
     """
-    result: dict[str, object] = {"backend": "ok"}
+    from src.backend.config import settings
+
+    result: dict[str, object] = {
+        "backend": "ok",
+        "narrative": "ok",
+        "logic_model": settings.logic_model,
+        "resident_model": None,
+    }
+
     try:
         client = get_qdrant_client()
         collections = client.get_collections()
         result["qdrant"] = "ok"
         result["qdrant_collections"] = len(collections.collections)
-        return JSONResponse(status_code=200, content=result)
-    except Exception as exc:  # noqa: BLE001 — qualsiasi errore = dipendenza non pronta
+    except Exception as exc:  # noqa: BLE001
         result["qdrant"] = "unreachable"
         result["error"] = f"{type(exc).__name__}: {exc}"
         return JSONResponse(status_code=503, content=result)
+        
+    try:
+        from src.backend.clients.postgres_client import get_pg_conn_readonly
+        conn = get_pg_conn_readonly()
+        conn.close()
+        result["structured"] = "ok"
+    except Exception as exc:
+        result["structured"] = f"degraded: {type(exc).__name__} ({exc})"
+
+    try:
+        from src.retrieval.pixelrag.index import DEFAULT_VISUAL_COLLECTION
+        from src.retrieval.pixelrag.embedder import Qwen3VLEmbedder # imported as check
+        if not client.collection_exists(DEFAULT_VISUAL_COLLECTION):
+            raise RuntimeError(f"collection {DEFAULT_VISUAL_COLLECTION} not found")
+        result["visual"] = "ok"
+    except Exception as exc:
+        result["visual"] = f"degraded: {type(exc).__name__} ({exc})"
+
+    return JSONResponse(status_code=200, content=result)
