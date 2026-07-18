@@ -11,7 +11,10 @@ system_error -> BASSA "Sistema non disponibile". Design: docs/superpowers/specs/
 from __future__ import annotations
 
 from dataclasses import dataclass
+import logging
 from typing import Callable, NamedTuple, TypedDict
+
+logger = logging.getLogger(__name__)
 
 from langgraph.graph import END, START, StateGraph
 
@@ -637,7 +640,11 @@ def _default_deps(role: Role) -> Deps:
         from src.backend.clients.postgres_client import get_pg_conn_readonly
         from src.graph.tools.sql_tool import PgSqlExecutor
         sql_query = PgSqlExecutor(get_pg_conn_readonly())
-    except Exception:
+    except Exception as e:
+        logger.warning(
+            "Ramo STRUCTURED degradato: %s (%s). Fallback a NARRATIVE.",
+            type(e).__name__, e, exc_info=True
+        )
         sql_query = None
 
     # Fase 1.3 — ramo VISUAL: retrieval PixelRAG reale su `aike_pages_visual`
@@ -653,7 +660,11 @@ def _default_deps(role: Role) -> Deps:
         from src.graph.tools.visual_tool import make_visual_search
         visual_search = make_visual_search(
             Qwen3VLEmbedder(), QdrantVisualIndex(qc))
-    except Exception:
+    except Exception as e:
+        logger.warning(
+            "Ramo VISUAL degradato: %s (%s). Fallback a NARRATIVE.",
+            type(e).__name__, e, exc_info=True
+        )
         visual_search = None
 
     return Deps(retrieve=_retrieve("current"), synthesize=synthesize,
