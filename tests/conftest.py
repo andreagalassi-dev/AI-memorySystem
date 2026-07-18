@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import pytest
 
 
@@ -34,6 +35,12 @@ def _qdrant_available() -> bool:
 needs_qdrant = pytest.mark.skipif(
     not _qdrant_available(),
     reason="richiede Qdrant del compose (docker compose up -d qdrant)",
+)
+
+
+needs_mlx = pytest.mark.skipif(
+    os.environ.get("RUN_MLX") != "1",
+    reason="richiede env RUN_MLX=1 per non scaricare pesi MLX in CI normale",
 )
 
 

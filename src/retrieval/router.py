@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from enum import StrEnum
 
 # Registro famiglie-codice ad alta confidenza: dallo STESSO config del
 # normalizzatore (config/brands.json, gate decision P1 §5) — una sola fonte
@@ -51,6 +52,53 @@ class QueryRoute:
     query_type: str          # code | mixed | natural
     code_token: str | None   # il token-codice individuato (upper), se presente
     reason: str              # spiegazione auditabile della decisione
+
+
+class Intent(StrEnum):
+    """Fase 1.3 — Intent d'instradamento del Cervello Unificatore (SPEC §C).
+
+    Tipo CHIUSO derivato da `classify_query`: e' l'unico valore che sceglie il ramo
+    del grafo. Mai testo libero eseguibile, mai un LLM. StrEnum: il valore e' la
+    stringa stessa, serializzabile diretta nello stato del grafo (come `Role`)."""
+
+    STRUCTURED = "structured"   # lookup sul Semantic Layer 1.2 (righe_listino) via SQL tool
+    VISUAL = "visual"           # retrieval visivo PixelRAG 1.1
+    NARRATIVE = "narrative"     # RAG testuale esistente (default fail-safe)
+
+
+# Whitelist CHIUSA delle keyword che promuovono una query CON codice a STRUCTURED.
+# Fase 1.3: SOLO prezzo (IT/EN/DE). Le keyword di QUANTITA' sono volutamente ESCLUSE:
+# `righe_listino` (1.2) non ha colonna quantita', quindi instradare li' una domanda di
+# quantita' violerebbe il Fail-Closed ("giusto oppure non lo so"). Si riammetteranno
+# quando esistera' la colonna. Distinta dal set campo-detection di `sql_tool`: qui la
+# domanda e' "questa query vuole un dato strutturato?", non "quale colonna leggere".
+STRUCTURED_KEYWORDS = frozenset({
+    "prezzo", "prezzi", "costo", "costa", "costano", "listino", "quanto costa",
+    "price", "cost", "how much",
+    "preis", "kostet", "kosten",
+})
+
+
+def _wants_structured(query: str) -> bool:
+    q = (query or "").lower()
+    return any(k in q for k in STRUCTURED_KEYWORDS)
+
+
+def derive_intent(route: QueryRoute, query: str) -> Intent:
+    """Deriva l'intent d'instradamento (deterministico, fail-safe).
+
+    - `visual` -> VISUAL (prevale, come in `classify_query`);
+    - codice presente E (route `code` OPPURE keyword-prezzo) -> STRUCTURED;
+    - tutto il resto -> NARRATIVE (ramo esistente, gia' presidiato da confidence +
+      guardrail): e' anche il default fail-safe su input degeneri/avversariali.
+
+    Serve un `code_token`: una domanda di prezzo senza codice non ha nulla da cercare
+    in `righe_listino`, quindi resta NARRATIVE (caveat Fail-Closed)."""
+    if route.query_type == "visual":
+        return Intent.VISUAL
+    if route.code_token and (route.query_type == "code" or _wants_structured(query)):
+        return Intent.STRUCTURED
+    return Intent.NARRATIVE
 
 
 def _family_match(token: str) -> bool:

@@ -23,10 +23,15 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-aike}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aike_dev}
       POSTGRES_DB: ${POSTGRES_DB:-aike_registry}
+      # Fase 1.3 — ruolo SELECT-only per il ramo STRUCTURED (difesa in profondita').
+      POSTGRES_RO_USER: ${POSTGRES_RO_USER:-aike_ro}
+      POSTGRES_RO_PASSWORD: ${POSTGRES_RO_PASSWORD:-aike_ro_dev}
     ports:
       - "5432:5432"
     volumes:
       - postgres_storage:/var/lib/postgresql/data
+      # Init script (SOLO su volume vuoto): crea il ruolo read-only alla nascita.
+      - ./docker/init-db:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-aike} -d $${POSTGRES_DB:-aike_registry}"]
       interval: 5s

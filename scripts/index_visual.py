@@ -1,4 +1,4 @@
-"""P2.7 — Indicizzazione visiva ColQwen2 delle pagine route_colpali (MaxSim).
+"""P2.7 — Indicizzazione visiva Qwen3-VL delle pagine route_colpali (MaxSim).
 
 Anti-OOM: pipeline pagina-per-pagina (render DPI 150 cap 1540px -> embed batch
 BATCH immagini con no_grad -> upsert wait=True -> free), checkpoint/resume via
@@ -26,7 +26,7 @@ import fitz  # noqa: E402
 from PIL import Image  # noqa: E402
 
 from src.backend.clients.qdrant_client import get_qdrant_client  # noqa: E402
-from src.retrieval.visual import (  # noqa: E402
+from src.retrieval.qwen3vl import (  # noqa: E402
     MAX_SIDE_PX,
     RENDER_DPI,
     VISUAL_COLLECTION,

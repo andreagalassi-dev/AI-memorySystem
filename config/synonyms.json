@@ -1,145 +1,665 @@
 {
-  "_doc": "SEED del dizionario sinonimi tecnico (debito §2, Query Expansion). A runtime la fonte di verita' sono le tabelle Postgres (src/registry/synonyms.py); questo file e' letto SOLO da scripts/seed_synonyms.py. Concetti curati sul vocabolario REALE del corpus indicizzato (descrizioni Mamoli/DeliTools/Electrolux/W-serie IT/EN/DE/ES/FR): mappano il lessico dell'utente sul lessico del catalogo. Termini SEMPRE lowercase; multi-parola ammessi.",
+  "_doc": "SEED del dizionario sinonimi tecnico (debito \u00a72, Query Expansion). A runtime la fonte di verita' sono le tabelle Postgres (src/registry/synonyms.py); questo file e' letto SOLO da scripts/seed_synonyms.py. Concetti curati sul vocabolario REALE del corpus indicizzato (descrizioni Mamoli/DeliTools/Electrolux/W-serie IT/EN/DE/ES/FR): mappano il lessico dell'utente sul lessico del catalogo. Termini SEMPRE lowercase; multi-parola ammessi.",
   "concepts": {
     "vite": {
       "note": "vite/screw; nel corpus anche abbreviato VTE",
-      "terms": {"IT": ["vite", "viti", "vte"], "EN": ["screw"], "DE": ["schraube"]}
+      "terms": {
+        "IT": [
+          "vite",
+          "viti",
+          "vte"
+        ],
+        "EN": [
+          "screw"
+        ],
+        "DE": [
+          "schraube"
+        ]
+      }
     },
     "bullone": {
       "note": "bullone esagonale -> bolt / screw hex cap",
-      "terms": {"IT": ["bullone", "bulloni"], "EN": ["bolt", "hex cap"], "DE": ["sechskantschraube"]}
+      "terms": {
+        "IT": [
+          "bullone",
+          "bulloni"
+        ],
+        "EN": [
+          "bolt",
+          "hex cap"
+        ],
+        "DE": [
+          "sechskantschraube"
+        ]
+      }
     },
     "dado": {
       "note": "dado (anche flangiato) -> nut",
-      "terms": {"IT": ["dado", "dadi"], "EN": ["nut"], "DE": ["mutter"]}
+      "terms": {
+        "IT": [
+          "dado",
+          "dadi"
+        ],
+        "EN": [
+          "nut"
+        ],
+        "DE": [
+          "mutter"
+        ]
+      }
     },
     "guarnizione": {
       "note": "guarnizione/tenuta -> gasket/seal/junta/dichtung",
-      "terms": {"IT": ["guarnizione", "tenuta"], "EN": ["gasket", "seal"], "DE": ["dichtung", "dichtring"], "ES": ["junta"]}
+      "terms": {
+        "IT": [
+          "guarnizione",
+          "tenuta"
+        ],
+        "EN": [
+          "gasket",
+          "seal"
+        ],
+        "DE": [
+          "dichtung",
+          "dichtring"
+        ],
+        "ES": [
+          "junta"
+        ]
+      }
     },
     "paraolio": {
       "note": "paraolio/anello di tenuta -> oil seal/o-ring/dichtring",
-      "terms": {"IT": ["paraolio"], "EN": ["oil seal", "o-ring"], "DE": ["wellendichtring", "dichtring", "o-ring"]}
+      "terms": {
+        "IT": [
+          "paraolio"
+        ],
+        "EN": [
+          "oil seal",
+          "o-ring"
+        ],
+        "DE": [
+          "wellendichtring",
+          "dichtring",
+          "o-ring"
+        ]
+      }
     },
     "molla": {
       "note": "",
-      "terms": {"IT": ["molla", "molle"], "EN": ["spring"], "DE": ["feder"]}
+      "terms": {
+        "IT": [
+          "molla",
+          "molle"
+        ],
+        "EN": [
+          "spring"
+        ],
+        "DE": [
+          "feder"
+        ]
+      }
     },
     "cuscinetto": {
       "note": "",
-      "terms": {"IT": ["cuscinetto"], "EN": ["bearing"], "DE": ["lager", "kugellager"]}
+      "terms": {
+        "IT": [
+          "cuscinetto"
+        ],
+        "EN": [
+          "bearing"
+        ],
+        "DE": [
+          "lager",
+          "kugellager"
+        ]
+      }
     },
     "boccola": {
       "note": "boccola/bronzina -> bushing; DE Gleitlager (W002/W022)",
-      "terms": {"IT": ["boccola", "bronzina"], "EN": ["bushing", "bush"], "DE": ["gleitlager", "buchse"]}
+      "terms": {
+        "IT": [
+          "boccola",
+          "bronzina"
+        ],
+        "EN": [
+          "bushing",
+          "bush"
+        ],
+        "DE": [
+          "gleitlager",
+          "buchse"
+        ]
+      }
     },
     "perno": {
       "note": "perno -> pin (Rear Clamp Cyl Pin)",
-      "terms": {"IT": ["perno", "perni"], "EN": ["pin"], "DE": ["bolzen", "stift"]}
+      "terms": {
+        "IT": [
+          "perno",
+          "perni"
+        ],
+        "EN": [
+          "pin"
+        ],
+        "DE": [
+          "bolzen",
+          "stift"
+        ]
+      }
     },
     "spinotto": {
-      "note": "esempio del debito §2: spinotto pistone -> piston pin",
-      "terms": {"IT": ["spinotto"], "EN": ["piston pin", "gudgeon pin"], "DE": ["kolbenbolzen"]}
+      "note": "esempio del debito \u00a72: spinotto pistone -> piston pin",
+      "terms": {
+        "IT": [
+          "spinotto"
+        ],
+        "EN": [
+          "piston pin",
+          "gudgeon pin"
+        ],
+        "DE": [
+          "kolbenbolzen"
+        ]
+      }
     },
     "pistone": {
       "note": "",
-      "terms": {"IT": ["pistone"], "EN": ["piston"], "DE": ["kolben"]}
+      "terms": {
+        "IT": [
+          "pistone"
+        ],
+        "EN": [
+          "piston"
+        ],
+        "DE": [
+          "kolben"
+        ]
+      }
     },
     "cilindro": {
       "note": "attuatore/pistone pneumatico -> cilindro (doppio effetto)",
-      "terms": {"IT": ["cilindro", "attuatore"], "EN": ["cylinder", "actuator"], "DE": ["zylinder"]}
+      "terms": {
+        "IT": [
+          "cilindro",
+          "attuatore"
+        ],
+        "EN": [
+          "cylinder",
+          "actuator"
+        ],
+        "DE": [
+          "zylinder"
+        ]
+      }
     },
     "valvola": {
       "note": "",
-      "terms": {"IT": ["valvola", "valvole"], "EN": ["valve"], "DE": ["ventil"], "ES": ["válvula", "valvula"]}
+      "terms": {
+        "IT": [
+          "valvola",
+          "valvole"
+        ],
+        "EN": [
+          "valve"
+        ],
+        "DE": [
+          "ventil"
+        ],
+        "ES": [
+          "v\u00e1lvula",
+          "valvula"
+        ]
+      }
     },
     "giunto": {
       "note": "giunto girevole -> snodo/joint (SNODO AVVOLGITUBO)",
-      "terms": {"IT": ["giunto", "snodo"], "EN": ["joint", "coupling", "swivel"], "DE": ["kupplung"]}
+      "terms": {
+        "IT": [
+          "giunto",
+          "snodo"
+        ],
+        "EN": [
+          "joint",
+          "coupling",
+          "swivel"
+        ],
+        "DE": [
+          "kupplung"
+        ]
+      }
     },
     "raccordo": {
-      "note": "raccordo -> fitting; DE Anschlussstück/Verbindungsstück (W049/W052)",
-      "terms": {"IT": ["raccordo", "raccordi"], "EN": ["fitting", "fittings", "connector"], "DE": ["anschlussstück", "verbindungsstück", "anschluss"]}
+      "note": "raccordo -> fitting; DE Anschlussst\u00fcck/Verbindungsst\u00fcck (W049/W052)",
+      "terms": {
+        "IT": [
+          "raccordo",
+          "raccordi"
+        ],
+        "EN": [
+          "fitting",
+          "fittings",
+          "connector"
+        ],
+        "DE": [
+          "anschlussst\u00fcck",
+          "verbindungsst\u00fcck",
+          "anschluss"
+        ]
+      }
     },
     "tubo": {
       "note": "tubo/tubetto -> pipe/hose/schlauch",
-      "terms": {"IT": ["tubo", "tubetto"], "EN": ["pipe", "hose", "tube"], "DE": ["schlauch", "rohr"]}
+      "terms": {
+        "IT": [
+          "tubo",
+          "tubetto"
+        ],
+        "EN": [
+          "pipe",
+          "hose",
+          "tube"
+        ],
+        "DE": [
+          "schlauch",
+          "rohr"
+        ]
+      }
     },
     "cavo": {
       "note": "cavo/prolunga elettrica -> cable/kabel (W005/W048)",
-      "terms": {"IT": ["cavo", "prolunga"], "EN": ["cable", "cord"], "DE": ["kabel"]}
+      "terms": {
+        "IT": [
+          "cavo",
+          "prolunga"
+        ],
+        "EN": [
+          "cable",
+          "cord"
+        ],
+        "DE": [
+          "kabel"
+        ]
+      }
     },
     "tappo": {
       "note": "tappo/chiusura -> plug/cap (W003)",
-      "terms": {"IT": ["tappo", "chiusura"], "EN": ["plug", "cap"], "DE": ["stopfen", "deckel"]}
+      "terms": {
+        "IT": [
+          "tappo",
+          "chiusura"
+        ],
+        "EN": [
+          "plug",
+          "cap"
+        ],
+        "DE": [
+          "stopfen",
+          "deckel"
+        ]
+      }
     },
     "maniglia": {
       "note": "",
-      "terms": {"IT": ["maniglia", "maniglie"], "EN": ["handle", "handles"], "DE": ["griff"]}
+      "terms": {
+        "IT": [
+          "maniglia",
+          "maniglie"
+        ],
+        "EN": [
+          "handle",
+          "handles"
+        ],
+        "DE": [
+          "griff"
+        ]
+      }
     },
     "ruota": {
       "note": "",
-      "terms": {"IT": ["ruota", "ruote"], "EN": ["wheel"], "DE": ["rad"], "FR": ["roue"]}
+      "terms": {
+        "IT": [
+          "ruota",
+          "ruote"
+        ],
+        "EN": [
+          "wheel"
+        ],
+        "DE": [
+          "rad"
+        ],
+        "FR": [
+          "roue"
+        ]
+      }
     },
     "carter": {
       "note": "carter/protezione -> cuffia/cover/guard (W019: CUFFIA MOTORE)",
-      "terms": {"IT": ["carter", "cuffia", "protezione"], "EN": ["cover", "guard", "housing"], "DE": ["gehäuse", "abdeckung"]}
+      "terms": {
+        "IT": [
+          "carter",
+          "cuffia",
+          "protezione"
+        ],
+        "EN": [
+          "cover",
+          "guard",
+          "housing"
+        ],
+        "DE": [
+          "geh\u00e4use",
+          "abdeckung"
+        ]
+      }
     },
     "spia-livello": {
       "note": "spia/vetrino livello -> sight glass / livello visivo (W010/W043)",
-      "terms": {"IT": ["spia", "vetrino", "livello visivo"], "EN": ["sight glass"], "DE": ["schauglas"]}
+      "terms": {
+        "IT": [
+          "spia",
+          "vetrino",
+          "livello visivo"
+        ],
+        "EN": [
+          "sight glass"
+        ],
+        "DE": [
+          "schauglas"
+        ]
+      }
     },
     "termostato": {
       "note": "cronotermostato/protezione termica -> termostato/thermostat (W020/W050)",
-      "terms": {"IT": ["termostato", "cronotermostato"], "EN": ["thermostat"], "DE": ["thermostat", "sicherheitsthermostat", "übertemperaturschutz"]}
+      "terms": {
+        "IT": [
+          "termostato",
+          "cronotermostato"
+        ],
+        "EN": [
+          "thermostat"
+        ],
+        "DE": [
+          "thermostat",
+          "sicherheitsthermostat",
+          "\u00fcbertemperaturschutz"
+        ]
+      }
     },
     "termometro": {
       "note": "",
-      "terms": {"IT": ["termometro"], "EN": ["thermometer"], "ES": ["termómetro", "termometro"]}
+      "terms": {
+        "IT": [
+          "termometro"
+        ],
+        "EN": [
+          "thermometer"
+        ],
+        "ES": [
+          "term\u00f3metro",
+          "termometro"
+        ]
+      }
     },
     "cesto": {
       "note": "cesto congelatore -> basket (C011)",
-      "terms": {"IT": ["cesto", "cestello"], "EN": ["basket"], "DE": ["korb"], "ES": ["cesta"]}
+      "terms": {
+        "IT": [
+          "cesto",
+          "cestello"
+        ],
+        "EN": [
+          "basket"
+        ],
+        "DE": [
+          "korb"
+        ],
+        "ES": [
+          "cesta"
+        ]
+      }
     },
     "congelatore": {
       "note": "",
-      "terms": {"IT": ["congelatore"], "EN": ["freezer"], "DE": ["kühltruhe", "gefrierschrank"], "ES": ["congelador"]}
+      "terms": {
+        "IT": [
+          "congelatore"
+        ],
+        "EN": [
+          "freezer"
+        ],
+        "DE": [
+          "k\u00fchltruhe",
+          "gefrierschrank"
+        ],
+        "ES": [
+          "congelador"
+        ]
+      }
     },
     "porta": {
       "note": "porta/sportello -> door/puerta (C009)",
-      "terms": {"IT": ["porta", "sportello"], "EN": ["door"], "DE": ["tür"], "ES": ["puerta"]}
+      "terms": {
+        "IT": [
+          "porta",
+          "sportello"
+        ],
+        "EN": [
+          "door"
+        ],
+        "DE": [
+          "t\u00fcr"
+        ],
+        "ES": [
+          "puerta"
+        ]
+      }
     },
     "scarico": {
       "note": "scarico -> drain; DE Ablauf/Abfluss (W052)",
-      "terms": {"IT": ["scarico"], "EN": ["drain", "outlet"], "DE": ["ablauf", "abfluss", "wasserablauf", "auslauf"]}
+      "terms": {
+        "IT": [
+          "scarico"
+        ],
+        "EN": [
+          "drain",
+          "outlet"
+        ],
+        "DE": [
+          "ablauf",
+          "abfluss",
+          "wasserablauf",
+          "auslauf"
+        ]
+      }
     },
     "alimentazione": {
       "note": "alimentazione idraulica/elettrica -> supply/feed; DE Zulauf/Netzanschluss (W048/W049)",
-      "terms": {"IT": ["alimentazione"], "EN": ["supply", "feed", "inlet"], "DE": ["zulauf", "netzanschluss", "stromanschluss"]}
+      "terms": {
+        "IT": [
+          "alimentazione"
+        ],
+        "EN": [
+          "supply",
+          "feed",
+          "inlet"
+        ],
+        "DE": [
+          "zulauf",
+          "netzanschluss",
+          "stromanschluss"
+        ]
+      }
     },
     "fermo": {
       "note": "fermo/arresto -> stopper/latch (W041: VALVE STOPPER)",
-      "terms": {"IT": ["fermo", "arresto"], "EN": ["stopper", "stop", "latch"], "DE": ["anschlag"]}
+      "terms": {
+        "IT": [
+          "fermo",
+          "arresto"
+        ],
+        "EN": [
+          "stopper",
+          "stop",
+          "latch"
+        ],
+        "DE": [
+          "anschlag"
+        ]
+      }
     },
     "chiave-utensile": {
       "note": "chiave/utensile speciale -> wrench/tool (W025: Tool, Latch Opening)",
-      "terms": {"IT": ["chiave", "utensile"], "EN": ["wrench", "tool", "spanner"], "DE": ["schlüssel", "werkzeug"]}
+      "terms": {
+        "IT": [
+          "chiave",
+          "utensile"
+        ],
+        "EN": [
+          "wrench",
+          "tool",
+          "spanner"
+        ],
+        "DE": [
+          "schl\u00fcssel",
+          "werkzeug"
+        ]
+      }
     },
     "taratura": {
       "note": "calibrazione -> taratura (W018: TESTA DI TARATURA); IT-IT",
-      "terms": {"IT": ["taratura", "calibrazione"], "EN": ["calibration"], "DE": ["kalibrierung"]}
+      "terms": {
+        "IT": [
+          "taratura",
+          "calibrazione"
+        ],
+        "EN": [
+          "calibration"
+        ],
+        "DE": [
+          "kalibrierung"
+        ]
+      }
     },
     "telo": {
       "note": "telo spazzatrice -> DE Plane (W011)",
-      "terms": {"IT": ["telo", "telone"], "EN": ["tarpaulin"], "DE": ["plane"]}
+      "terms": {
+        "IT": [
+          "telo",
+          "telone"
+        ],
+        "EN": [
+          "tarpaulin"
+        ],
+        "DE": [
+          "plane"
+        ]
+      }
     },
     "filtro": {
       "note": "retina -> filtro/filter (W003: hair filter)",
-      "terms": {"IT": ["filtro", "retina"], "EN": ["filter", "strainer"], "DE": ["filter", "sieb"]}
+      "terms": {
+        "IT": [
+          "filtro",
+          "retina"
+        ],
+        "EN": [
+          "filter",
+          "strainer"
+        ],
+        "DE": [
+          "filter",
+          "sieb"
+        ]
+      }
     },
     "pompa": {
       "note": "",
-      "terms": {"IT": ["pompa"], "EN": ["pump"], "DE": ["pumpe"], "ES": ["bomba"]}
+      "terms": {
+        "IT": [
+          "pompa"
+        ],
+        "EN": [
+          "pump"
+        ],
+        "DE": [
+          "pumpe"
+        ],
+        "ES": [
+          "bomba"
+        ]
+      }
+    },
+    "esploso": {
+      "note": "esploso -> exploded view",
+      "terms": {
+        "IT": [
+          "esploso"
+        ],
+        "EN": [
+          "exploded view"
+        ]
+      }
+    },
+    "disegno": {
+      "note": "disegno -> drawing/diagram",
+      "terms": {
+        "IT": [
+          "disegno",
+          "spaccato"
+        ],
+        "EN": [
+          "drawing",
+          "diagram",
+          "cross-section"
+        ]
+      }
+    },
+    "volano": {
+      "note": "volano -> flywheel",
+      "terms": {
+        "IT": [
+          "volano"
+        ],
+        "EN": [
+          "flywheel"
+        ]
+      }
+    },
+    "albero-motore": {
+      "note": "albero motore -> crankshaft",
+      "terms": {
+        "IT": [
+          "albero motore"
+        ],
+        "EN": [
+          "crankshaft"
+        ]
+      }
+    },
+    "schema-elettrico": {
+      "note": "schema elettrico -> wiring diagram",
+      "terms": {
+        "IT": [
+          "schema elettrico"
+        ],
+        "EN": [
+          "wiring diagram"
+        ]
+      }
+    },
+    "ricambi": {
+      "note": "ricambi/tavola -> spare parts/table",
+      "terms": {
+        "IT": [
+          "ricambi",
+          "ricambio",
+          "tavola"
+        ],
+        "EN": [
+          "spare parts",
+          "table"
+        ]
+      }
     }
   }
 }

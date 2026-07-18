@@ -61,12 +61,12 @@ def _load_from_db() -> dict:
 
 
 @lru_cache(maxsize=1)
-def _index() -> dict[str, list[tuple[str, tuple[str, ...]]]]:
-    """term -> lista di (slug, termini-del-concetto in ordine di seed)."""
-    idx: dict[str, list[tuple[str, tuple[str, ...]]]] = {}
+def _index() -> dict[str, list[tuple[str, tuple[tuple[str, str], ...]]]]:
+    """term -> lista di (slug, ( (term1, lang1), ... ) )."""
+    idx: dict[str, list[tuple[str, tuple[tuple[str, str], ...]]]] = {}
     for slug, c in _load_from_db().items():
-        terms = tuple(t for t, _ in c["terms"])
-        for t in terms:
+        terms = tuple((t, l) for t, l in c["terms"])
+        for t, _l in terms:
             idx.setdefault(t, []).append((slug, terms))
     return idx
 
@@ -80,7 +80,7 @@ def _tokens(text: str) -> list[str]:
     return _WORD.findall(unicodedata.normalize("NFKC", text or "").lower())
 
 
-def expand_query(query: str, max_terms: int = MAX_TERMS) -> list[str]:
+def expand_query(query: str, max_terms: int = MAX_TERMS, target_lang: str | None = None) -> list[str]:
     """Termini di espansione per la query (deterministici, ordinati, cap).
 
     Longest-match-first: un n-gramma che matcha consuma i suoi token (nessun
@@ -88,6 +88,9 @@ def expand_query(query: str, max_terms: int = MAX_TERMS) -> list[str]:
     ROUND-ROBIN tra i concetti colpiti: il cap non deve mai far cadere tutti
     i termini di un concetto a favore delle sole varianti del primo
     (misurato su eval: 'o-ring' e 'filtro' tagliati -> W046/W003 persi).
+    
+    Se `target_lang` e' specificato, restituisce SOLO i sinonimi in quella lingua
+    (utile per query translation IT->EN).
     """
     toks = _tokens(query)
     if any(DEFAULT_CODEY.match(t.upper()) for t in toks):
@@ -95,7 +98,7 @@ def expand_query(query: str, max_terms: int = MAX_TERMS) -> list[str]:
     idx = _index()
     have = set(toks)
 
-    matched: list[tuple[str, tuple[str, ...]]] = []
+    matched: list[tuple[str, tuple[tuple[str, str], ...]]] = []
     seen_slugs: set[str] = set()
     used = [False] * len(toks)
     for n in range(_NGRAM_MAX, 0, -1):
@@ -112,7 +115,7 @@ def expand_query(query: str, max_terms: int = MAX_TERMS) -> list[str]:
     # candidati per concetto (senza i termini gia' in query), poi round-robin
     per_concept = []
     for _slug, terms in matched:
-        cand = [t for t in terms if not set(t.split()) <= have]
+        cand = [t for t, l in terms if not set(t.split()) <= have and (target_lang is None or l == target_lang)]
         if cand:
             per_concept.append(cand)
     out: list[str] = []

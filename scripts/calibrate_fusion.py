@@ -1,6 +1,6 @@
 """P3.3 §5 — Calibrazione di delta (accordo testo↔visione) col gate ALTA=1.0.
 
-Cross-probe PIGRO: interroga l'indice visivo (ColQwen2) SOLO sulle query che
+Cross-probe PIGRO: interroga l'indice visivo (Qwen3-VL) SOLO sulle query che
 P3.2 mette in banda MEDIA (le uniche promuovibili). Per delta in {0,1,2} conta
 promozioni buone (POS_HIT1) vs cattive (POS_MISS/NEG) e la ALTA precision
 risultante. Sceglie il delta piu' grande <=2 con ZERO promozioni cattive.
@@ -31,7 +31,7 @@ from src.retrieval.fusion import hit_docpage, page_agreement  # noqa: E402
 from src.retrieval.rerank import RERANK_TOPK, _reranker  # noqa: E402
 from src.retrieval.router import classify_query  # noqa: E402
 from src.retrieval.search import search  # noqa: E402
-from src.retrieval.visual import search_visual  # noqa: E402
+from src.retrieval.qwen3vl import search_visual  # noqa: E402
 
 EVAL_SET = Path(os.environ.get("EVAL_SET", ROOT / "data" / "eval" / "eval_set_v1.jsonl"))
 OUT = ROOT / "output" / "eval" / "fusion_calibration_v1.json"

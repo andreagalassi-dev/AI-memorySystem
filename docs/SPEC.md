@@ -44,7 +44,7 @@ Si esegue la **Roadmap** dall'alto verso il basso, un punto alla volta.
 ## P1 — Validazione ingestion ⚠️ GATE CRITICO
 🎯 **Obiettivo:** scoprire **se** OCR ed estrazione tabelle reggono sul corpus vero, **prima** di costruire qualsiasi altra cosa. È il punto dove questi progetti tipicamente falliscono.
 
-☐ Pipeline **OCR → Markdown** su un campione (Marker/Surya/MinerU, oppure GOT-OCR2/DeepSeek-OCR).
+☐ Pipeline **OCR → Markdown** su un campione (Marker/Surya/MinerU, oppure GOT-OCR2/GLM-OCR).
 ☐ Valutare la **qualità OCR** sui casi difficili: esplosi con linee di richiamo, layout multi-colonna, testo ruotato, multilingua.
 ☐ **Estrazione tabelle** in file strutturati separati (CSV/XLSX/JSON) con puntatore al documento d'origine.
 ☐ **TEST DEDICATO tabelle** (≠ test OCR): su un campione di tabelle reali "difficili", verificare che ogni `codice → descrizione → quantità` corrisponda all'originale. Controllare i modi di fallimento silenziosi: **celle unite**, **tabelle su più pagine**, **intestazioni ripetute**, **righe-totale/note scambiate per dati**.
@@ -199,8 +199,8 @@ Orchestrazione **basata su grafi** per affidabilità rispetto a un agente "black
 * **Router decisore:** analizza la query e sceglie il percorso (codice preciso → testuale; schema/esploso → ispezione visiva). Piccolo VLM/classificatore + regole.
 
 **Due modelli distinti, orchestrati dal grafo:**
-1. **Ragionatore (solo testo):** sintetizza, ragiona sui codici, valida. *Esempi:* Qwen3, DeepSeek, Mistral, Llama, GLM.
-2. **VLM (visione + testo):** "legge" le pagine renderizzate, interpreta esplosi e schemi. *Esempi:* Qwen2.5/3-VL, InternVL3, GLM-4.5V, Pixtral. Per la sola conversione PDF→Markdown: Marker/Surya/MinerU, GOT-OCR2/DeepSeek-OCR.
+1. **Ragionatore (solo testo):** sintetizza, ragiona sui codici, valida. *Esempi:* Qwen3, GLM-OCR, Mistral, Llama, GLM.
+2. **VLM (visione + testo):** "legge" le pagine renderizzate, interpreta esplosi e schemi. *Esempi:* Qwen2.5/3-VL, InternVL3, GLM-4.5V, Pixtral. Per la sola conversione PDF→Markdown: Marker/Surya/MinerU, GOT-OCR2/GLM-OCR.
 
 > I modelli sono **esempi**; la scelta definitiva è dopo i test sul corpus ed è un parametro sostituibile, non vincolante.
 

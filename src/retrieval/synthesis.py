@@ -9,7 +9,9 @@ Design: docs/superpowers/specs/2026-07-04-p34-llm-spike-design.md.
 from __future__ import annotations
 
 import re
-from typing import Sequence
+from collections.abc import Sequence
+
+from src.graph.llm import LanguageModel
 from xml.sax.saxutils import escape, quoteattr
 
 REFUSAL = "Non ho evidenza sufficiente per rispondere."
@@ -88,9 +90,6 @@ def strip_citations(text: str) -> str:
     es. lycoming_IGO540_PC116 -> falso-positivo). Integrazione P3.1↔P3.4."""
     return _CITE.sub("", text)
 
-
-def synthesize(client, query: str, payloads: Sequence[dict], model: str) -> str:
+def synthesize(llm: "LanguageModel", query: str, payloads: Sequence[dict]) -> str:
     """Chiama il ragionatore per la sintesi ancorata (integrazione)."""
-    from src.backend.clients.ollama_client import chat
-
-    return chat(client, SYSTEM_SYNTHESIS, build_prompt(query, payloads), model=model)
+    return llm.generate(SYSTEM_SYNTHESIS, build_prompt(query, payloads))
