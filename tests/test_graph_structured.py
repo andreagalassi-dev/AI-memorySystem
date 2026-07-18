@@ -17,6 +17,7 @@ from src.graph.pipeline import (
     answer,
     render_node,
     sql_node,
+    _after_sql,
 )
 from src.graph.tools.sql_tool import FakeSqlExecutor
 from src.retrieval.confidence import Thresholds
@@ -36,12 +37,32 @@ def _sql(records=None):
 def _deps(*, llm=None, sql=None, retrieve=None):
     return Deps(
         retrieve=retrieve or (lambda q: ([], [])),
-        synthesize=lambda q, ev: "n/a",
+        synthesize=lambda q, ev: llm.generate("", "") if llm else "n/a",
         catalog_lookup=lambda k: False,
         thresholds=_T,
         llm=llm,
         sql_query=sql,
     )
+
+
+# --------------------------------------------------------------- _after_sql routing
+
+class TestAfterSqlRouting:
+    def test_sql_zero_righe_fallback_expansion(self):
+        state = {"level": "BASSA"}
+        assert _after_sql(state) == "expansion"
+
+    def test_codice_non_valido_fallback_expansion(self):
+        state = {"level": "BASSA"}
+        assert _after_sql(state) == "expansion"
+
+    def test_system_error_fail_closed_finalize(self):
+        state = {"level": "BASSA", "system_error": True}
+        assert _after_sql(state) == "finalize"
+
+    def test_righe_trovate_prosegue_render(self):
+        state = {"level": "ALTA"}
+        assert _after_sql(state) == "render"
 
 
 # --------------------------------------------------------------- sql_node
@@ -135,6 +156,22 @@ class TestE2EStructured:
         llm = FakeLLM(_GOOD)
         with pytest.raises(ValueError, match="ruolo ignoto"):
             answer("prezzo del codice V09199300001", "ospite", _deps(llm=llm, sql=_sql()))
+
+    def test_sql_vuoto_fallback_su_retrieval(self):
+        llm = FakeLLM("Trovato da Qdrant (doc, pag. 1).")
+        called = {"retrieve": False}
+
+        def retrieve(q, *a):
+            called["retrieve"] = True
+            from src.graph.pipeline import Evidence
+            return ([Evidence(doc="doc", page=1, lang="it", code="V09199300009", desc=None, text="testo", qty=None, price=None, type="text", status="clean", warnings=[], score=0.9)], [])
+
+        res = answer("prezzo del codice V09199300009", "commerciale",
+                     _deps(llm=llm, sql=_sql(), retrieve=retrieve))
+        
+        assert called["retrieve"] is True
+        assert res["final_level"] in ["MEDIA", "ALTA"]
+        assert "Trovato da Qdrant" in res["final_answer"]
 
 
 # --------------------------------------------------------------- zero-regressione

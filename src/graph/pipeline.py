@@ -193,7 +193,7 @@ def sql_node(state: GraphState, deps: Deps) -> dict:
         params = extract_params(state.get("code_token") or "", state["query"])
     except ValueError as exc:
         return {"level": "BASSA",
-                "audit": _audit(state, f"sql: codice non valido ({exc}) -> non lo so")}
+                "audit": _audit(state, f"sql: codice non valido ({exc}) -> fallback retrieval")}
     try:
         rows = deps.sql_query.run(params)
     except Exception as exc:  # fail-closed: Postgres giu'/timeout
@@ -202,7 +202,7 @@ def sql_node(state: GraphState, deps: Deps) -> dict:
     if not rows:
         return {"sql_params": params, "sql_rows": [], "level": "BASSA",
                 "audit": _audit(state, f"sql: 0 righe per '{params.codice_normalizzato}' "
-                                       "-> non lo so")}
+                                       "-> fallback retrieval")}
     ev = [_row_to_evidence(r, state.get("code_token"), params.campo) for r in rows]
     return {"sql_params": params, "sql_rows": rows, "evidence": ev, "level": "ALTA",
             "audit": _audit(state, f"sql: {len(rows)} riga/e campo={params.campo} -> ALTA")}
@@ -424,8 +424,8 @@ def _after_visual(state: GraphState) -> str:
 def _after_sql(state: GraphState) -> str:
     if state.get("system_error"):
         return "finalize"
-    if state.get("level") == "BASSA":   # 0 righe / codice degenere -> rifiuto
-        return "finalize"
+    if state.get("level") == "BASSA":   # 0 righe / codice degenere -> fallback retrieval
+        return "expansion"
     return "render"
 
 
@@ -490,7 +490,7 @@ def build_graph(deps: Deps):
                              "sql": "sql", "visual": "visual"})
     # Fase 1.3 — ramo STRUCTURED: sql -> render -> guardrail (convergenza invariata)
     g.add_conditional_edges("sql", _after_sql,
-                            {"finalize": "finalize", "render": "render"})
+                            {"finalize": "finalize", "render": "render", "expansion": "expansion"})
     g.add_conditional_edges("render", _after_render,
                             {"finalize": "finalize", "guardrail": "guardrail"})
     # Fase 1.3 — ramo VISUAL: visual -> guardrail (NESSUN LLM; convergenza invariata)

@@ -105,6 +105,7 @@ class TestFailClosedCondiviso:
         res = answer("mostrami l'esploso del gruppo pompa", "tecnico", deps)
         assert res["final_answer"] == REFUSAL and res["final_level"] == "BASSA"
 
-    def test_structured_zero_righe_refusal(self):
+    def test_structured_zero_righe_fallback(self):
         res = answer("prezzo del codice V09199300009", "commerciale", _full_deps())
-        assert res["final_answer"] == REFUSAL and res["final_level"] == "BASSA"
+        assert res["final_level"] in ("MEDIA", "ALTA")
+        assert res["final_answer"].startswith(_NARR_ANSWER)
