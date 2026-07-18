@@ -2,6 +2,10 @@ import sys
 import time
 import subprocess
 import os
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
 
 from src.graph.pipeline import answer
 from src.common.roles import Role
