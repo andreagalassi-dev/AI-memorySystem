@@ -56,7 +56,7 @@ def run_queries():
             "check": lambda res: (
                 res.get("final_level") in ["MEDIA", "ALTA"] and
                 "non ho evidenza" not in res.get("final_answer", "").lower() and
-                any(c[0] == "Mamoli" and c[1] == 133 for c in res.get("citations", []))
+                any(c[0] == "Mamoli_Catalogo_Ricambi_2021_IT_EN" and c[1] == 133 for c in res.get("citations", []))
             )
         },
         {
