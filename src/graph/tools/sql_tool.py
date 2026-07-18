@@ -157,14 +157,15 @@ class PgSqlExecutor:
     parametrizzabile per i test su schema usa-e-getta. Al server acceso la connessione
     andra' aperta con un ruolo DB read-only (difesa in profondita')."""
 
-    conn: psycopg.Connection
+    conninfo: str
     schema: str = DEFAULT_SCHEMA
 
     def run(self, params: SqlParams) -> list[LookupRow]:
         q = _build_query(params.campo, self.schema)
-        with self.conn.cursor() as cur:
-            cur.execute(q, (params.codice_normalizzato,))
-            return [LookupRow(valore=r[0], doc_stem=r[1], page=r[2]) for r in cur.fetchall()]
+        with psycopg.connect(self.conninfo) as conn:
+            with conn.cursor() as cur:
+                cur.execute(q, (params.codice_normalizzato,))
+                return [LookupRow(valore=r[0], doc_stem=r[1], page=r[2]) for r in cur.fetchall()]
 
 
 def lookup(executor: SqlExecutor, code_token: str, query: str) -> list[LookupRow]:

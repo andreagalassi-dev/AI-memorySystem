@@ -89,16 +89,16 @@ class TestDefaultDepsWiring:
         assert isinstance(deps.llm, LanguageModel)
         # e la connessione e' davvero SELECT-only: una scrittura e' rifiutata dal DB
         with pytest.raises(errors.InsufficientPrivilege):
-            with deps.sql_query.conn.cursor() as cur:
-                cur.execute("CREATE TABLE estrazione._deps_probe(x int)")
-        deps.sql_query.conn.rollback()
+            with psycopg.connect(deps.sql_query.conninfo) as conn:
+                with conn.cursor() as cur:
+                    cur.execute("CREATE TABLE estrazione._deps_probe(x int)")
 
 
 @needs_pg
 class TestRuoloReadOnly:
     def test_select_funziona_col_ruolo_readonly(self, ro_env):
-        _adm, ro, schema = ro_env
-        rows = lookup(PgSqlExecutor(ro, schema=schema), CODE, "quanto costa")
+        _adm, _ro, schema = ro_env
+        rows = lookup(PgSqlExecutor(_ro_conninfo(), schema=schema), CODE, "quanto costa")
         assert rows == [LookupRow(valore=Decimal("12.50"), doc_stem="listino_x", page=1)]
 
     def test_insert_rifiutato_dal_db(self, ro_env):
@@ -126,3 +126,52 @@ class TestRuoloReadOnly:
                 cur.execute(sql.SQL(
                     "DELETE FROM {}.righe_listino").format(sql.Identifier(schema)))
         ro.rollback()
+
+    def test_connessioni_non_crescono_dopo_n_chiamate(self, ro_env):
+        adm, _ro, schema = ro_env
+        
+        def count_ro_conns() -> int:
+            with adm.cursor() as cur:
+                cur.execute("SELECT count(*) FROM pg_stat_activity WHERE usename = %s", (RO_USER,))
+                return cur.fetchone()[0]
+                
+        # Chiudiamo ro perche' non ci serve e potrebbe sballare il conteggio
+        _ro.close()
+        
+        conns_before = count_ro_conns()
+        executor = PgSqlExecutor(_ro_conninfo(), schema=schema)
+        
+        from src.graph.tools.sql_tool import extract_params
+        params = extract_params(CODE, "prezzo")
+        for _ in range(20):
+            executor.run(params)
+            
+        conns_after = count_ro_conns()
+        # delta <= 1
+        assert (conns_after - conns_before) <= 1
+
+    def test_connessione_chiusa_su_eccezione(self, ro_env, monkeypatch):
+        adm, _ro, schema = ro_env
+        
+        def count_ro_conns() -> int:
+            with adm.cursor() as cur:
+                cur.execute("SELECT count(*) FROM pg_stat_activity WHERE usename = %s", (RO_USER,))
+                return cur.fetchone()[0]
+                
+        _ro.close()
+        
+        # Facciamo sollevare un'eccezione manomettendo la query
+        from src.graph.tools import sql_tool
+        monkeypatch.setattr(sql_tool, "_build_query", lambda c, s: "SELECT FROM table_that_does_not_exist_error")
+        
+        conns_before = count_ro_conns()
+        executor = PgSqlExecutor(_ro_conninfo(), schema=schema)
+        
+        from src.graph.tools.sql_tool import extract_params
+        params = extract_params(CODE, "prezzo")
+        
+        with pytest.raises(Exception):
+            executor.run(params)
+            
+        conns_after = count_ro_conns()
+        assert (conns_after - conns_before) <= 1

@@ -158,16 +158,16 @@ def pgconn():
 @needs_pg
 class TestPgSqlExecutor:
     def test_lookup_reale_ritorna_prezzo_e_provenienza(self, pgconn):
-        ex = PgSqlExecutor(pgconn, schema=PG_SCHEMA)
+        ex = PgSqlExecutor(conninfo(), schema=PG_SCHEMA)
         rows = lookup(ex, "V0-123", "quanto costa")
         assert rows == [LookupRow(valore=Decimal("12.50"), doc_stem="listino_x", page=1)]
 
     def test_codice_assente_fail_closed(self, pgconn):
-        ex = PgSqlExecutor(pgconn, schema=PG_SCHEMA)
+        ex = PgSqlExecutor(conninfo(), schema=PG_SCHEMA)
         assert lookup(ex, "ZZ-999", "quanto costa") == []
 
     def test_injection_non_esegue_drop_e_ritorna_vuoto(self, pgconn):
-        ex = PgSqlExecutor(pgconn, schema=PG_SCHEMA)
+        ex = PgSqlExecutor(conninfo(), schema=PG_SCHEMA)
         rows = lookup(ex, "0; DROP TABLE righe_listino; --", "prezzo")
         assert rows == []
         # prova regina: la tabella esiste ancora con la sua riga, il DROP non e' passato
@@ -176,6 +176,6 @@ class TestPgSqlExecutor:
         assert n == 1
 
     def test_campo_fuori_whitelist_non_raggiunge_il_db(self, pgconn):
-        ex = PgSqlExecutor(pgconn, schema=PG_SCHEMA)
+        ex = PgSqlExecutor(conninfo(), schema=PG_SCHEMA)
         with pytest.raises(ValueError, match="whitelist"):
             ex.run(SqlParams(codice_normalizzato="V0123", campo="updated_at"))

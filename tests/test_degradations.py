@@ -4,10 +4,10 @@ from src.graph.pipeline import _default_deps
 from src.common.roles import Role
 
 def test_default_deps_structured_fallback_logs_warning(caplog, monkeypatch):
-    def mock_get_conn():
+    def mock_get_conn(*args, **kwargs):
         raise RuntimeError("DB in fiamme")
     
-    monkeypatch.setattr("src.backend.clients.postgres_client.get_pg_conn_readonly", mock_get_conn)
+    monkeypatch.setattr("psycopg.connect", mock_get_conn)
     
     with caplog.at_level(logging.WARNING):
         deps = _default_deps(Role.TECNICO)

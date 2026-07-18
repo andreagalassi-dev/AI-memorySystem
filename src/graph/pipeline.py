@@ -634,12 +634,14 @@ def _default_deps(role: Role) -> Deps:
     # profondita'). Fail-safe: se il DB e' irraggiungibile o il ruolo manca, sql_query
     # resta None e l'intent STRUCTURED degrada a NARRATIVE (mai un crash all'avvio).
     # NB: il ramo si attiva solo con ANCHE `llm` != None (MLXModel, ancora differito).
-    # TODO: [Performance] Implementare pool di connessioni o context manager per
-    # evitare leak a ogni answer() (oggi si apre una connessione RO per invocazione).
     try:
-        from src.backend.clients.postgres_client import get_pg_conn_readonly
+        from src.backend.clients.postgres_client import conninfo_readonly
         from src.graph.tools.sql_tool import PgSqlExecutor
-        sql_query = PgSqlExecutor(get_pg_conn_readonly())
+        import psycopg
+        cinfo = conninfo_readonly()
+        with psycopg.connect(cinfo):
+            pass # probe veloce: se il DB non e' raggiungibile degrada
+        sql_query = PgSqlExecutor(cinfo)
     except Exception as e:
         logger.warning(
             "Ramo STRUCTURED degradato: %s (%s). Fallback a NARRATIVE.",
