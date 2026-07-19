@@ -42,3 +42,26 @@ L'estrazione non muore per timeout, loop, o errori silenziati durante il groundi
 
 **Conclusione:**
 La "morte" dell'estrazione dopo p185 e la presenza di buchi (come p156) non sono causate dall'estrattore o dal DB. È una limitazione sistematica dell'euristica di classificazione (`page_classifier.py` / `fast_dispatch.py`). Le tabelle "borderless" (con poche righe vettoriali) vengono scambiate per pagine di solo testo (`FAST_TEXT`) e scartate dal runner prima ancora di verificare con `is_table_page` se contengono dati tabellari.
+
+## 5. Verifica e quantificazione del reviewer (19/07/2026)
+
+Catena causale **CONFERMATA** con la correlazione completa route×DB su tutte le 237 pagine
+(dispatch rieseguito dal reviewer):
+
+- le **67 pagine nel DB sono tutte `heavy`** (0 contro-esempi);
+- delle 145 mancanti: **99 `fast_text`** (spiegate dalla teoria) e 46 `heavy`;
+- le 46 `heavy` mancanti NON sono un secondo modo di fallimento: l'estrattore rieseguito
+  su tutte produce **0 righe** (sono esplosi/tavole senza listino — l'euristica
+  `expected_pages` di questo audit era troppo inclusiva; il totale "attese 203" va letto
+  con questo caveat).
+
+**Quantificazione del danno (estrattore rieseguito su tutte le 145 pagine mancanti,
+sola lettura):** 75 pagine hanno righe estraibili, TUTTE `fast_text`, per un totale di
+**1.698 righe recuperabili contro le 280 oggi in DB** (~6×). Concentrazione in coda:
+p224-231 valgono ~1.300 righe (i listini borderless — incluse le p230-231 già note da T2).
+
+Correzione al registro storico: il PDF Mamoli ha **237 pagine**, non 285 (verificato
+PyMuPDF); "p185/285" nei documenti precedenti era errato.
+
+Fix del routing (es. `is_table_page` PRIMA del branch fast_text, o segnale tabellare
+text-based nel classifier) = **epica C**, con questi numeri come baseline del gate.
