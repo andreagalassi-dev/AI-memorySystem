@@ -95,9 +95,9 @@ async def on_message(msg: cl.Message):
                     break
         
         actions = [
-            cl.Action(name="feedback", value="conferma", label="✓ Conferma"),
-            cl.Action(name="feedback", value="correggi", label="✎ Correggi"),
-            cl.Action(name="feedback", value="segnala", label="⚑ Segnala"),
+            cl.Action(name="feedback", payload={"verdetto": "conferma"}, label="✓ Conferma"),
+            cl.Action(name="feedback", payload={"verdetto": "correggi"}, label="✎ Correggi"),
+            cl.Action(name="feedback", payload={"verdetto": "segnala"}, label="⚑ Segnala"),
         ]
         
         wait_msg.content = content
@@ -128,8 +128,8 @@ async def on_feedback(action: cl.Action):
     if not user:
         return
         
-    verdetto = action.value
-    msg_id = action.msgId
+    verdetto = action.payload.get("verdetto")
+    msg_id = action.forId
     
     interactions = cl.user_session.get("interactions", {})
     state = interactions.get(msg_id)
@@ -162,7 +162,7 @@ async def on_feedback(action: cl.Action):
 
     # Rimuovi i pulsanti per evitare feedback multipli
     msg_to_update = cl.Message(content="")
-    msg_to_update.id = action.msgId
+    msg_to_update.id = action.forId
     await msg_to_update.remove_actions()
 
     if fb_id is not None:
