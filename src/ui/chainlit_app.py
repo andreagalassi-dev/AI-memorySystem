@@ -13,6 +13,7 @@ from src.graph.pipeline import answer
 from src.common.roles import Role
 from src.serving.session_deps import get_deps
 from src.ui.page_render import ensure_page_render
+from src.ui.feedback_handler import save_feedback_ui
 
 load_dotenv()
 
@@ -93,10 +94,78 @@ async def on_message(msg: cl.Message):
                 if len(seen) >= 8:
                     break
         
+        actions = [
+            cl.Action(name="feedback", value="conferma", label="✓ Conferma"),
+            cl.Action(name="feedback", value="correggi", label="✎ Correggi"),
+            cl.Action(name="feedback", value="segnala", label="⚑ Segnala"),
+        ]
+        
         wait_msg.content = content
         wait_msg.elements = elements
+        wait_msg.actions = actions
         await wait_msg.update()
+        
+        # Salva lo stato per il feedback (chiave: ID del messaggio di risposta)
+        interaction_state = {
+            "query": msg.content,
+            "risposta": final_answer,
+            "final_level": final_level,
+            "citazioni": citations,
+            "contesto": {"audit": res.get("audit", [])}
+        }
+        interactions = cl.user_session.get("interactions", {})
+        interactions[wait_msg.id] = interaction_state
+        cl.user_session.set("interactions", interactions)
         
     except Exception as e:
         wait_msg.content = f"Errore durante l'elaborazione: {e}"
         await wait_msg.update()
+
+
+@cl.action_callback("feedback")
+async def on_feedback(action: cl.Action):
+    user = cl.user_session.get("user")
+    if not user:
+        return
+        
+    verdetto = action.value
+    msg_id = action.msgId
+    
+    interactions = cl.user_session.get("interactions", {})
+    state = interactions.get(msg_id)
+    if not state:
+        await cl.Message(content="Sessione feedback scaduta o non trovata.").send()
+        return
+
+    correzione = None
+    if verdetto == "correggi":
+        res = await cl.AskUserMessage(content="Inserisci la correzione:", timeout=120).send()
+        if res:
+            correzione = res.get('output') if isinstance(res, dict) else getattr(res, 'content', str(res))
+        else:
+            await cl.Message(content="Nessuna correzione fornita. Feedback annullato.").send()
+            return
+
+    # Esegue insert_feedback (che apre/chiude connessione) in un thread separato
+    fb_id = await asyncio.to_thread(
+        save_feedback_ui,
+        utente=user.identifier,
+        ruolo=user.metadata.get("role", "sconosciuto"),
+        query=state["query"],
+        risposta=state["risposta"],
+        final_level=state["final_level"],
+        citazioni=state["citazioni"],
+        contesto=state["contesto"],
+        verdetto=verdetto,
+        correzione=correzione
+    )
+
+    # Rimuovi i pulsanti per evitare feedback multipli
+    msg_to_update = cl.Message(content="")
+    msg_to_update.id = action.msgId
+    await msg_to_update.remove_actions()
+
+    if fb_id is not None:
+        await cl.Message(content=f"Feedback registrato (Verdetto: {verdetto}).").send()
+    else:
+        await cl.Message(content="Errore durante la registrazione del feedback. Riprovare più tardi.").send()
