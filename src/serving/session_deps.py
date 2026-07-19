@@ -108,7 +108,10 @@ def get_deps(role: str) -> Deps:
     locked_deps = replace(
         deps,
         llm=LockedLLMProxy(deps.llm) if deps.llm is not None else None,
-        visual_search=locked_callable(deps.visual_search)
+        visual_search=locked_callable(deps.visual_search),
+        retrieve=locked_callable(deps.retrieve),
+        retrieve_superseded=locked_callable(deps.retrieve_superseded),
+        retrieve_deleted=locked_callable(deps.retrieve_deleted)
     )
     
     _CACHE[role_key] = locked_deps

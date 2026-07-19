@@ -183,3 +183,28 @@ def test_inference_is_serialized_and_affinity(monkeypatch):
     (start1, end1) = fake_llm.calls[0]
     (start2, end2) = fake_llm.calls[1]
     assert end1 <= start2 or end2 <= start1
+
+def test_retrieve_is_locked_callable(monkeypatch):
+    import src.serving.session_deps as sd
+    sd._CACHE.clear()
+    
+    def mock_build_default(*args, llm=None, visual_search=None):
+        from src.retrieval.confidence import Thresholds
+        from src.graph.pipeline import Deps
+        return Deps(
+            retrieve=lambda: "r",
+            retrieve_superseded=lambda: "rs",
+            retrieve_deleted=lambda: "rd",
+            synthesize=lambda: None,
+            catalog_lookup=lambda: None,
+            thresholds=Thresholds(0,0),
+            llm=None
+        )
+    monkeypatch.setattr("src.serving.session_deps.build_default_deps", mock_build_default)
+    
+    deps = sd.get_deps("tecnico")
+    
+    # Verifica che le funzioni siano state avvolte (il decorator restituisce 'wrapper')
+    assert deps.retrieve.__name__ == "wrapper"
+    assert deps.retrieve_superseded.__name__ == "wrapper"
+    assert deps.retrieve_deleted.__name__ == "wrapper"
