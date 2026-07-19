@@ -17,6 +17,13 @@ from src.ui.feedback_handler import save_feedback_ui
 
 load_dotenv()
 
+import chainlit.data as cl_data
+from chainlit.data.sql_alchemy import SQLAlchemyDataLayer
+
+db_url = os.environ.get("DATABASE_URL")
+if db_url:
+    cl_data._data_layer = SQLAlchemyDataLayer(conninfo=db_url)
+
 LEVEL_EMOJI = {
     "ALTA": "🟢 ALTA",
     "MEDIA": "🟡 MEDIA",
