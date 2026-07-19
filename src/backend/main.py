@@ -29,7 +29,8 @@ def health() -> JSONResponse:
     result: dict[str, object] = {
         "backend": "ok",
         "narrative": "ok",
-        "logic_model": settings.logic_model,
+        "brain_model": settings.brain_model,
+        "fallback_model": settings.ollama_model,
         "resident_model": None,
     }
 

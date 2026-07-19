@@ -46,6 +46,10 @@ class Settings(BaseSettings):
     # RAM libera per gli embedder residenti. Clampato dal ModelMultiplexer.
     local_ctx_cap: int = 16000
 
+    # --- Ollama Cervello (Fase 1, Produzione) ---
+    brain_model: str = "gemma4:26b-mlx"
+    brain_think: bool = False
+
     # --- Ollama fallback ---
     # Ollama resta ESCLUSIVAMENTE come fallback di transizione nel caso in cui
     # MLXModel fallisca o mlx-lm non sia disponibile.

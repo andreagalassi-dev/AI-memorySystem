@@ -16,7 +16,9 @@ def test_health_ok():
     assert data["structured"] == "ok"
     assert data["visual"] == "ok"
     assert data["narrative"] == "ok"
-    assert "logic_model" in data
+    assert "brain_model" in data
+    assert "fallback_model" in data
+    assert "resident_model" in data
     assert data["resident_model"] is None
 
 @needs_qdrant

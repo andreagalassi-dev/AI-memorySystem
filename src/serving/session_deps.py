@@ -29,24 +29,26 @@ def _init_shared_singletons():
         if _llm is not None:
             return
             
-        # Initialize shared MLXModel + Multiplexer
-        from src.graph.llm import MLXModel, FallbackLLM
-        from src.serving.multiplexer import ModelMultiplexer, MlxModelRuntime
+        # Initialize shared Ollama Models
+        from src.graph.llm import FallbackLLM
         from src.backend.clients.ollama_client import OllamaModel
         from src.backend.config import settings
         import requests
     
-        global _multiplexer
-        mlx_runtime = MlxModelRuntime(default_num_ctx=settings.local_ctx_cap)
-        _multiplexer = ModelMultiplexer(mlx_runtime, max_resident=1, ctx_cap=settings.local_ctx_cap)
-        
-        primary_llm = MLXModel(settings.logic_model, _multiplexer)
-        fallback_llm = OllamaModel()
+        primary_llm = OllamaModel(model=settings.brain_model, think=settings.brain_think)
+        fallback_llm = OllamaModel(model=settings.ollama_model)
         
         try:
             r = requests.get(f"{settings.ollama_host}/api/tags", timeout=3)
             r.raise_for_status()
             models = [m.get("name") for m in r.json().get("models", [])]
+            if settings.brain_model not in models:
+                logger.warning(
+                    "\n=== ATTENZIONE: MODELLO PRIMARIO ASSENTE ===\n"
+                    f"Il modello Ollama '{settings.brain_model}' non è installato.\n"
+                    f"Esegui: ollama pull {settings.brain_model}\n"
+                    "============================================"
+                )
             if settings.ollama_model not in models:
                 logger.warning(
                     "\n=== ATTENZIONE: FALLBACK ASSENTE ===\n"
@@ -55,9 +57,9 @@ def _init_shared_singletons():
                     "====================================="
                 )
         except Exception as e:
-            logger.warning("Impossibile contattare Ollama per il probe del fallback: %s", e)
+            logger.warning("Impossibile contattare Ollama per il probe dei modelli: %s", e)
             
-        _llm = FallbackLLM(primary_llm, fallback_llm)
+        _llm = FallbackLLM(primary_llm, fallback_llm, primary_name="Ollama (Brain)", fallback_name="Ollama (Fallback)")
         
         # Initialize shared Visual Search
         try:
@@ -118,14 +120,22 @@ def get_deps(role: str) -> Deps:
     return locked_deps
 
 def get_serving_health() -> dict:
-    """Returns the health status of the serving process, including resident models."""
+    """Returns the health status of the serving process, compresi i modelli usati.
+    
+    resident_model rappresenta l'eventuale modello MLX caricato in memoria dal 
+    processo corrente (multiplexer), che in produzione Ollama-based è tipicamente null.
+    """
+    from src.backend.config import settings
+    
     resident = None
     if _multiplexer is not None:
         residents = list(_multiplexer.resident())
         if residents:
-            resident = residents[0]  # multiplexer max_resident=1 by default, or just take first
+            resident = residents[0]  # multiplexer max_resident=1 by default, o prendi il primo
     
     return {
+        "brain_model": settings.brain_model,
+        "fallback_model": settings.ollama_model,
         "resident_model": resident,
         "roles_cached": list(_CACHE.keys())
     }

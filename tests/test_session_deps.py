@@ -74,11 +74,8 @@ def test_get_serving_health():
     health = sd.get_serving_health()
     assert health["resident_model"] is None
     assert "tecnico" in health["roles_cached"]
-    
-    # Simulate a load
-    sd._multiplexer.resident = lambda: {"test_model"}
-    health = sd.get_serving_health()
-    assert health["resident_model"] == "test_model"
+    assert "brain_model" in health
+    assert "fallback_model" in health
 
 def test_init_shared_singletons_concurrent_is_thread_safe(monkeypatch):
     import src.serving.session_deps as sd
@@ -95,11 +92,11 @@ def test_init_shared_singletons_concurrent_is_thread_safe(monkeypatch):
         return Deps(retrieve=lambda: None, synthesize=lambda: None, catalog_lookup=lambda: None, thresholds=Thresholds(0,0))
     monkeypatch.setattr("src.serving.session_deps.build_default_deps", mock_build_default_deps)
 
-    def mock_MLXModel(*args, **kwargs):
-        calls.append("MLXModel_init")
+    def mock_OllamaModel(*args, **kwargs):
+        calls.append("OllamaModel_init")
         time.sleep(0.1) # Simulate slow init
         return "mock_primary"
-    monkeypatch.setattr("src.graph.llm.MLXModel", mock_MLXModel)
+    monkeypatch.setattr("src.backend.clients.ollama_client.OllamaModel", mock_OllamaModel)
     
     threads = []
     for _ in range(10):
@@ -112,7 +109,34 @@ def test_init_shared_singletons_concurrent_is_thread_safe(monkeypatch):
     for t in threads:
         t.join()
         
-    assert len(calls) == 1
+    assert len(calls) == 2 # 1 for primary, 1 for fallback
+
+def test_no_mlx_instantiated(monkeypatch):
+    import src.serving.session_deps as sd
+    
+    sd._CACHE.clear()
+    sd._llm = None
+    sd._multiplexer = None
+    
+    # Se MlxModelRuntime o MLXModel vengono istanziati, esplode
+    def explode(*args, **kwargs):
+        raise RuntimeError("Non istanziare MLX in serving!")
+        
+    try:
+        import src.serving.multiplexer
+        monkeypatch.setattr("src.serving.multiplexer.MlxModelRuntime", explode)
+    except ImportError:
+        pass
+        
+    try:
+        import src.graph.llm
+        monkeypatch.setattr("src.graph.llm.MLXModel", explode)
+    except ImportError:
+        pass
+        
+    # Esegue il build (che ora usa solo OllamaModel)
+    deps = sd.get_deps("tecnico")
+    assert deps is not None
 
 def test_inference_is_serialized_and_affinity(monkeypatch):
     import src.serving.session_deps as sd

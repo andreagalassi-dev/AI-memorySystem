@@ -546,18 +546,14 @@ def build_default_deps(role: Role, *, llm=None, visual_search=None) -> Deps:
     qc = get_qdrant_client()
     
     if llm is None:
-        from src.graph.llm import MLXModel, FallbackLLM
-        from src.serving.multiplexer import ModelMultiplexer, MlxModelRuntime
+        from src.graph.llm import FallbackLLM
         from src.backend.clients.ollama_client import OllamaModel
         from src.backend.config import settings
 
-        mlx_runtime = MlxModelRuntime(default_num_ctx=settings.local_ctx_cap)
-        multiplexer = ModelMultiplexer(mlx_runtime, max_resident=1, ctx_cap=settings.local_ctx_cap)
+        primary_llm = OllamaModel(model=settings.brain_model, think=settings.brain_think)
+        fallback_llm = OllamaModel(model=settings.ollama_model)
         
-        primary_llm = MLXModel(settings.logic_model, multiplexer)
-        fallback_llm = OllamaModel()
-        
-        llm = FallbackLLM(primary_llm, fallback_llm)
+        llm = FallbackLLM(primary_llm, fallback_llm, primary_name="Ollama (Brain)", fallback_name="Ollama (Fallback)")
 
     def _to_ev(hit, score) -> Evidence:
         p = hit.payload
