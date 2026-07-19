@@ -12,8 +12,15 @@ sys.path.insert(0, str(ROOT))
 from src.graph.pipeline import answer
 from src.common.roles import Role
 from src.serving.session_deps import get_deps
+from src.ui.page_render import ensure_page_render
 
 load_dotenv()
+
+LEVEL_EMOJI = {
+    "ALTA": "🟢 ALTA",
+    "MEDIA": "🟡 MEDIA",
+    "BASSA": "🔴 BASSA"
+}
 
 @cl.password_auth_callback
 def auth_callback(username: str, password: str) -> User | None:
@@ -65,9 +72,29 @@ async def on_message(msg: cl.Message):
                 f"- Documento: {doc}, Pagina: {page}" for doc, page in citations
             )
             
-        content = f"**Livello di confidenza:** {final_level}\n\n**Risposta:**\n{final_answer}{cit_text}"
+        display_level = LEVEL_EMOJI.get(final_level, final_level)
+        content = f"**Livello di confidenza:** {display_level}\n\n**Risposta:**\n{final_answer}{cit_text}"
+        
+        # Pagine renderizzate (max 8 dedup)
+        elements = []
+        seen = set()
+        
+        for doc, page in citations:
+            if (doc, page) not in seen:
+                seen.add((doc, page))
+                
+                # Ottieni PNG
+                png_path = ensure_page_render(doc, page)
+                if png_path:
+                    elements.append(
+                        cl.Image(path=str(png_path), name=f"{doc} p.{page}", display="inline")
+                    )
+                
+                if len(seen) >= 8:
+                    break
         
         wait_msg.content = content
+        wait_msg.elements = elements
         await wait_msg.update()
         
     except Exception as e:
