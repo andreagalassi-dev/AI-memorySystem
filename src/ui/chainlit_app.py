@@ -105,13 +105,37 @@ async def on_message(msg: cl.Message):
         wait_msg.actions = actions
         await wait_msg.update()
         
+        # Prepara l'evidenza troncata per il DB
+        ev_list = []
+        for e in res.get("evidence", []):
+            try:
+                doc = e.doc if hasattr(e, "doc") else e.get("doc")
+                page = e.page if hasattr(e, "page") else e.get("page")
+                code = e.code if hasattr(e, "code") else e.get("code")
+                score = e.score if hasattr(e, "score") else e.get("score")
+                text = e.text if hasattr(e, "text") else e.get("text")
+                
+                ev_dict = {
+                    "doc": doc,
+                    "page": page,
+                    "code": code,
+                    "score": score,
+                    "text": text[:500] if text else None
+                }
+                ev_list.append(ev_dict)
+            except Exception:
+                pass
+
         # Salva lo stato per il feedback (chiave: ID del messaggio di risposta)
         interaction_state = {
             "query": msg.content,
             "risposta": final_answer,
             "final_level": final_level,
             "citazioni": citations,
-            "contesto": {"audit": res.get("audit", [])}
+            "contesto": {
+                "audit": res.get("audit", []),
+                "evidence": ev_list
+            }
         }
         interactions = cl.user_session.get("interactions", {})
         interactions[wait_msg.id] = interaction_state

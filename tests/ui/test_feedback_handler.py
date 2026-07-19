@@ -16,7 +16,12 @@ def test_save_feedback_ui_success():
         risposta="100 euro",
         final_level="ALTA",
         citazioni=[("doc1", 10)],
-        contesto={"audit": ["nodo1", "nodo2"]},
+        contesto={
+            "audit": ["nodo1", "nodo2"],
+            "evidence": [
+                {"doc": "doc1", "page": 10, "code": "A1", "score": 0.95, "text": "testo " * 100}
+            ]
+        },
         verdetto="conferma"
     )
     
