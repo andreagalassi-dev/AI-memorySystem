@@ -29,7 +29,7 @@ Tutto il flusso è locale; sono previsti flag offline per installazioni air-gapp
 
 ```bash
 # 1. Ambiente Python con uv
-uv sync --extra dev
+uv sync --extra dev  # L'extra 'demo' e' richiesto finche' la demo permanente Streamlit vive
 
 # 2. Configurazione (NON committare .env)
 cp .env.example .env
