@@ -45,3 +45,27 @@ Il guardrail agisce ponendo lo stato in `VERIFY` o `BLOCK` per codici che pur es
 
 ### Conclusione Task B1.b-v2
 A valle della bonifica del campionatore, il tasso ALTA misurato sul dato pulito rispecchia il benchmark storico (~40%). Eliminando il rumore dei campioni testuali non-codice, il problema primario non risulta più il fallimento del retrieval (`0%`), ma l'incapacità dell'LLM di presentare correttamente o con margine sufficiente l'evidenza estratta (GENERAZIONE e FUSIONE_RANKING).
+
+## Verifica e reinterpretazione del reviewer (19/07/2026)
+
+Verificato: campione rigenerato dal codice committato = **identico al carattere** al JSON
+(seed 42); tabelle riconciliate col raw; suite 744/2 riprodotta; spot-check dal vivo
+(`80637`→ALTA TRAGBUEGEL) fedele.
+
+**Correzione di attribuzione (cambia l'epica di destinazione dei fix):** l'etichetta
+GENERAZIONE va riletta guardando il CONTENUTO dei chunk. Verificato su Qdrant:
+
+- i 10 casi iwaki (MEDIA+VERIFY) hanno chunk con **`desc: null`** e text ridotto a
+  "doc pagina N | pos M | codice X": il generatore può solo ripetere il codice e il
+  guardrail, correttamente, non può confermare una descrizione che NON esiste nel dato.
+  Root-cause reale: **contenuto del chunk povero → estrazione/chunking (epica C)**,
+  non un difetto dell'LLM (epica D).
+- i 5 casi pi_pulley (MEDIA+PASS) hanno `desc` = solo il prezzo ("101,42"): risposta
+  generata corretta, confidence che resta MEDIA su evidenza scarna. Famiglia affine
+  (dato povero + calibrazione, epiche C/D).
+
+Ricalcolo onesto dei 24 degradati: **≥15/24 (62%) hanno come causa prima il dato povero
+nel chunk**; la generazione "vera" (riformulazioni tipo rotax `979448` BLOCK) è
+minoritaria. Nota metodologica: RETRIEVAL_MISS=0 è in parte per costruzione (codici
+campionati dall'indice + BM25 esatto sul ramo lessicale): non generalizzare ai codici
+fuori indice (B1.a).
