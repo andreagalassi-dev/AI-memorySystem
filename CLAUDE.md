@@ -7,7 +7,8 @@ Fase attuale: **Fase 0 locale, single-tenant**. La specifica e la roadmap comple
 
 ## Principio non negoziabile
 IMPORTANT: il sistema deve essere **giusto, oppure dichiarare "non lo so" — mai sbagliato in
-silenzio.** Ogni risposta cita la fonte (pagina/documento). Nessun codice pezzo va mostrato se
+silenzio.** L'evoluzione futura (Epica H) prevede: **"mai un'affermazione senza fonte"**.
+Ogni risposta cita la fonte (pagina/documento). Nessun codice pezzo va mostrato se
 non esiste nel dato strutturato recuperato (guardrail deterministico non-LLM, vedi SPEC §L2).
 
 ## Come lavoriamo
@@ -25,14 +26,15 @@ immagini/schemi, chunking, dual-indexing, multilingua) sono registrate in
 l'architettura di ingestion si fissa a P1/P2 **dopo** lo spike di estrazione
 reale. Leggile prima di pianificare P1.
 
-## Stack deciso (dettaglio in SPEC §L0)
+## Stack reale
 - Container: Docker + docker-compose. Servizi: backend, qdrant, ocr, ui.
-- LLM locale: Ollama / LM Studio. Hardware disponibile: Apple Silicon + NVIDIA RTX.
-- OCR: Marker (default); al gate testare anche MinerU e Docling.
-- Embedding: BGE-M3 (dense+sparse+multivector). Reranker: BGE-reranker-v2.
-- VLM: Qwen3-VL 8B (32B per OCR tedesco difficile).
-- Ragionatore (solo testo): famiglia Qwen3 14B/32B. Orchestrazione: LangGraph.
-- Vector DB: Qdrant (collezione per tenant). DB di supporto: PostgreSQL. UI PoC: Streamlit.
+- Ingestion: Fast-Dispatch + TextTableExtractor (born-digital) / GLM-OCR (scansioni).
+- LLM locale: MLX Gemma-4-26B come cervello via multiplexer. Fallback: Ollama.
+- Embedding: BGE-M3 + BM25 (testo) e Qwen3-VL 1024d (visivo).
+- Orchestrazione: LangGraph tri-intent (structured, visual, narrative) con fallback structured->retrieval.
+- Vector DB: Qdrant. DB di supporto: PostgreSQL.
+- UI: Chainlit (auth, sessioni, feedback nativi). Streamlit resta solo come demo congelata.
+- Qualità: suite con ~721 test. Gate anti-regressione via `scripts/smoke_e2e.py`.
 
 ## Lingue del corpus
 IT / EN / DE. Le metriche di valutazione vanno calcolate **separatamente per lingua**.
