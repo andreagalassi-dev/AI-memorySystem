@@ -20,9 +20,14 @@ load_dotenv()
 import chainlit.data as cl_data  # noqa: E402
 from chainlit.data.sql_alchemy import SQLAlchemyDataLayer  # noqa: E402
 
+from src.ui.storage_client import LocalStorageClient # noqa: E402
+
 db_url = os.environ.get("DATABASE_URL")
 if db_url:
-    cl_data._data_layer = SQLAlchemyDataLayer(conninfo=db_url)
+    cl_data._data_layer = SQLAlchemyDataLayer(
+        conninfo=db_url,
+        storage_provider=LocalStorageClient(storage_dir="output/ui_elements")
+    )
 
 LEVEL_EMOJI = {
     "ALTA": "🟢 ALTA",
@@ -87,6 +92,7 @@ async def on_message(msg: cl.Message):
         elements = []
         seen = set()
         
+        actions = []
         for doc, page in citations:
             if (doc, page) not in seen:
                 seen.add((doc, page))
@@ -97,15 +103,21 @@ async def on_message(msg: cl.Message):
                     elements.append(
                         cl.Image(path=str(png_path), name=f"{doc} p.{page}", display="inline")
                     )
+                    actions.append(
+                        cl.Action(name="paginate", payload={"doc": doc, "page": page, "dir": "prec"}, label=f"◀ Pagina prec ({doc})")
+                    )
+                    actions.append(
+                        cl.Action(name="paginate", payload={"doc": doc, "page": page, "dir": "succ"}, label=f"Pagina succ ▶ ({doc})")
+                    )
                 
                 if len(seen) >= 8:
                     break
         
-        actions = [
+        actions.extend([
             cl.Action(name="feedback", payload={"verdetto": "conferma"}, label="✓ Conferma"),
             cl.Action(name="feedback", payload={"verdetto": "correggi"}, label="✎ Correggi"),
             cl.Action(name="feedback", payload={"verdetto": "segnala"}, label="⚑ Segnala"),
-        ]
+        ])
         
         wait_msg.content = content
         wait_msg.elements = elements
@@ -200,6 +212,41 @@ async def on_feedback(action: cl.Action):
         await cl.Message(content=f"Feedback registrato (Verdetto: {verdetto}).").send()
     else:
         await cl.Message(content="Errore durante la registrazione del feedback. Riprovare più tardi.").send()
+
+@cl.action_callback("paginate")
+async def on_paginate(action: cl.Action):
+    from src.ui.pagination import calculate_next_page
+    
+    payload = action.payload
+    doc = payload.get("doc")
+    current_page = payload.get("page")
+    direction = payload.get("dir")
+    
+    try:
+        target_page = calculate_next_page(current_page, direction)
+    except ValueError:
+        await cl.Message(content="Direzione non valida.").send()
+        return
+
+    png_path = ensure_page_render(doc, target_page)
+    
+    if not png_path:
+        await cl.Message(content=f"La pagina {target_page} del documento {doc} non è disponibile o è fuori range.").send()
+        return
+        
+    elements = [
+        cl.Image(path=str(png_path), name=f"{doc} p.{target_page}", display="inline")
+    ]
+    actions = [
+        cl.Action(name="paginate", payload={"doc": doc, "page": target_page, "dir": "prec"}, label=f"◀ Pagina prec ({doc})"),
+        cl.Action(name="paginate", payload={"doc": doc, "page": target_page, "dir": "succ"}, label=f"Pagina succ ▶ ({doc})")
+    ]
+    
+    await cl.Message(
+        content=f"Pagina {target_page} del documento **{doc}**:",
+        elements=elements,
+        actions=actions
+    ).send()
 
 from chainlit.server import app  # noqa: E402
 from src.serving.session_deps import get_serving_health  # noqa: E402

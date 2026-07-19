@@ -53,12 +53,14 @@ dependencies = [
     { name = "python-dotenv" },
     { name = "qdrant-client" },
     { name = "sentence-transformers" },
-    { name = "streamlit" },
     { name = "torchvision" },
     { name = "uvicorn", extra = ["standard"] },
 ]
 
 [package.optional-dependencies]
+demo = [
+    { name = "streamlit" },
+]
 dev = [
     { name = "pytest" },
     { name = "ruff" },
@@ -91,11 +93,11 @@ requires-dist = [
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.4" },
     { name = "sentence-transformers", specifier = ">=3.0.0" },
     { name = "sqlalchemy", extras = ["asyncio"], marker = "extra == 'ui'", specifier = ">=2.0.0" },
-    { name = "streamlit", specifier = ">=1.33" },
+    { name = "streamlit", marker = "extra == 'demo'", specifier = ">=1.33" },
     { name = "torchvision", specifier = ">=0.28.0" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.29" },
 ]
-provides-extras = ["dev", "mlx", "ui"]
+provides-extras = ["dev", "mlx", "ui", "demo"]
 
 [[package]]
 name = "aiofiles"
