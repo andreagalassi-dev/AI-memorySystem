@@ -47,6 +47,7 @@ Il lavoro vero vive su `feature/fase1-model-multiplexer`; main è 60+ commit ind
   `/health` con stato rami e modello residente. (`0f50405`, `7cd9730`)
 - [x] Pool connessioni Postgres RO (TODO noto pipeline.py:623). (`d85dae0`)
 - [x] `scripts/smoke_e2e.py` (3 query, una per ramo, exit≠0 se degrado) come gate pre-merge. (`96249c6`)
+- [x] Cervello di produzione configurato: Ollama gemma4 (think off) + fallback qwen2.5 (A9.4 deciso, commit c7a6249, 2026-07-19).
 - [x] Coda docs: aggiornare CLAUDE.md (stack reale) e README; archiviare ciò che A rende obsoleto.
 
 ### B — Misura (il metro di "irrifiutabile")

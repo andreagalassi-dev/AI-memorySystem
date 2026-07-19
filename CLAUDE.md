@@ -29,7 +29,7 @@ massiva è materia dell'epica C del piano.
 ## Stack reale
 - Container: Docker + docker-compose. Servizi: backend, qdrant, ocr, ui.
 - Ingestion: Fast-Dispatch + TextTableExtractor (born-digital) / GLM-OCR (scansioni).
-- LLM locale: MLX Gemma-4-26B come cervello via multiplexer. Fallback: Ollama.
+- LLM locale: Cervello: Gemma 4 26B via Ollama (MLX+MTP, think off); fallback qwen2.5:14b; MLX in-processo dietro Port per profili futuri.
 - Embedding: BGE-M3 + BM25 (testo) e Qwen3-VL 1024d (visivo).
 - Orchestrazione: LangGraph tri-intent (structured, visual, narrative) con fallback structured->retrieval.
 - Vector DB: Qdrant. DB di supporto: PostgreSQL.

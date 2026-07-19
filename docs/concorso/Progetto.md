@@ -49,8 +49,7 @@ al gate di regressione, con l'errore silenzioso trattato sempre come bug da erad
 
 - **FSM LangGraph tri-intent** (structured / visual / narrative) ✅ — costruita e provata
   end-to-end su adapter reali. Integrata su main.
-- **Modelli di ragionamento** ⚠️ → **Epiche A/G** — MLX Gemma 4 26B MoE sul Mac
-  (implementato, lento per l'uso live), Ollama come fallback. Profilo doppio: 
+- **Modelli di ragionamento** ⚠️ → **Epiche A/G** — Cervello: Gemma 4 26B via Ollama (MLX+MTP, think off); fallback qwen2.5:14b; MLX in-processo dietro Port per profili futuri. Profilo doppio: 
   mac-ottimizzato ora, NVIDIA (DGX Spark GB10, 128GB unificati, CUDA) quando arriva.
 - **Risposta a cascata 3 livelli — "non lo so" deve diventare RARO** ❌ → **Epica H**
   (decisione utente 15/07: feature portante). Il principio fondante evolve: da "mai
