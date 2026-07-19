@@ -32,9 +32,9 @@
 
 ### A — Un solo sistema (fondamenta)
 Il lavoro vero vive su `feature/fase1-model-multiplexer`; main è 60+ commit indietro.
-- Merge `feature/fase1-model-multiplexer` → `main`; suite verde prima e dopo.
-- Pulizia ~16 branch mergiati; decisione su `feat/fase-d2-quote` (bozza preventivo).
-- **UI Chainlit** collegata a `answer(query, role)` del grafo tri-intent: chat con
+- [x] Merge `feature/fase1-model-multiplexer` → `main`; suite verde prima e dopo. (`468244b`)
+- [x] Pulizia ~16 branch mergiati; decisione su `feat/fase-d2-quote` (bozza preventivo). (`468244b`)
+- [x] **UI Chainlit** collegata a `answer(query, role)` del grafo tri-intent: chat con
   cronologia, badge fiducia, citazione, viewer documenti/esplosi (pagina citata SEMPRE
   per prima — il fix D-3.3 della demo rifatto pulito), fino a 8 candidati, feedback
   strutturato nativo. Schema feedback: (utente, query, risposta, verdetto, correzione).
@@ -42,12 +42,12 @@ Il lavoro vero vive su `feature/fase1-model-multiplexer`; main è 60+ commit ind
   in chat (render dell'immagine, non solo il riferimento) e il viewer deve diventare
   **navigabile**: zoom sulla tavola e scorrimento tra le pagine del documento. Il render
   in chat entra in A7.2; la navigazione completa (zoom/sfoglia) può maturare tra A7.2 e
-  l'epica E, ma è un impegno di prodotto: non va persa.
-- T3: fine dei fail-safe silenziosi — warning strutturato per ogni ramo degradato,
-  `/health` con stato rami e modello residente.
-- Pool connessioni Postgres RO (TODO noto pipeline.py:623).
-- `scripts/smoke_e2e.py` (3 query, una per ramo, exit≠0 se degrado) come gate pre-merge.
-- Coda docs: aggiornare CLAUDE.md (stack reale) e README; archiviare ciò che A rende obsoleto.
+  l'epica E, ma è un impegno di prodotto: non va persa. (`206bcf1`)
+- [x] T3: fine dei fail-safe silenziosi — warning strutturato per ogni ramo degradato,
+  `/health` con stato rami e modello residente. (`0f50405`, `7cd9730`)
+- [x] Pool connessioni Postgres RO (TODO noto pipeline.py:623). (`d85dae0`)
+- [x] `scripts/smoke_e2e.py` (3 query, una per ramo, exit≠0 se degrado) come gate pre-merge. (`96249c6`)
+- [x] Coda docs: aggiornare CLAUDE.md (stack reale) e README; archiviare ciò che A rende obsoleto.
 
 ### B — Misura (il metro di "irrifiutabile")
 - **B1 Audit diagnostico** (prima i numeri, poi i target):

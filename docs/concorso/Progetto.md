@@ -48,8 +48,7 @@ al gate di regressione, con l'errore silenzioso trattato sempre come bug da erad
 ## 2. Il Cervello Unificatore
 
 - **FSM LangGraph tri-intent** (structured / visual / narrative) ✅ — costruita e provata
-  end-to-end su adapter reali. ⚠️ → **Epica A**: oggi vive su un branch non integrato;
-  la UI di prodotto non ci è ancora collegata.
+  end-to-end su adapter reali. Integrata su main.
 - **Modelli di ragionamento** ⚠️ → **Epiche A/G** — MLX Gemma 4 26B MoE sul Mac
   (implementato, lento per l'uso live), Ollama come fallback. Profilo doppio: 
   mac-ottimizzato ora, NVIDIA (DGX Spark GB10, 128GB unificati, CUDA) quando arriva.
@@ -86,8 +85,7 @@ al gate di regressione, con l'errore silenzioso trattato sempre come bug da erad
   — il principio è dichiarato ma il generatore oggi riformula (es. "IEC 34-7" vs
   "EN60034-7" nell'evidenza): la risposta sui dati strutturati deve diventare
   template-driven, con l'LLM solo come formattatore.
-- **Fail-Closed design** ⚠️ → **Epica A (T3)** — la degradazione oggi è silenziosa
-  (`except: dep=None`): servono warning strutturati e `/health` con stato dei rami.
+- **Fail-Closed design** ✅ — warning strutturati per i rami degradati e `/health` completati (T3).
 - **Watchdog ciclo di vita documenti** ✅ — ingestion per-documento, avviso obsoleto
   in risposta, cancellazione → alert.
 - **MLOps / Golden Dataset gate** ❌ → **Epica B2** — il gate anti-regressione con
@@ -100,13 +98,9 @@ al gate di regressione, con l'errore silenzioso trattato sempre come bug da erad
 - **Bozze di preventivo da liste sporche** ❌ — bozza su branch `feat/fase-d2-quote`,
   mai integrata; decisione in epica A.
 - **Integrazione ERP sicura (semantic layer, sola lettura)** ❌ — post-epiche ("Fase 6").
-- **UI**: ⚠️ → **Epica A** — salto a **Chainlit** (auth, sessioni, feedback nativi);
+- **UI**: ✅ — salto a **Chainlit** (auth, sessioni, feedback nativi);
   React+FastAPI resta il target di lungo periodo. La demo Streamlit congelata resta
-  come vetrina permanente. **Stato 19/07:** scheletro Chainlit VIVO (auth per ruolo,
-  answer() reale, collaudo utente: codice→ALTA con fonte). **Requisito utente 19/07:**
-  la pagina citata deve comparire renderizzata in chat e il viewer deve essere
-  **navigabile** (zoom sull'esploso, scorrimento tra le pagine del documento) — render
-  in chat in A7.2, navigazione piena tra A7.2 ed epica E.
+  come vetrina permanente. Viewer navigabile resta ⚠️ (epiche A7.2+/E).
 - **Memoria a tre livelli e apprendimento dai feedback** ❌ → **Epica F** — il sistema
   migliora con l'uso. Struttura gerarchica:
   1. **Memoria aziendale (generale)**: conoscenza condivisa da tutti — es. una risposta
@@ -118,7 +112,7 @@ al gate di regressione, con l'errore silenzioso trattato sempre come bug da erad
   Promozione verso l'alto (personale → categoria → aziendale) SOLO con conferme multiple
   o moderazione (mai da un singolo feedback: un errore confermato da uno non deve
   inquinare tutti). Profilo utente compresso stile L0-L3 iniettato nel system prompt.
-  Il feedback si raccoglie da subito (schema progettato in epica A).
+  Il feedback si raccoglie da subito (schema progettato in epica A ✅), ma la memoria utente arriva in F (❌).
 - **SaaS multi-tenant** ❌ — fuori orizzonte corrente (era "Fase 7").
 
 ---
