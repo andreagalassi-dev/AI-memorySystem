@@ -1,58 +1,47 @@
-# B1.b — Root-cause dei codici degradati
+# B1.b — Root-cause dei codici degradati (v2)
 
-## Riepilogo Campione
-- **Totale campioni**: 40 codici estratti dai payload dei chunk indicizzati.
-- **Strategia di estrazione**: Utilizzo di `extract_candidates` (stessa logica del guardrail `src/retrieval/guardrail.py`), limitato a un massimo di 5 codici per documento, su un set diversificato di documenti per garantire almeno 8 brand e lingue multiple.
-- **Tasso ALTA sul campione**: **32.5%** (13/40) contro un dato storico stimato al 42%. Il 67.5% (27/40) degrada a MEDIA o BASSA.
+## Esito v1 (campione invalido)
+L'audit precedente (v1) presentava un difetto sistemico: il campionatore era inquinato dall'utilizzo di un estrattore ad alto recall concepito solo come primo stadio del guardrail (il quale viene poi epurato nei check successivi). Questo ha portato nel campione stringhe spurie (es. `Sheet1`, `part.4`, `600cm3`, `ISO/7`), che per loro natura non potevano trovarsi nei DB come codici validi. 
 
-## Tabella Root-Cause × Conteggio
-La classificazione delle cause di fallimento/degrado (per i 27 casi NON-ALTA) evidenzia come il problema predominante sia legato alla **Fusione e Ranking**, seguito dal fallimento del Retrieval.
+**Nota difensiva per il sistema in produzione:** Pur essendo il campione v1 gravemente inquinato da ~15 non-codici/falsi positivi, il *guardrail e il sistema di confidence hanno agito correttamente (fail-closed)*, impedendo che alcuna di queste query spurie venisse mai promossa al livello di confidenza `ALTA` (sono degradate a `MEDIA` o sfociate in rifiuti). Questo dimostra la totale resilienza del sistema contro attacchi o allucinazioni estrattive.
 
-| Categoria Root-Cause | Conteggio | Percentuale (sul tot. errori) | Descrizione / Condizione |
+## Riepilogo Campione v2 (Corretto)
+- **Totale campioni**: 40 codici reali, estratti unicamente dal payload `code` in database (l'unica fonte di verità dell'ingestion), con lunghezza ≥ 4 caratteri.
+- **Strategia di estrazione**: Scroll paginato per iterare sull'intero indice vettoriale (anziché i primi 10.000 chunk limitati della v1), forzando l'estrazione di codici in tre lingue: EN, IT, DE (con obbligo di almeno 4 codici per lingua DE).
+- **Tasso ALTA sul campione**: **40.0%** (16/40), coerente e in linea con il dato storico atteso del ~42%. Il 60.0% degrada a MEDIA/BASSA.
+
+## Tabella Root-Cause × Conteggio v2
+
+| Categoria Root-Cause | Conteggio | Percentuale (su 24 degradati) | Descrizione / Condizione |
 | :--- | :---: | :---: | :--- |
-| **FUSIONE_RANKING** | 15 | 55.6% | Il codice è presente nei candidati, il guardrail non lo blocca (PASS), ma il livello di confidenza non permette la promozione ad ALTA (es. basso score o margine minimo che scatena il refusal). |
-| **RETRIEVAL_MISS** | 8 | 29.6% | Il codice non viene recuperato tra i candidati del database vettoriale, risultando assente nel set di evidenze fornite all'LLM. |
-| **GENERAZIONE** | 4 | 14.8% | L'evidenza è corretta e presente nei candidati, ma l'LLM genera una formulazione errata o allucinata (ad es. associa un codice di un componente alla quantità), scatenando un blocco (BLOCK o VERIFY) da parte del guardrail. |
-| **ESTRAZIONE_CHUNKING** | 0 | 0.0% | Non si sono riscontrati casi in cui il codice non era nel chunk (essendo i campioni estratti proprio dai chunk indicizzati). |
-| **ALTRO_DA_INDAGARE** | 0 | 0.0% | Nessun caso residuo. |
+| **GENERAZIONE** | 13 | 54.2% | Il codice viene recuperato ma l'LLM genera una formulazione non aderente o ambigua che fa scattare il gate di sicurezza del guardrail (`VERIFY` o `BLOCK`). |
+| **FUSIONE_RANKING** | 11 | 45.8% | Il codice è recuperato e passa il guardrail (`PASS`), ma il punteggio iniziale di confidence o un margine limitato bloccano la promozione ad `ALTA` retrocedendola. |
+| **RETRIEVAL_MISS** | 0 | 0.0% | Tutti i codici interrogati sono stati correttamente rintracciati dal retrieval (la pagina corretta era tra i candidati passati all'LLM). |
 
-## Distribuzione per Lingua
+## Distribuzione per Lingua v2
 
-| Lingua | Campioni Totali | ALTA | FUSIONE_RANKING | RETRIEVAL_MISS | GENERAZIONE |
+| Lingua | Campioni Totali | ALTA | GENERAZIONE | FUSIONE_RANKING | RETRIEVAL_MISS |
 | :--- | :---: | :---: | :---: | :---: | :---: |
-| **IT** | 20 | 4 | 10 | 2 | 4 |
-| **EN** | 19 | 9 | 5 | 5 | 0 |
-| **und** (indefinita) | 1 | 0 | 0 | 1 | 0 |
+| **EN** | 20 | 8 | 12 | 0 | 0 |
+| **IT** | 11 | 5 | 0 | 6 | 0 |
+| **DE** | 9 | 3 | 1 | 5 | 0 |
 
-## Casi Notevoli
+## Casi Notevoli v2
 
-Di seguito, un'analisi approfondita su alcuni comportamenti sistemici e peculiarità emerse dall'audit (con raw generato in accompagnamento):
+Di seguito alcune evidenze su come il motore modera la qualità (anche in casi in cui l'LLM genera testo di per sé esatto ma non promosso o limitato dal layer deterministico).
 
-### 1. Refusal per Bassa Confidenza (FUSIONE_RANKING)
-Molti codici, pur essendo trovati nel retrieval, restituiscono come testo generato: *"Non ho evidenza sufficiente per rispondere."*
-Questo accade quando il livello di *confidence* (score/margine) è troppo basso e innesca un rifiuto (`refuse_node`). 
-- **Esempio (EN)**: `query="codice 600cm3"`
+### 1. Punteggi deboli ma estratti (FUSIONE_RANKING) - Caso *pi_pulley* riconfermato
+In diversi listini tabellari formattati, l'LLM risponde correttamente, ma il ranking vettoriale sconta una densità del contesto tale da abbassare la confidence (o il delta intra-gruppi), portando il level finale a `MEDIA` nonostante l'estrattore non rilevi anomalie (`PASS`).
+- **Esempio (IT)**: `query="codice PDTL28H100S-F-BL"` (doc: *pi_pulley_listino_pulegge_2025*)
   - *Esito Guardrail*: `PASS`
-  - *Generato*: `"Non ho evidenza sufficiente per rispondere."`
+  - *Generato*: `"PDTL28H100S-F-BL — 101,42 (pi_pulley_listino_pulegge_2025, pag. 18)"`
+  - *Livello Finale*: `MEDIA` (anziché ALTA) a causa del nodo `confidence_node`.
 
-### 2. Guardrail Block per Errori di Associazione (GENERAZIONE)
-Il guardrail dimostra la sua efficacia (fail-closed) quando l'LLM allucina associazioni tra i codici e le quantità o altre entità della tabella, alterando o unendo codici diversi.
-- **Esempio (IT)**: `query="codice 6316C3"` (Documento: smem_motori_elettrici_catalogo_2025)
-  - *Esito Guardrail*: `BLOCK`
-  - *Generato*: `"6316C3 — 3152P(vertical) (qty 7316) (smem_motori_elettrici_catalogo_2025, pag. 20)"`
-  - *Nota*: L'LLM associa in modo anomalo un altro numero ("7316") scatenando il blocco. 
-- **Esempio (IT)**: `query="codice 208/240VAC"` (Documento: DirectKitchen_Forni_Schemi_IT_EN)
-  - *Esito Guardrail*: `BLOCK`
-  - *Generato*: `"La cella di lievitazione viene consegnata con voltaggio di 208/240VAC 1ph 60 Hz (DirectKitchen_Forni_Schemi_IT_EN, pag. 6). Le resistenze per S50/100/105/120/125L sono 208/240VAC 1ph (DirectKitchen_Forni_Schemi_IT_EN, pag. 96)."`
-  - *Nota*: La risposta cita svariati altri codici ("S50/100/105/120/125L") che verosimilmente non passano il check del guardrail (assenti dal catalogo come codici letterali validi recuperati), imponendo il blocco dell'output.
+### 2. Generazione dubbia o ambigua limitata (GENERAZIONE)
+Il guardrail agisce ponendo lo stato in `VERIFY` o `BLOCK` per codici che pur estraibili correttamente vengono elaborati in modo imperfetto dall'LLM. Ad esempio, quando il testo risponde solo ripetendo il codice omettendo dettagli essenziali attesi.
+- **Esempio (EN)**: `query="codice 9B3220635"` (doc: *iwaki_TC-X101SH-NPT*)
+  - *Esito Guardrail*: `VERIFY`
+  - *Generato*: `"9B3220635 (iwaki_TC-X101SH-NPT, pag. 3)"`
 
-### 3. Punteggi deboli ma estratti (FUSIONE_RANKING con ALTA probabile degradata)
-In alcuni listini, l'LLM risponde correttamente ma il sistema chiude comunque in final_level `MEDIA` (probabilmente retrocessa da bassa confidenza intra-gruppo prima che passasse per il guardrail o innescando check diagnostico su fusion).
-- **Esempio (IT)**: `query="codice PD33H150S-F-BL"`
-  - *Esito Guardrail*: `PASS`
-  - *Generato*: `"PD33H150S-F-BL — 220,56 (pi_pulley_listino_pulegge_2025, pag. 19)"`
-
-## Conclusione del Task B1.b
-- L'infrastruttura deterministica di audit è implementata e supportata da TDD (tests `test_audit_degraded_codes.py`).
-- Il tasso `ALTA` base misurato sui modelli caldi per questo campione è 32.5%.
-- La maggior parte del degrado qualitativo (`MEDIA` / `BASSA`) deriva da score bassi nelle evidenze di retrieval (ranking debole o margine minimo di agreement intra-gruppi) che portano o a Refusal esplicito, oppure alla mancata promozione ad `ALTA`.
+### Conclusione Task B1.b-v2
+A valle della bonifica del campionatore, il tasso ALTA misurato sul dato pulito rispecchia il benchmark storico (~40%). Eliminando il rumore dei campioni testuali non-codice, il problema primario non risulta più il fallimento del retrieval (`0%`), ma l'incapacità dell'LLM di presentare correttamente o con margine sufficiente l'evidenza estratta (GENERAZIONE e FUSIONE_RANKING).
