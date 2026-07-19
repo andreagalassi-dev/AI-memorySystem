@@ -69,7 +69,18 @@ class LocalStorageClient(BaseStorageClient):
         overwrite: bool = True,
         content_disposition: Optional[str] = None,
     ) -> Dict[str, Any]:
-        file_path = self._validate_key(object_key)
+        # Sanitize object_key to prevent spaces and weird characters
+        import re
+        # Convert something like "Documento p.26" to "Documento_p0026.png"
+        sanitized_key = object_key
+        def pad_page(match):
+            return f"_p{int(match.group(1)):04d}"
+        sanitized_key = re.sub(r"\s+p\.(\d+)", pad_page, sanitized_key)
+        sanitized_key = sanitized_key.replace(" ", "_")
+        if not sanitized_key.endswith(".png") and mime == "image/png":
+            sanitized_key += ".png"
+            
+        file_path = self._validate_key(sanitized_key)
         
         if not overwrite and file_path.exists():
             pass # Keep existing
@@ -80,6 +91,6 @@ class LocalStorageClient(BaseStorageClient):
             file_path.write_bytes(data)
             
         return {
-            "object_key": object_key,
-            "url": await self.get_read_url(object_key)
+            "object_key": sanitized_key,
+            "url": await self.get_read_url(sanitized_key)
         }

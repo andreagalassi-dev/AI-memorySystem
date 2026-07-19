@@ -57,7 +57,16 @@ def auth_callback(username: str, password: str) -> User | None:
                     continue
                 return User(identifier=username, metadata={"role": r})
     return None
-
+@cl.on_chat_resume
+async def on_chat_resume(thread: dict):
+    # Ripristina la sessione dell'utente dal thread
+    # Assumiamo che l'utente sia già loggato e in cl.user_session
+    user = cl.user_session.get("user")
+    if not user:
+        return
+    
+    # Inizializza interactions a vuoto
+    cl.user_session.set("interactions", {})
 @cl.on_message
 async def on_message(msg: cl.Message):
     user = cl.user_session.get("user")
@@ -146,8 +155,9 @@ async def on_message(msg: cl.Message):
             except Exception:
                 pass
 
-        # Invia messaggio finale ROOT (parent_id=None) con tutti gli elements
-        final_msg = cl.Message(content=content, elements=elements, actions=actions, parent_id=None)
+        # Invia messaggio finale ROOT (parent_id=None forzato DOPO l'init per evitare sovrascritture dal contesto)
+        final_msg = cl.Message(content=content, elements=elements, actions=actions)
+        final_msg.parent_id = None
         await final_msg.send()
 
         # Salva lo stato per il feedback (chiave: ID del messaggio di risposta)
@@ -246,12 +256,13 @@ async def on_paginate(action: cl.Action):
         cl.Action(name="paginate", payload={"doc": doc, "page": target_page, "dir": "succ"}, label="Pagina succ ▶")
     ]
     
-    await cl.Message(
+    msg = cl.Message(
         content=f"Pagina {target_page} del documento **{doc}**:",
         elements=elements,
-        actions=actions,
-        parent_id=None
-    ).send()
+        actions=actions
+    )
+    msg.parent_id = None
+    await msg.send()
 
 from chainlit.server import app  # noqa: E402
 from src.serving.session_deps import get_serving_health  # noqa: E402
@@ -260,5 +271,29 @@ from src.serving.session_deps import get_serving_health  # noqa: E402
 async def serving_health_endpoint():
     return get_serving_health()
 
-# Ensure the route is placed before Chainlit's catch-all SPA route
+from fastapi import Request, Depends, HTTPException
+from fastapi.responses import FileResponse
+from chainlit.auth import get_current_user
+
+@app.get("/files/ui_elements/{filename:path}")
+async def serve_ui_element(
+    filename: str,
+    user = Depends(get_current_user)
+):
+    print(f"MY ROUTE HIT for {filename}, user={user}")
+    if not user:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+        
+    # TODO: Il filtro per RUOLO sui file è debito tecnico -> epica F/RBAC
+    file_path = Path("output/ui_elements") / filename
+    if not file_path.resolve().is_relative_to(Path("output/ui_elements").resolve()):
+        raise HTTPException(status_code=403, detail="Path traversal non consentito")
+        
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="File non trovato")
+        
+    return FileResponse(str(file_path))
+
+# Ensure the routes are placed before Chainlit's catch-all SPA route
+app.router.routes.insert(0, app.router.routes.pop())
 app.router.routes.insert(0, app.router.routes.pop())
