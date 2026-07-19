@@ -12,19 +12,19 @@ Ogni risposta cita la fonte (pagina/documento). Nessun codice pezzo va mostrato 
 non esiste nel dato strutturato recuperato (guardrail deterministico non-LLM, vedi SPEC §L2).
 
 ## Come lavoriamo
-- Si procede **un Punto della roadmap alla volta** (P0, P1, …). YOU MUST NOT iniziare il Punto
-  successivo senza il mio ok esplicito.
-- **P1 è un GATE**: se la qualità OCR/estrazione tabelle non regge sul corpus reale, fermati e
-  segnalalo. Non proseguire a P2.
+- Il piano operativo vivo è `docs/piano_implementazione/15_piano_prodotto.md` (epiche
+  A→H). Si procede **un punto alla volta**, con DoD e verifica del reviewer. YOU MUST
+  NOT iniziare un'epica nuova senza l'ok esplicito dell'utente.
 - Usa sempre la **plan mode** prima di scrivere codice: mostrami il piano, aspetta ok, poi esegui.
-- A fine Punto: confronta il risultato col DoD del Punto, fai un commit, e fermati.
+- A fine punto: confronta il risultato col DoD, fai un commit, e fermati.
+- La roadmap a fasi P0-P7 (SPEC) è COMPLETATA fino a P5 e superata dal piano epiche:
+  è storia, non guida operativa.
 
-## Note per il gate P1
-IMPORTANT: le sfide di ingestion individuate sul corpus reale (parser tabelle,
-immagini/schemi, chunking, dual-indexing, multilingua) sono registrate in
-`docs/ingestion-challenges.md`. Sono **note pre-gate, non decisioni**:
-l'architettura di ingestion si fissa a P1/P2 **dopo** lo spike di estrazione
-reale. Leggile prima di pianificare P1.
+## Nota storica ingestion
+Le sfide di ingestion individuate sul corpus reale sono archiviate in
+`docs/archive/ingestion-challenges.md` (note pre-gate P1, oggi superate: l'architettura
+di ingestion reale è quella descritta nello Stack). Il ridisegno dell'estrazione
+massiva è materia dell'epica C del piano.
 
 ## Stack reale
 - Container: Docker + docker-compose. Servizi: backend, qdrant, ocr, ui.
