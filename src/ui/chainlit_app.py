@@ -193,3 +193,13 @@ async def on_feedback(action: cl.Action):
         await cl.Message(content=f"Feedback registrato (Verdetto: {verdetto}).").send()
     else:
         await cl.Message(content="Errore durante la registrazione del feedback. Riprovare più tardi.").send()
+
+from chainlit.server import app
+from src.serving.session_deps import get_serving_health
+
+@app.get("/aike/serving-health")
+async def serving_health_endpoint():
+    return get_serving_health()
+
+# Ensure the route is placed before Chainlit's catch-all SPA route
+app.router.routes.insert(0, app.router.routes.pop())

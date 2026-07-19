@@ -45,3 +45,28 @@ def test_degradation(monkeypatch, caplog):
     deps = get_deps("tecnico")
     assert deps.sql_query is None
     assert "Ramo STRUCTURED degradato" in caplog.text
+
+def test_get_serving_health():
+    import src.serving.session_deps as sd
+    
+    # Reset for test
+    sd._CACHE.clear()
+    sd._llm = None
+    sd._visual_search = None
+    sd._multiplexer = None
+    
+    health = sd.get_serving_health()
+    assert health["resident_model"] is None
+    assert health["roles_cached"] == []
+    
+    # Initialize deps
+    get_deps("tecnico")
+    
+    health = sd.get_serving_health()
+    assert health["resident_model"] is None
+    assert "tecnico" in health["roles_cached"]
+    
+    # Simulate a load
+    sd._multiplexer.resident = lambda: {"test_model"}
+    health = sd.get_serving_health()
+    assert health["resident_model"] == "test_model"
