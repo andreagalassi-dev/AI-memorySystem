@@ -1,8 +1,8 @@
 from __future__ import annotations
 import logging
-from src.watchdog.scanner import scan_directory, diff_files, get_file_hash
+from src.watchdog.scanner import get_file_hash
 from src.watchdog.soft_delete import apply_soft_delete
-from src.watchdog.pipeline import ingest_file, filename_to_stem
+from src.watchdog.pipeline import ingest_file
 import os
 
 logger = logging.getLogger(__name__)

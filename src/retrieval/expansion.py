@@ -65,7 +65,7 @@ def _index() -> dict[str, list[tuple[str, tuple[tuple[str, str], ...]]]]:
     """term -> lista di (slug, ( (term1, lang1), ... ) )."""
     idx: dict[str, list[tuple[str, tuple[tuple[str, str], ...]]]] = {}
     for slug, c in _load_from_db().items():
-        terms = tuple((t, l) for t, l in c["terms"])
+        terms = tuple((t, lang) for t, lang in c["terms"])
         for t, _l in terms:
             idx.setdefault(t, []).append((slug, terms))
     return idx
@@ -115,7 +115,7 @@ def expand_query(query: str, max_terms: int = MAX_TERMS, target_lang: str | None
     # candidati per concetto (senza i termini gia' in query), poi round-robin
     per_concept = []
     for _slug, terms in matched:
-        cand = [t for t, l in terms if not set(t.split()) <= have and (target_lang is None or l == target_lang)]
+        cand = [t for t, lang in terms if not set(t.split()) <= have and (target_lang is None or lang == target_lang)]
         if cand:
             per_concept.append(cand)
     out: list[str] = []

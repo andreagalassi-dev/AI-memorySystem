@@ -20,14 +20,14 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from src.backend.clients.qdrant_client import get_qdrant_client  # noqa: E402
-from src.retrieval.pixelrag.search import visual_search
-from src.retrieval.pixelrag.index import QdrantVisualIndex
-from src.retrieval.pixelrag.embedder import Qwen3VLEmbedder
-from src.common.roles import Role
-from src.retrieval.qwen3vl import VISUAL_COLLECTION
+from src.retrieval.pixelrag.search import visual_search  # noqa: E402
+from src.retrieval.pixelrag.index import QdrantVisualIndex  # noqa: E402
+from src.retrieval.pixelrag.embedder import Qwen3VLEmbedder  # noqa: E402
+from src.common.roles import Role  # noqa: E402
+from src.retrieval.qwen3vl import VISUAL_COLLECTION  # noqa: E402
 
-from src.retrieval.pixelrag.reranker import Qwen3VLReranker
-from src.serving.multiplexer import ModelMultiplexer, FakeModelRuntime
+from src.retrieval.pixelrag.reranker import Qwen3VLReranker  # noqa: E402
+from src.serving.multiplexer import ModelMultiplexer, FakeModelRuntime  # noqa: E402
 
 EVAL = Path(os.environ.get("EVAL_FILE", ROOT / "data" / "eval" / "eval_visual_v0.jsonl"))
 OUT = ROOT / "output/eval/p27_visual_results.json"
@@ -95,7 +95,8 @@ def main() -> int:
 
     def calc_metrics(rows):
         n = len(rows)
-        if not n: return {}
+        if not n:
+            return {}
         m = {f"recall@{k}": sum(1 for r in rows if r and r <= k) / n for k in KS}
         m["mrr"] = sum(1/r for r in rows if r) / n
         return m
@@ -113,7 +114,7 @@ def main() -> int:
     print("\n--- DETTAGLIO PER LINGUA (DOPO RERANKER) ---")
     lang_set = sorted(list(set(langs)))
     for lang in lang_set:
-        lang_rows = [r for r, l in zip(rows_after, langs) if l == lang]
+        lang_rows = [r for r, lang_ in zip(rows_after, langs) if lang_ == lang]
         lm = calc_metrics(lang_rows)
         print(f"[{lang.upper()}] (n={len(lang_rows)}) R@5={lm.get('recall@5',0):.3f} MRR={lm.get('mrr',0):.3f}")
 

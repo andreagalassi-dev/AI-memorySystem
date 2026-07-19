@@ -1,5 +1,4 @@
 import json
-import os
 import random
 import torch
 import sys
@@ -10,7 +9,7 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from src.retrieval.colqwen3 import _model_and_processor, embed_pages, embed_query
+from src.retrieval.colqwen3 import _model_and_processor, embed_pages, embed_query  # noqa: E402
 
 def main():
     eval_file = ROOT / "data" / "eval" / "eval_visual_v0.jsonl"
@@ -108,9 +107,12 @@ def main():
                 rank = ranked_pages.index(exp) + 1
                 best_rank = min(best_rank, rank)
                 
-        if best_rank <= 1: r1 += 1
-        if best_rank <= 3: r3 += 1
-        if best_rank <= 5: r5 += 1
+        if best_rank <= 1:
+            r1 += 1
+        if best_rank <= 3:
+            r3 += 1
+        if best_rank <= 5:
+            r5 += 1
         
         # Calculate margin
         gt_score = max([score for score, page in scores if page in expected_list])

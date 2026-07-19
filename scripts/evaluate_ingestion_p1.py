@@ -177,17 +177,23 @@ def eval_table(engine: str, table_id: str) -> dict:
                     continue
                 if numeric:
                     cell_norm = [norm(c, numeric=True) for c in prows[hit]]
-                    strict = gnorm in cell_norm; loose = strict; fz = strict
+                    strict = gnorm in cell_norm
+                    loose = strict
+                    fz = strict
                 elif is_desc:
                     strict = gnorm in row_cells
                     loose = gnorm in row_text
                     fz = loose or jaccard(gnorm, row_text) >= DESC_FUZZY_THRESHOLD
                 else:
-                    strict = gnorm in row_cells; loose = gnorm in row_text; fz = loose
+                    strict = gnorm in row_cells
+                    loose = gnorm in row_text
+                    fz = loose
                 if strict:
-                    stats["cells_strict"] += 1; pc["strict"] += 1
+                    stats["cells_strict"] += 1
+                    pc["strict"] += 1
                 if loose:
-                    stats["cells_loose"] += 1; pc["loose"] += 1
+                    stats["cells_loose"] += 1
+                    pc["loose"] += 1
                 if fz:
                     pc["fuzzy"] += 1
         per_lang[lang] = stats
@@ -235,8 +241,10 @@ def aggregate(tables: list[dict]) -> dict:
                                       "cells_loose": 0, "fp_rows": 0, "fidelity": [],
                                       "col": {}})
             a["n_tab"] += 1
-            a["gt_rows"] += s["gt_rows"]; a["rows_recalled"] += s["rows_recalled"]
-            a["cells_total"] += s["cells_total"]; a["cells_strict"] += s["cells_strict"]
+            a["gt_rows"] += s["gt_rows"]
+            a["rows_recalled"] += s["rows_recalled"]
+            a["cells_total"] += s["cells_total"]
+            a["cells_strict"] += s["cells_strict"]
             a["cells_loose"] += s["cells_loose"]
             a["fidelity"].append(t["structure_fidelity"])
             a["fp_rows"] += t["false_positive_rows"]

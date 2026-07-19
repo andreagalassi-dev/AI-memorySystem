@@ -13,9 +13,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from src.backend.clients.qdrant_client import get_qdrant_client
-from src.retrieval.bom import get_bom
-from src.common.roles import Role
+from src.backend.clients.qdrant_client import get_qdrant_client  # noqa: E402
+from src.retrieval.bom import get_bom  # noqa: E402
+from src.common.roles import Role  # noqa: E402
 
 def main():
     parser = argparse.ArgumentParser(description="Esporta la BOM di un kit/assembly")

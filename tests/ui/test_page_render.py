@@ -1,10 +1,7 @@
-import os
-from pathlib import Path
-from unittest.mock import patch, MagicMock
-import pytest
+from unittest.mock import patch
 import fitz
 
-from src.ui.page_render import ensure_page_render, resolve_pdf, RENDERS_DIR
+from src.ui.page_render import ensure_page_render, resolve_pdf
 
 def test_resolve_pdf_not_found():
     assert resolve_pdf("non_existent_doc_123") is None

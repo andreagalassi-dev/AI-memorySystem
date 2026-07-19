@@ -15,7 +15,7 @@ print("Process Checksum:", model.embedding_proj_layer.weight.sum().item())
 # Create dummy image
 img = Image.new('RGB', (224, 224), color = 'red')
 
-from src.vendor.colqwen3_tomoro.processing_colqwen3 import ColQwen3Processor
+from src.vendor.colqwen3_tomoro.processing_colqwen3 import ColQwen3Processor  # noqa: E402
 processor = ColQwen3Processor.from_pretrained(model_id, trust_remote_code=False)
 
 inputs = processor(text=["Hello"], images=[img], return_tensors="pt")

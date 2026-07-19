@@ -54,7 +54,6 @@ def health() -> JSONResponse:
 
     try:
         from src.retrieval.pixelrag.index import DEFAULT_VISUAL_COLLECTION
-        from src.retrieval.pixelrag.embedder import Qwen3VLEmbedder # imported as check
         if not client.collection_exists(DEFAULT_VISUAL_COLLECTION):
             raise RuntimeError(f"collection {DEFAULT_VISUAL_COLLECTION} not found")
         result["visual"] = "ok"

@@ -14,8 +14,6 @@ from dataclasses import dataclass
 import logging
 from typing import Callable, NamedTuple, TypedDict
 
-logger = logging.getLogger(__name__)
-
 from langgraph.graph import END, START, StateGraph
 
 from src.common.roles import Role, parse_role
@@ -29,6 +27,8 @@ from src.retrieval.confidence import (Signals, Thresholds, compute_margin,
 from src.retrieval.guardrail import check_answer
 from src.retrieval.router import classify_query, derive_intent
 from src.retrieval.synthesis import REFUSAL, extract_citations, strip_citations
+
+logger = logging.getLogger(__name__)
 
 SYS_UNAVAIL = "Sistema non disponibile. Riprova più tardi."
 ACCESS_MSG = "Richiesta rifiutata: ruolo mancante o non valido."

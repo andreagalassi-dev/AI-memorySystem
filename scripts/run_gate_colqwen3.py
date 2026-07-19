@@ -1,16 +1,15 @@
 import json
 import sys
-import os
 from pathlib import Path
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from src.retrieval.colqwen3 import embed_pages, VISUAL_COLLECTION_COLQWEN3
-from src.backend.config import settings
-from qdrant_client import QdrantClient
-import uuid
+from src.retrieval.colqwen3 import embed_pages, VISUAL_COLLECTION_COLQWEN3  # noqa: E402
+from src.backend.config import settings  # noqa: E402
+from qdrant_client import QdrantClient  # noqa: E402
+import uuid  # noqa: E402
 
 def page_id(doc: str, page: int) -> str:
     return str(uuid.uuid5(uuid.NAMESPACE_URL, f"visual_colqwen3/{doc}/p{page}"))

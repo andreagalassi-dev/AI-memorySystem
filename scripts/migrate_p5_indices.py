@@ -12,9 +12,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from qdrant_client import models
-from src.backend.clients.qdrant_client import get_qdrant_client
-from src.ingestion.embedding import COLLECTION
+from qdrant_client import models  # noqa: E402
+from src.backend.clients.qdrant_client import get_qdrant_client  # noqa: E402
+from src.ingestion.embedding import COLLECTION  # noqa: E402
 
 def main() -> int:
     client = get_qdrant_client()

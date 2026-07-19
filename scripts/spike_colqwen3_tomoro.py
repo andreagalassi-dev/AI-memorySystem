@@ -46,7 +46,7 @@ def main():
         metas = [n for n, p in model.named_parameters() if p.device.type == "meta"]
         assert not metas, f"Parametri non materializzati: {metas[:5]}"
         
-    except Exception as e:
+    except Exception:
         import traceback
         traceback.print_exc()
         return
@@ -89,7 +89,7 @@ def main():
             else:
                 batch_queries = processor(text=queries, return_tensors="pt", padding=True).to(device)
             query_embeddings = model(**batch_queries).embeddings
-        except Exception as e:
+        except Exception:
             import traceback
             traceback.print_exc()
             return
@@ -110,7 +110,7 @@ def main():
                 # output: (b_q, b_i)
                 scores = torch.einsum("qnd,imd->qimn", query_embeddings, image_embeddings)
                 scores = scores.max(dim=-1)[0].sum(dim=-1)
-        except Exception as e:
+        except Exception:
             import traceback
             traceback.print_exc()
             return

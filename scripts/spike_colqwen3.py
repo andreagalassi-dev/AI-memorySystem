@@ -38,7 +38,6 @@ def main():
     kohler_img = get_pdf_page("corpus/engines/kohler_marine_tp6954.pdf", 14)
     kbs_img = get_pdf_page("corpus/gastronomy/kbs_gastrotechnik_1717.pdf", 3)
     altro_img = get_pdf_page("corpus/construction_agricultural/gehl_v270_parts.pdf", 94)
-    from PIL import Image
     blank_img = Image.new("RGB", (1024, 1024), color="white")
 
     

@@ -1,5 +1,4 @@
 import logging
-import pytest
 
 from src.backend.clients.postgres_client import get_pg_conn
 from src.ui.feedback_handler import save_feedback_ui

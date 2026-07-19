@@ -1,5 +1,3 @@
-import torch
-import torch.nn.functional as F
 from sentence_transformers import SentenceTransformer, util
 from PIL import Image
 

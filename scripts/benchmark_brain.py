@@ -25,8 +25,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from src.common.roles import Role, parse_role
-from src.graph.pipeline import answer, build_default_deps, build_graph, Evidence
+from src.common.roles import parse_role  # noqa: E402
+from src.graph.pipeline import build_default_deps, build_graph  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Query set fisso (dal file 14 — query collaudate)

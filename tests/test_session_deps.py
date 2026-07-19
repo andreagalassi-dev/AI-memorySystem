@@ -1,10 +1,9 @@
-import pytest
 import sys
 import importlib
 import threading
 import time
 from src.serving.session_deps import get_deps
-from src.graph.pipeline import parse_role, Deps
+from src.graph.pipeline import Deps
 
 def test_get_deps_cache():
     deps1 = get_deps("tecnico")
@@ -28,7 +27,6 @@ def test_get_deps_shared_singletons():
             assert deps1.visual_search.__closure__[0].cell_contents is deps2.visual_search.__closure__[0].cell_contents
 
 def test_lazy_import(monkeypatch):
-    import sys
     # Rimuoviamo moduli pesanti in modo sicuro con monkeypatch
     for mod in ["torch", "mlx", "mlx.core"]:
         monkeypatch.delitem(sys.modules, mod, raising=False)
@@ -129,7 +127,7 @@ def test_no_mlx_instantiated(monkeypatch):
         pass
         
     try:
-        import src.graph.llm
+        import src.graph.llm  # noqa: F401
         monkeypatch.setattr("src.graph.llm.MLXModel", explode)
     except ImportError:
         pass

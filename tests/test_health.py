@@ -1,5 +1,4 @@
 from fastapi.testclient import TestClient
-import pytest
 from src.backend.main import app
 from tests.conftest import needs_pg, needs_qdrant
 

@@ -12,7 +12,6 @@ Il grounding loop col modello Qwen3-VL vero e' separato (manuale), non un unit t
 
 from __future__ import annotations
 
-import uuid
 
 import pytest
 from qdrant_client import models

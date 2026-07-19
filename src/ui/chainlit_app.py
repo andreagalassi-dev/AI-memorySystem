@@ -9,16 +9,16 @@ import sys
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-from src.graph.pipeline import answer
-from src.common.roles import Role
-from src.serving.session_deps import get_deps
-from src.ui.page_render import ensure_page_render
-from src.ui.feedback_handler import save_feedback_ui
+from src.graph.pipeline import answer  # noqa: E402
+from src.common.roles import Role  # noqa: E402
+from src.serving.session_deps import get_deps  # noqa: E402
+from src.ui.page_render import ensure_page_render  # noqa: E402
+from src.ui.feedback_handler import save_feedback_ui  # noqa: E402
 
 load_dotenv()
 
-import chainlit.data as cl_data
-from chainlit.data.sql_alchemy import SQLAlchemyDataLayer
+import chainlit.data as cl_data  # noqa: E402
+from chainlit.data.sql_alchemy import SQLAlchemyDataLayer  # noqa: E402
 
 db_url = os.environ.get("DATABASE_URL")
 if db_url:
@@ -201,8 +201,8 @@ async def on_feedback(action: cl.Action):
     else:
         await cl.Message(content="Errore durante la registrazione del feedback. Riprovare più tardi.").send()
 
-from chainlit.server import app
-from src.serving.session_deps import get_serving_health
+from chainlit.server import app  # noqa: E402
+from src.serving.session_deps import get_serving_health  # noqa: E402
 
 @app.get("/aike/serving-health")
 async def serving_health_endpoint():

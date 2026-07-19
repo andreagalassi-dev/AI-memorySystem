@@ -17,7 +17,6 @@ usa-e-getta, entrambi droppati in teardown. `needs_pg` + `needs_qdrant`.
 from __future__ import annotations
 
 import uuid
-from decimal import Decimal
 
 import psycopg
 import pytest

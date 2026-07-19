@@ -4,12 +4,11 @@ import sys
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
-import pytest
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from scripts.add_brand_profile import main
+from scripts.add_brand_profile import main  # noqa: E402
 
 
 def test_cli_add_profile_success(monkeypatch, capsys):

@@ -14,10 +14,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from src.backend.clients.qdrant_client import get_qdrant_client
-from src.retrieval.search import search_unified
-from src.retrieval.bom import get_bom
-from src.common.roles import Role
+from src.backend.clients.qdrant_client import get_qdrant_client  # noqa: E402
+from src.retrieval.search import search_unified  # noqa: E402
+from src.retrieval.bom import get_bom  # noqa: E402
+from src.common.roles import Role  # noqa: E402
 
 def calc_r_hierarchy(children_hits: list | set, expected_child_codes: list[str]) -> float:
     """Calcola la metrica R_hierarchy.

@@ -4,7 +4,6 @@ Clean up ground truth expected.csv files according to the rules.
 """
 
 import csv
-import re
 from pathlib import Path
 
 BASE = Path("/Users/AndreaGalassi/Documents/AI/AI-memorySystem/data/ground_truth")
@@ -189,7 +188,7 @@ def clean_silca_p003():
     rows = []
     with open(input_path, newline='', encoding='utf-8') as f:
         reader = csv.reader(f)
-        header = next(reader)  # skip header
+        next(reader)  # skip header
         for row in reader:
             # The data is in the last column (index 7)
             if len(row) >= 8:
@@ -265,7 +264,7 @@ def clean_silca_p004():
     rows = []
     with open(input_path, newline='', encoding='utf-8') as f:
         reader = csv.reader(f)
-        header = next(reader)  # skip header
+        next(reader)  # skip header
         for row in reader:
             # The data is in the last column (index 7)
             if len(row) >= 8:

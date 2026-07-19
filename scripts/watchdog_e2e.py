@@ -29,15 +29,15 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-import psycopg
+import psycopg  # noqa: E402
 
-from src.backend.clients.postgres_client import conninfo
-from src.backend.clients.qdrant_client import get_qdrant_client
+from src.backend.clients.postgres_client import conninfo  # noqa: E402
+from src.backend.clients.qdrant_client import get_qdrant_client  # noqa: E402
 
 # --- moduli di cui sovrascriviamo SOLO il nome-collezione (isolamento) ----------
-import src.ingestion.embedding as embedding
-import src.ingestion.ingest_one as ingest_one
-import src.retrieval.search as search_mod
+import src.ingestion.embedding as embedding  # noqa: E402
+import src.ingestion.ingest_one as ingest_one  # noqa: E402
+import src.retrieval.search as search_mod  # noqa: E402
 
 CORPUS = ROOT / "corpus" / "pumps"
 PDF_V1 = CORPUS / "iwaki_TC-X031VTN.pdf"      # versione 1
@@ -74,8 +74,6 @@ def main() -> int:
     from src.common.roles import parse_role
     from src.registry.registry import init_schema
     from src.registry.ingestion_profiles import init_schema as init_profiles
-    from src.registry.sync import sync_collection
-    from src.registry.registry import export_backfill
     from src.retrieval.search import search, access_filter
     from src.watchdog.scanner import scan_directory, diff_files
     from src.watchdog.worker import process_diffs
@@ -176,7 +174,7 @@ def main() -> int:
         out = reconcile({"deleted_warning": bool(del_hits), "level": "BASSA",
                          "answer": ""})
         print(f"  final_level = {out['final_level']}")
-        print(f"  final_answer:\n    " + out["final_answer"].replace("\n", "\n    "))
+        print("  final_answer:\n    " + out["final_answer"].replace("\n", "\n    "))
         assert not cur_hits, "il doc eliminato NON deve comparire nello scope current"
         assert "ELIMINATO" in out["final_answer"], "manca l'avviso ELIMINATO"
         assert out["final_level"] == "BASSA"

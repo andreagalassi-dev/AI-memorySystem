@@ -1,5 +1,3 @@
-import pytest
-import numpy as np
 from unittest.mock import MagicMock
 from scripts.index_colqwen3 import check_roundtrip, validation_gate
 

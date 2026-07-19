@@ -1,6 +1,6 @@
 from __future__ import annotations
 import logging
-from src.registry.registry import get_version_by_stem, backfill_payload, export_backfill
+from src.registry.registry import export_backfill
 from src.backend.clients.qdrant_client import get_qdrant_client
 
 logger = logging.getLogger(__name__)

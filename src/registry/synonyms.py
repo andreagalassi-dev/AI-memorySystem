@@ -40,7 +40,7 @@ def canonical_concept(concept: dict) -> dict:
                              f"ammesse: {sorted(LANGS)}")
         seen.setdefault(t, lang)
     return {"note": concept.get("note"),
-            "terms": [[t, l] for t, l in seen.items()]}
+            "terms": [[t, lang] for t, lang in seen.items()]}
 
 
 def load_seed_config(path: Path) -> dict:

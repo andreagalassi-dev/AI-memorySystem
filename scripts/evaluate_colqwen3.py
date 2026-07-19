@@ -14,17 +14,16 @@ import sys
 import os
 import psutil
 from pathlib import Path
-from collections import defaultdict
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from src.backend.clients.qdrant_client import get_qdrant_client
-from src.retrieval.colqwen3 import VISUAL_COLLECTION_COLQWEN3, search_visual_colqwen3, embed_query
-from src.retrieval.pixelrag.index import PageHit
-from src.retrieval.pixelrag.reranker import Qwen3VLReranker
-from src.serving.multiplexer import ModelMultiplexer, FakeModelRuntime
-from src.retrieval.expansion import expand_query
+from src.backend.clients.qdrant_client import get_qdrant_client  # noqa: E402
+from src.retrieval.colqwen3 import VISUAL_COLLECTION_COLQWEN3, search_visual_colqwen3  # noqa: E402
+from src.retrieval.pixelrag.index import PageHit  # noqa: E402
+from src.retrieval.pixelrag.reranker import Qwen3VLReranker  # noqa: E402
+from src.serving.multiplexer import ModelMultiplexer, FakeModelRuntime  # noqa: E402
+from src.retrieval.expansion import expand_query  # noqa: E402
 
 EVAL = Path(os.environ.get("EVAL_FILE", ROOT / "data" / "eval" / "eval_visual_v0.jsonl"))
 OUT = ROOT / "output" / "eval" / "p27_colqwen3_results.json"
@@ -114,8 +113,10 @@ def main() -> int:
     # --- MEMORY CLEANUP ---
     from src.retrieval.colqwen3 import _model_and_processor
     _model_and_processor.cache_clear()
-    import gc; gc.collect()
-    import torch; torch.mps.empty_cache() if torch.backends.mps.is_available() else None
+    import gc
+    gc.collect()
+    import torch
+    torch.mps.empty_cache() if torch.backends.mps.is_available() else None
     print_mem("DOPO CLEANUP")
     
     # --- PHASE 2: Reranking ---
@@ -131,10 +132,8 @@ def main() -> int:
         b_hits = [PageHit(**h) for h in data["b_hits"]]
 
         # (c) Puro IT + Reranker (uses Qwen3VLReranker-2B)
-        c_hits = [] # visual_reranker.rerank(query, hits_it[:30], top_k=10)
         
         # (d) Espansione + Reranker
-        d_hits = [] # visual_reranker.rerank(query, b_hits_all[:30], top_k=10)
         
         # Calc ranks
         rank_a = next((i for i, h in enumerate(a_hits, 1) if (h.doc, h.page) in expected), None)
@@ -150,7 +149,8 @@ def main() -> int:
 
     def print_metrics(name, rows):
         n = len(rows)
-        if not n: return
+        if not n:
+            return
         mrr = sum(1/r for r in rows if r) / n
         recalls = [sum(1 for r in rows if r and r <= k) / n for k in KS]
         print(f"  {name:15s} | MRR: {mrr:.3f} | R@1: {recalls[0]:.3f} | R@3: {recalls[1]:.3f} | R@5: {recalls[2]:.3f}")
@@ -158,12 +158,12 @@ def main() -> int:
     def eval_group(mask_fn, title):
         print(f"\n=== {title} ===")
         for conf, name in [("a", "Puro"), ("b", "+Espansione")]:
-            filtered_rows = [r for r, l in zip(results[conf], langs) if mask_fn(l)]
+            filtered_rows = [r for r, lang_ in zip(results[conf], langs) if mask_fn(lang_)]
             print_metrics(name, filtered_rows)
-
+            
     eval_group(lambda _: True, "TOTALE")
-    eval_group(lambda l: l == "IT", "IT")
-    eval_group(lambda l: l == "EN", "EN")
+    eval_group(lambda lang_: lang_ == "IT", "IT")
+    eval_group(lambda lang_: lang_ == "EN", "EN")
     
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(results, indent=2), encoding="utf-8")

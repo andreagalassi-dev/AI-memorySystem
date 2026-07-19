@@ -2,7 +2,6 @@ import time
 import os
 import logging
 import signal
-import sys
 from src.watchdog.scanner import scan_directory, diff_files
 from src.watchdog.worker import process_diffs
 from src.watchdog.health import update_health_state
@@ -38,7 +37,7 @@ class PollingDaemon:
             raise
 
         try:
-            with psycopg.connect(self.dsn) as conn:
+            with psycopg.connect(self.dsn):
                 update_health_state(postgres_ok=True)
         except Exception:
             update_health_state(postgres_ok=False)
@@ -85,9 +84,9 @@ class PollingDaemon:
 
         update_health_state(daemon_alive=False)
 
-import threading
-import uvicorn
-from src.watchdog.health import app as health_app
+import threading  # noqa: E402
+import uvicorn  # noqa: E402
+from src.watchdog.health import app as health_app  # noqa: E402
 
 def start_health_server():
     uvicorn.run(health_app, host="0.0.0.0", port=8001, log_level="error")

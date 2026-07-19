@@ -17,15 +17,15 @@ import torch
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-import fitz
+import fitz  # noqa: E402
 
-from src.backend.clients.qdrant_client import get_qdrant_client
-from src.retrieval.qwen3vl import ensure_visual_collection
-from src.retrieval.pixelrag.index import QdrantVisualIndex, VisualPoint, KIND_TILE, KIND_THUMB
-from src.retrieval.pixelrag.embedder import Qwen3VLEmbedder
-from src.retrieval.pixelrag.tiling import render_page_tiles
-from src.serving.multiplexer import ModelMultiplexer
-from src.retrieval.pixelrag.ingest import _point_id, decide_recreate, get_successful_pages
+from src.backend.clients.qdrant_client import get_qdrant_client  # noqa: E402
+from src.retrieval.qwen3vl import ensure_visual_collection  # noqa: E402
+from src.retrieval.pixelrag.index import QdrantVisualIndex, VisualPoint, KIND_TILE, KIND_THUMB  # noqa: E402
+from src.retrieval.pixelrag.embedder import Qwen3VLEmbedder  # noqa: E402
+from src.retrieval.pixelrag.tiling import render_page_tiles  # noqa: E402
+from src.serving.multiplexer import ModelMultiplexer  # noqa: E402
+from src.retrieval.pixelrag.ingest import _point_id, decide_recreate, get_successful_pages  # noqa: E402
 
 ROUTE = Path(os.environ.get("VISUAL_ROUTE", ROOT / "output" / "spike" / "page_classes" / "_route_colpali.txt"))
 RENDERS = ROOT / "output" / "visual" / "renders"
@@ -63,7 +63,7 @@ def main() -> int:
     ensure_visual_collection(client, recreate=recreate)
     
     index = QdrantVisualIndex(client)
-    from src.serving.multiplexer import ModelMultiplexer, FakeModelRuntime
+    from src.serving.multiplexer import FakeModelRuntime
     mx = ModelMultiplexer(runtime=FakeModelRuntime())
     embedder = Qwen3VLEmbedder(multiplexer=mx)
     
@@ -75,7 +75,8 @@ def main() -> int:
                 done_ids.add((e["doc"], e["page"]))
     else:
         PROGRESS.parent.mkdir(parents=True, exist_ok=True)
-        if progress_exists: PROGRESS.unlink()
+        if progress_exists:
+            PROGRESS.unlink()
 
     progress = PROGRESS.open("a", encoding="utf-8")
     todo = [(r, p) for r, p in refs if (Path(r).stem, p) not in done_ids]
@@ -141,7 +142,7 @@ def main() -> int:
             ))
             
         index.upsert(points)
-        el = time.time() - t0
+        _el = time.time() - t0
         
         # Memory Hygiene su MPS: svuota cache e logga uso swap ogni 10 batch
         if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():

@@ -7,8 +7,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from src.graph.pipeline import answer
-from src.common.roles import Role
+from src.graph.pipeline import answer  # noqa: E402
 
 def preflight():
     print("--- PREFLIGHT ---")

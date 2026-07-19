@@ -13,8 +13,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from src.backend.clients.postgres_client import get_pg_conn
-from src.registry.ingestion_profiles import load_profiles, set_doc_map, upsert_profile
+from src.backend.clients.postgres_client import get_pg_conn  # noqa: E402
+from src.registry.ingestion_profiles import load_profiles, set_doc_map, upsert_profile  # noqa: E402
 
 
 def main() -> int:
@@ -41,7 +41,8 @@ def main() -> int:
     try:
         re_ext = re.compile(args.extract)
         re_tok = re.compile(args.token)
-        re_ass = re.compile(args.assembly) if args.assembly else None
+        if args.assembly:
+            re.compile(args.assembly)
     except re.error as e:
         print(f"ERRORE: Regex invalida fornita -> {e}")
         return 1

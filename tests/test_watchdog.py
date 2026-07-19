@@ -1,6 +1,5 @@
 from src.watchdog.scanner import scan_directory, diff_files, FileState
 import uuid
-import pytest
 from qdrant_client import models
 
 from tests.conftest import needs_pg, needs_qdrant

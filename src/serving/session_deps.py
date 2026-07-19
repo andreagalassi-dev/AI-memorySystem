@@ -2,7 +2,6 @@
 import logging
 import concurrent.futures
 import threading
-from typing import Optional
 from dataclasses import replace
 
 from src.graph.pipeline import Deps, build_default_deps, parse_role
