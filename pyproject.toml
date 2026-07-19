@@ -33,6 +33,9 @@ dev = [
 mlx = [
     "mlx-lm>=0.31.3",
 ]
+ui = [
+    "chainlit>=2.11.1", # latest at dry-run
+]
 
 [tool.uv]
 package = false
