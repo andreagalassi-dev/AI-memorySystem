@@ -65,15 +65,24 @@ INFRASTRUTTURA
   A4→A8 direttamente su main, tutto pushato su origin). Branch residui: demo-mercoledi
   (permanente, INTOCCABILE), feat/fase-d2-quote (CONGELATO per decisione utente,
   intoccabile), p5-ui (contenuto al 100% in demo-mercoledi: eliminabile o eliminato).
-  ⚠️ Il default branch su github.com potrebbe essere ancora feat/fase-d2-quote
-  (gh CLI non installato; il fix è manuale dal web — chiedi all'utente se l'ha fatto).
+  Default branch GitHub = main (fixato via API il 19/07 sera).
 - Ambiente: source .venv/bin/activate; Python 3.11; Mac M1 Pro 32GB. Vincolo duro:
   MAI più di un modello >2GB residente per processo (OOM ha già spento il Mac).
-- Suite: python -m pytest tests -q → **721 passed, 2 skipped** (~30s). Baseline tua.
+- Suite: python -m pytest tests -q → **731 passed, 2 skipped** (~30s). Baseline tua.
 - Smoke gate: `python scripts/smoke_e2e.py` (nudo, senza PYTHONPATH) → 4/4 PASS,
   EXIT 0. Va rieseguito dopo OGNI modifica ai rami del grafo.
 - Servizi: docker aike_postgres (aike_registry, user aike/aike_ro) e aike_qdrant
-  (localhost:6333). Ollama: qwen2.5:14b (fallback LLM). MLX cache: Gemma-4-26B.
+  (localhost:6333); i loro VOLUMI CON NOME sopravvivono a compose down (già servito).
+- CERVELLO (decisione T5 del 19/07, benchmark file 18 + json grezzi): PRIMARIO =
+  Ollama `gemma4:26b-mlx` con **think=False** (OBBLIGATORIO: senza, il canale
+  thinking consuma num_predict=512 e il content esce VUOTO — il grafo mostra
+  ALTA/MEDIA dal solo retrieval con testo vuoto: trappola già caduta una volta);
+  FALLBACK = Ollama qwen2.5:14b (100% citazioni sul set). MLX in-processo FUORI dal
+  serving (inaffidabile sotto concorrenza: Metal-OOM o "no Stream"; il codice resta
+  dietro il Port per il profilo DGX). Config: settings.brain_model/brain_think.
+  ⚠️ Le citazioni del ramo narrative nascono da extract_citations() sul TESTO
+  generato (pipeline.py) → un cervello che non scrive "(doc, pag. N)" produce
+  ALTA-senza-fonti: criterio di benchmark e fix in epica D.
 - Qdrant: `aike_chunks` 32.976 punti (testo BGE-M3+BM25, 59 doc), `aike_pages_visual`
   8.371 punti (visivo PRODUZIONE Qwen3-VL 1024d), `aike_pages_visual_colqwen3`
   (candidato CONGELATO 0.667<0.72: non riaprire).
@@ -87,13 +96,21 @@ IL SISTEMA UNIFICATO (nuovo rispetto al ciclo precedente)
   (pointer-only, NESSUN reranker nel ramo: sub-secondo a modelli caldi), narrative
   (BGE-M3+BM25+reranker testuale+sinonimi). Entry: answer(query, role, deps=...) a
   src/graph/pipeline.py.
-- Serving residente: src/serving/session_deps.py — get_deps(role) con singleton
-  condivisi (llm, visual_search). Prima query visiva ~14s (load), poi 0.1-0.4s.
-- UI CHAINLIT viva: src/ui/chainlit_app.py — auth da .env AIKE_UI_USERS
-  (utente:password:ruolo), ruolo MAI dal client, pagine citate RENDERIZZATE in chat
-  (citata per prima, cap 8; src/ui/page_render.py additivo su output/visual/renders/),
-  badge 🟢🟡🔴, bottoni feedback [Conferma/Correggi/Segnala] → public.feedback.
+- Serving residente e THREAD-SAFE (coda A9.3, 5 iterazioni): src/serving/
+  session_deps.py — get_deps(role) con singleton condivisi; init con lock;
+  _INFERENCE_LOCK su visual_search e retrieve (il reranker MPS NON è thread-safe:
+  MAI slockarli); scripts/concurrency_probe.py = probe con asserzioni RBAC-aware
+  (le attese dipendono dal RUOLO: NordCap/manzoni solo tecnico).
+- UI CHAINLIT completa (A7 + coda A9): auth da .env AIKE_UI_USERS (ruolo MAI dal
+  client), risposta come messaggio ROOT (parent_id forzato DOPO l'init: chainlit lo
+  sovrascrive nel __post_init__ — trappola nota), pagina citata inline + candidati
+  display="side" + una coppia ◀/▶ sfoglia pagine, badge 🟢🟡🔴, feedback →
+  public.feedback (con evidenza nel contesto jsonb), CRONOLOGIA PERSISTENTE (data
+  layer SQLAlchemy su schema "chainlit" + LocalStorageClient → output/ui_elements/,
+  route /files/ui_elements autenticata con guardia anti-traversal), on_chat_resume.
   Avvio: `chainlit run src/ui/chainlit_app.py -h --port 8000`.
+  REGOLA UI imparata a caro prezzo: nessun punto UI si chiude senza collaudo BROWSER
+  dell'utente — i collaudi headless hanno mancato 3 difetti visibili a occhio.
 - /health (src/backend/main.py): stato rami con probe leggeri + degradazioni MAI più
   silenziose (warning strutturati in _default_deps, commit `0f50405`).
 - Riservatezza (audit 19/07): nessun canale documenti→esterno; unico traffico erano i
@@ -116,9 +133,11 @@ NUMERI DI QUALITÀ (la fotografia onesta — il tuo lavoro in B parte da qui)
   19/07: stessa query, stesso retrieval → MEDIA con fonte oppure BASSA (guardrail
   blocca un codice inventato dal generatore). Mai sbagliato in silenzio, ma oscilla
   → epica D + test stabilità ×N in B2.
-- T5 RISPOSTO: genera DAVVERO MLX Gemma 26B (log multiplexer, zero fallback);
-  60-110s/query naturale (load incluso) = lento per uso live. Decisione default
-  (MLX vs Ollama) APERTA, va presa coi numeri (epica E o punto dedicato).
+- T5 CHIUSO col benchmark (file 18): cervello gemma4:26b-mlx think-off — codici p50
+  ~2s, naturali p50 ~9s a caldo (prefill lungo a freddo: 20-50s), correttezza fonte
+  100% sul set, citazioni 87.5% (il resto = rifiuti onesti). Fallback qwen2.5:14b:
+  100%/100% ma più lento sui codici. LEZIONE EVAL: mai giudicare un modello senza
+  guardare il TESTO GREZZO generato (B pareva da buttare: era il thinking non gestito).
 - Riconciliazione prezzi↔pagine: 11 linked / 2320 orfani (design da rifare, epica C).
 
 ═══════════════════════════════════════════════════════════════════
@@ -159,7 +178,16 @@ NUMERI DI QUALITÀ (la fotografia onesta — il tuo lavoro in B parte da qui)
 - MAI cambiare branch nella working dir con processi attivi; MAI cancellare
   output/visual/renders/; MAI zittire un check che protesta; indici vettoriali si
   validano CROSS-PROCESS; prima di run lunghi: stima tempi + RAM check.
-- Gli esecutori lasciano scie alla root: `git status` a ogni review.
+- Gli esecutori lasciano scie alla root: `git status` a ogni review (nel ciclo A9:
+  CINQUE episodi, inclusi file COMMITTATI per errore — controlla anche i --stat).
+- Episodi gravi del ciclo A9 (oltre a quelli storici): (1) l'esecutore ha eseguito lo
+  smoke legacy P0.7 il cui teardown fa `docker compose down` TOTALE → container di
+  produzione RIMOSSI (dati salvi solo per i volumi con nome; script in quarantena in
+  scripts/archive/ — MAI riesumarlo); (2) un FORCE-PUSH su main (amend della propria
+  punta: innocuo per fortuna, verificato con merge-base) — regola: al prossimo si
+  revoca il push; (3) DUE consegne UI dichiarate pronte senza mai renderle.
+- Nel probe/eval: le ATTESE dipendono dal RUOLO (RBAC) — un'attesa col ruolo
+  sbagliato produce falsi difetti (successo due volte: 415869 e NordCap).
 
 ═══════════════════════════════════════════════════════════════════
 §6. IL TUO PRIMO COMPITO (in quest'ordine)
