@@ -42,3 +42,4 @@ htmlcov/
 
 # --- Docker volumes locali ---
 qdrant_storage/
+.files/
