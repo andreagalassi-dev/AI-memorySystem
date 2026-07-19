@@ -62,6 +62,8 @@ services:
     restart: unless-stopped
 
   ocr:
+    # placeholder, vedi epica G/deploy
+    profiles: ["placeholder"]
     build:
       context: .
       dockerfile: docker/ocr.Dockerfile
@@ -80,6 +82,8 @@ services:
     restart: unless-stopped
 
   ui:
+    # placeholder, vedi epica G/deploy
+    profiles: ["placeholder"]
     build:
       context: .
       dockerfile: docker/ui.Dockerfile
@@ -95,7 +99,6 @@ services:
     # Porta 8501 da riaggiungere quando la UI Streamlit servira' davvero (P5).
     networks:
       - aike_net
-    restart: unless-stopped
 
   watchdog:
     build:
