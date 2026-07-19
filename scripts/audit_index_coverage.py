@@ -39,7 +39,15 @@ def classify_pdf(pdf_path: Path, doc_slugs: set[str], doc_map_patterns: list[str
     return "FALLITO_ESTRAZIONE"
 
 def main():
-    conn = psycopg.connect("dbname=aike_registry user=aike password=aike_dev host=localhost port=5432")
+    from src.backend.config import settings as s
+
+    conn = psycopg.connect(
+        dbname=s.postgres_db,
+        user=s.postgres_user,
+        password=s.postgres_password,
+        host=s.postgres_host,
+        port=s.postgres_port,
+    )
     with conn.cursor() as cur:
         cur.execute("SELECT slug FROM public.documents")
         doc_slugs = {row[0] for row in cur.fetchall()}
