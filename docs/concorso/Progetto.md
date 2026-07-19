@@ -102,7 +102,11 @@ al gate di regressione, con l'errore silenzioso trattato sempre come bug da erad
 - **Integrazione ERP sicura (semantic layer, sola lettura)** ❌ — post-epiche ("Fase 6").
 - **UI**: ⚠️ → **Epica A** — salto a **Chainlit** (auth, sessioni, feedback nativi);
   React+FastAPI resta il target di lungo periodo. La demo Streamlit congelata resta
-  come vetrina permanente.
+  come vetrina permanente. **Stato 19/07:** scheletro Chainlit VIVO (auth per ruolo,
+  answer() reale, collaudo utente: codice→ALTA con fonte). **Requisito utente 19/07:**
+  la pagina citata deve comparire renderizzata in chat e il viewer deve essere
+  **navigabile** (zoom sull'esploso, scorrimento tra le pagine del documento) — render
+  in chat in A7.2, navigazione piena tra A7.2 ed epica E.
 - **Memoria a tre livelli e apprendimento dai feedback** ❌ → **Epica F** — il sistema
   migliora con l'uso. Struttura gerarchica:
   1. **Memoria aziendale (generale)**: conoscenza condivisa da tutti — es. una risposta

@@ -38,6 +38,11 @@ Il lavoro vero vive su `feature/fase1-model-multiplexer`; main è 60+ commit ind
   cronologia, badge fiducia, citazione, viewer documenti/esplosi (pagina citata SEMPRE
   per prima — il fix D-3.3 della demo rifatto pulito), fino a 8 candidati, feedback
   strutturato nativo. Schema feedback: (utente, query, risposta, verdetto, correzione).
+  **Requisito utente (19/07, dal primo collaudo A7.1a):** la pagina citata va MOSTRATA
+  in chat (render dell'immagine, non solo il riferimento) e il viewer deve diventare
+  **navigabile**: zoom sulla tavola e scorrimento tra le pagine del documento. Il render
+  in chat entra in A7.2; la navigazione completa (zoom/sfoglia) può maturare tra A7.2 e
+  l'epica E, ma è un impegno di prodotto: non va persa.
 - T3: fine dei fail-safe silenziosi — warning strutturato per ogni ramo degradato,
   `/health` con stato rami e modello residente.
 - Pool connessioni Postgres RO (TODO noto pipeline.py:623).
