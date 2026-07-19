@@ -24,14 +24,18 @@ def get_ollama_client() -> Client:
 
 
 def chat(client: Client, system: str, prompt: str, *, model: str | None = None,
-         options: dict | None = None) -> str:
+         options: dict | None = None, think: bool | None = None) -> str:
     """Una risposta del modello a (system, prompt). Ritorna il solo testo."""
-    resp = client.chat(
-        model=model or settings.ollama_model,
-        messages=[{"role": "system", "content": system},
-                  {"role": "user", "content": prompt}],
-        options=options or SAFE_OPTIONS,
-    )
+    kwargs = {
+        "model": model or settings.ollama_model,
+        "messages": [{"role": "system", "content": system},
+                     {"role": "user", "content": prompt}],
+        "options": options or SAFE_OPTIONS,
+    }
+    if think is not None:
+        kwargs["think"] = think
+        
+    resp = client.chat(**kwargs)
     return resp["message"]["content"]
 
 
@@ -50,14 +54,16 @@ class OllamaModel:
     Port `LanguageModel`, zero impatto sul grafo."""
 
     def __init__(self, *, model: str | None = None, options: dict | None = None,
+                 think: bool | None = None,
                  _chat: Callable[[str, str], str] | None = None):
         self._model = model
         self._options = options or SAFE_OPTIONS
+        self._think = think
         self._chat = _chat
 
     def generate(self, system: str, user: str) -> str:
         if self._chat is None:
             client = get_ollama_client()  # lazy: connessione alla prima chiamata
             self._chat = lambda s, u: chat(client, s, u, model=self._model,
-                                           options=self._options)
+                                           options=self._options, think=self._think)
         return self._chat(system, user)

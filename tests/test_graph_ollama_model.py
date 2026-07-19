@@ -37,3 +37,23 @@ def test_errore_del_modello_propaga_fail_closed():
 
     with pytest.raises(RuntimeError, match="Ollama giù"):
         OllamaModel(_chat=boom).generate("SYS", "USER")
+
+
+def test_think_param_inoltrato(monkeypatch):
+    seen = {}
+
+    def mock_chat(self, **kwargs):
+        seen.update(kwargs)
+        return {"message": {"content": "ok"}}
+
+    monkeypatch.setattr("ollama.Client.chat", mock_chat)
+
+    # (a) default: think NON inoltrato (None)
+    OllamaModel().generate("S", "U")
+    assert "think" not in seen
+
+    seen.clear()
+
+    # (b) think=False inoltrato
+    OllamaModel(think=False).generate("S", "U")
+    assert seen.get("think") is False

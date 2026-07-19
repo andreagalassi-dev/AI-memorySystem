@@ -134,7 +134,11 @@ def build_llm(backend: str):
     elif backend.startswith("ollama:"):
         model_name = backend.split(":", 1)[1]
         from src.backend.clients.ollama_client import OllamaModel
-        llm = OllamaModel(model=model_name)
+        
+        # B (gemma4 via ollama) necessita di disattivare il thinking per non consumare il budget num_predict
+        think_flag = False if model_name == "gemma4:26b-mlx" else None
+        llm = OllamaModel(model=model_name, think=think_flag)
+        
         label_map = {
             "gemma4:26b-mlx": "B (Ollama gemma4:26b-mlx)",
             "qwen2.5:14b": "D (Ollama qwen2.5:14b)",
