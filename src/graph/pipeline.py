@@ -533,8 +533,8 @@ def answer(query: str, role: Role | str, deps: Deps | None = None) -> dict:
         {"query": query, "role": validated.value})
 
 
-def _default_deps(role: Role) -> Deps:
-    """Wiring di produzione: Qdrant (routed_rr) + Ollama. Import lazy."""
+def build_default_deps(role: Role, *, llm=None, visual_search=None) -> Deps:
+    """Wiring di produzione parametrico: Qdrant (routed_rr) + Ollama. Import lazy."""
     from qdrant_client import models
 
     from src.backend.clients.qdrant_client import get_qdrant_client
@@ -544,18 +544,20 @@ def _default_deps(role: Role) -> Deps:
     from src.retrieval.synthesis import synthesize as _synth
 
     qc = get_qdrant_client()
-    from src.graph.llm import MLXModel, FallbackLLM
-    from src.serving.multiplexer import ModelMultiplexer, MlxModelRuntime
-    from src.backend.clients.ollama_client import OllamaModel
-    from src.backend.config import settings
+    
+    if llm is None:
+        from src.graph.llm import MLXModel, FallbackLLM
+        from src.serving.multiplexer import ModelMultiplexer, MlxModelRuntime
+        from src.backend.clients.ollama_client import OllamaModel
+        from src.backend.config import settings
 
-    mlx_runtime = MlxModelRuntime(default_num_ctx=settings.local_ctx_cap)
-    multiplexer = ModelMultiplexer(mlx_runtime, max_resident=1, ctx_cap=settings.local_ctx_cap)
-    
-    primary_llm = MLXModel(settings.logic_model, multiplexer)
-    fallback_llm = OllamaModel()
-    
-    llm = FallbackLLM(primary_llm, fallback_llm)
+        mlx_runtime = MlxModelRuntime(default_num_ctx=settings.local_ctx_cap)
+        multiplexer = ModelMultiplexer(mlx_runtime, max_resident=1, ctx_cap=settings.local_ctx_cap)
+        
+        primary_llm = MLXModel(settings.logic_model, multiplexer)
+        fallback_llm = OllamaModel()
+        
+        llm = FallbackLLM(primary_llm, fallback_llm)
 
     def _to_ev(hit, score) -> Evidence:
         p = hit.payload
@@ -649,25 +651,26 @@ def _default_deps(role: Role) -> Deps:
         )
         sql_query = None
 
-    # Fase 1.3 — ramo VISUAL: retrieval PixelRAG reale su `aike_pages_visual`
-    # (Qwen3-VL + Qdrant), RBAC/versioning fail-closed dentro visual_search.
-    # Fail-safe come sopra: se Qdrant/collection/embedder mancano -> None ->
-    # VISUAL degrada a NARRATIVE. Lazy: Qwen3VLEmbedder non importa torch
-    # finche' non si embedda davvero. Il multiplexer e' opzionale (None in
-    # fase 0 single-tenant): se verra' iniettato, l'embedder ne usera'
-    # l'hook di eviction; oggi resta compatibile (no-op).
-    try:
-        from src.retrieval.pixelrag.embedder import Qwen3VLEmbedder
-        from src.retrieval.pixelrag.index import QdrantVisualIndex
-        from src.graph.tools.visual_tool import make_visual_search
-        visual_search = make_visual_search(
-            Qwen3VLEmbedder(), QdrantVisualIndex(qc))
-    except Exception as e:
-        logger.warning(
-            "Ramo VISUAL degradato: %s (%s). Fallback a NARRATIVE.",
-            type(e).__name__, e, exc_info=True
-        )
-        visual_search = None
+    if visual_search is None:
+        # Fase 1.3 — ramo VISUAL: retrieval PixelRAG reale su `aike_pages_visual`
+        # (Qwen3-VL + Qdrant), RBAC/versioning fail-closed dentro visual_search.
+        # Fail-safe come sopra: se Qdrant/collection/embedder mancano -> None ->
+        # VISUAL degrada a NARRATIVE. Lazy: Qwen3VLEmbedder non importa torch
+        # finche' non si embedda davvero. Il multiplexer e' opzionale (None in
+        # fase 0 single-tenant): se verra' iniettato, l'embedder ne usera'
+        # l'hook di eviction; oggi resta compatibile (no-op).
+        try:
+            from src.retrieval.pixelrag.embedder import Qwen3VLEmbedder
+            from src.retrieval.pixelrag.index import QdrantVisualIndex
+            from src.graph.tools.visual_tool import make_visual_search
+            visual_search = make_visual_search(
+                Qwen3VLEmbedder(), QdrantVisualIndex(qc))
+        except Exception as e:
+            logger.warning(
+                "Ramo VISUAL degradato: %s (%s). Fallback a NARRATIVE.",
+                type(e).__name__, e, exc_info=True
+            )
+            visual_search = None
 
     return Deps(retrieve=_retrieve("current"), synthesize=synthesize,
                 catalog_lookup=catalog_lookup, thresholds=CALIBRATED_V1,
@@ -675,3 +678,8 @@ def _default_deps(role: Role) -> Deps:
                 retrieve_deleted=_retrieve("deleted"),
                 expand=expand_query, sql_query=sql_query, llm=llm,
                 visual_search=visual_search)
+
+
+def _default_deps(role: Role) -> Deps:
+    """Wiring di produzione: Qdrant (routed_rr) + Ollama. Import lazy."""
+    return build_default_deps(role)

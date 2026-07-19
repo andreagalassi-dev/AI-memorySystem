@@ -11,6 +11,7 @@ sys.path.insert(0, str(ROOT))
 
 from src.graph.pipeline import answer
 from src.common.roles import Role
+from src.serving.session_deps import get_deps
 
 load_dotenv()
 
@@ -51,7 +52,7 @@ async def on_message(msg: cl.Message):
 
     try:
         # Chiama graph pipeline in thread separato
-        res = await asyncio.to_thread(answer, msg.content, role)
+        res = await asyncio.to_thread(answer, msg.content, role, deps=get_deps(role))
         
         final_answer = res.get("final_answer", "")
         final_level = res.get("final_level", "")
