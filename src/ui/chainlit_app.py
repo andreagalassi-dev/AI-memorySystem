@@ -4,6 +4,11 @@ import chainlit as cl
 from chainlit.user import User
 from dotenv import load_dotenv
 
+from pathlib import Path
+import sys
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT))
+
 from src.graph.pipeline import answer
 from src.common.roles import Role
 
