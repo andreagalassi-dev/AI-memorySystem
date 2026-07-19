@@ -1,0 +1,690 @@
+{
+  "metrics_overall": {
+    "recall@1": 0.3333333333333333,
+    "recall@3": 0.5333333333333333,
+    "recall@5": 0.5333333333333333,
+    "mrr": 0.39999999999999997
+  },
+  "latency_p50": 0.21186199999647215,
+  "results": [
+    {
+      "qa_id": "V001",
+      "query": "esploso albero motore e pistone del trattore Branson",
+      "role": "tecnico",
+      "latency": 13.373140582996712,
+      "candidates": [
+        [
+          "branson_4520R_parts",
+          67
+        ],
+        [
+          "branson_4520R_parts",
+          113
+        ],
+        [
+          "branson_4520R_parts",
+          22
+        ]
+      ],
+      "expected": [
+        [
+          "branson_4520R_parts",
+          22
+        ]
+      ],
+      "rank": 3,
+      "hit_at": {
+        "1": false,
+        "3": true,
+        "5": true
+      },
+      "status": "EVALUATED"
+    },
+    {
+      "qa_id": "V002",
+      "query": "esploso del rilascio frizione Branson 4520",
+      "role": "tecnico",
+      "latency": 0.26751183399755973,
+      "candidates": [
+        [
+          "branson_4520R_parts",
+          94
+        ],
+        [
+          "branson_4520R_parts",
+          69
+        ],
+        [
+          "branson_4520R_parts",
+          67
+        ]
+      ],
+      "expected": [
+        [
+          "branson_4520R_parts",
+          68
+        ]
+      ],
+      "rank": null,
+      "hit_at": {
+        "1": false,
+        "3": false,
+        "5": false
+      },
+      "status": "EVALUATED"
+    },
+    {
+      "qa_id": "V003",
+      "query": "electric wiring diagram of the Branson tractor",
+      "role": "tecnico",
+      "latency": 0.13294854199921247,
+      "candidates": [
+        [
+          "manzoni_comac_spareparts_B",
+          8
+        ],
+        [
+          "rotax_912iS_IPC",
+          78
+        ],
+        [
+          "rotax_912_914_IPC",
+          149
+        ]
+      ],
+      "expected": [
+        [
+          "branson_4520R_parts",
+          127
+        ]
+      ],
+      "rank": null,
+      "hit_at": {
+        "1": false,
+        "3": false,
+        "5": false
+      },
+      "status": "EVALUATED"
+    },
+    {
+      "qa_id": "V004",
+      "query": "wiring harness dello chassis del Gehl V270",
+      "role": "tecnico",
+      "latency": 0.12340970800141804,
+      "candidates": [
+        [
+          "gehl_v270_parts",
+          54
+        ],
+        [
+          "gehl_v270_parts",
+          96
+        ],
+        [
+          "gehl_v270_parts",
+          126
+        ]
+      ],
+      "expected": [
+        [
+          "gehl_v270_parts",
+          94
+        ]
+      ],
+      "rank": null,
+      "hit_at": {
+        "1": false,
+        "3": false,
+        "5": false
+      },
+      "status": "EVALUATED"
+    },
+    {
+      "qa_id": "V005",
+      "query": "exploded view of the Gehl foot valve",
+      "role": "tecnico",
+      "latency": 0.11151070900086779,
+      "candidates": [
+        [
+          "gehl_v270_parts",
+          167
+        ],
+        [
+          "flow_exploded_2022",
+          6
+        ],
+        [
+          "gehl_v270_parts",
+          126
+        ]
+      ],
+      "expected": [
+        [
+          "gehl_v270_parts",
+          167
+        ]
+      ],
+      "rank": 1,
+      "hit_at": {
+        "1": true,
+        "3": true,
+        "5": true
+      },
+      "status": "EVALUATED"
+    },
+    {
+      "qa_id": "V006",
+      "query": "esploso del controller del motore Kohler industriale",
+      "role": "tecnico",
+      "latency": 0.22925929100165376,
+      "candidates": [
+        [
+          "kohler_marine_tp6954",
+          88
+        ],
+        [
+          "flow_exploded_2022",
+          6
+        ],
+        [
+          "kohler_marine_tp6954",
+          90
+        ]
+      ],
+      "expected": [
+        [
+          "kohler_industrial_tp7120",
+          24
+        ]
+      ],
+      "rank": null,
+      "hit_at": {
+        "1": false,
+        "3": false,
+        "5": false
+      },
+      "status": "EVALUATED"
+    },
+    {
+      "qa_id": "V007",
+      "query": "spaccato interno della pompa Iwaki",
+      "role": "tecnico",
+      "latency": 0.2358452499975101,
+      "candidates": [
+        [
+          "hydrogear_Pseries_pump",
+          74
+        ],
+        [
+          "hydrogear_Pseries_pump",
+          38
+        ],
+        [
+          "edwards_booster_pump_parts",
+          39
+        ]
+      ],
+      "expected": [
+        [
+          "iwaki_TC-X101SH-NPT",
+          2
+        ],
+        [
+          "iwaki_TC-X252PH-NPT",
+          2
+        ],
+        [
+          "iwaki_TC-X031VTN",
+          2
+        ],
+        [
+          "iwaki_TC-X500PH-FLA",
+          2
+        ],
+        [
+          "iwaki_TC-X501VT-FLA",
+          2
+        ]
+      ],
+      "rank": null,
+      "hit_at": {
+        "1": false,
+        "3": false,
+        "5": false
+      },
+      "status": "EVALUATED"
+    },
+    {
+      "qa_id": "V008",
+      "query": "Explosionszeichnung der NordCap K\u00fchltruhe",
+      "role": "tecnico",
+      "latency": 0.21403087500220863,
+      "candidates": [
+        [
+          "NordCap_Esploso_Ricambi_DE",
+          1
+        ],
+        [
+          "crusader_marine_L510008",
+          30
+        ],
+        [
+          "NordCap_Esploso_Ricambi_DE",
+          2
+        ]
+      ],
+      "expected": [
+        [
+          "NordCap_Esploso_Ricambi_DE",
+          2
+        ]
+      ],
+      "rank": 3,
+      "hit_at": {
+        "1": false,
+        "3": true,
+        "5": true
+      },
+      "status": "EVALUATED"
+    },
+    {
+      "qa_id": "V009",
+      "query": "esploso del forno KBS gastronomia",
+      "role": "tecnico",
+      "latency": 0.20498541699635098,
+      "candidates": [
+        [
+          "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+          14
+        ],
+        [
+          "DirectKitchen_Forni_Schemi_IT_EN",
+          60
+        ],
+        [
+          "kbs_gastrotechnik_4055041",
+          4
+        ]
+      ],
+      "expected": [
+        [
+          "kbs_gastrotechnik_1717",
+          3
+        ],
+        [
+          "kbs_gastrotechnik_1717",
+          4
+        ]
+      ],
+      "rank": null,
+      "hit_at": {
+        "1": false,
+        "3": false,
+        "5": false
+      },
+      "status": "EVALUATED"
+    },
+    {
+      "qa_id": "V010",
+      "query": "exploded view of the Kids MICRON sweeper",
+      "role": "tecnico",
+      "latency": 0.10178354199888417,
+      "candidates": [
+        [
+          "flow_exploded_2022",
+          16
+        ],
+        [
+          "flow_exploded_2022",
+          15
+        ],
+        [
+          "flow_exploded_2022",
+          6
+        ]
+      ],
+      "expected": [
+        [
+          "flow_exploded_2022",
+          16
+        ]
+      ],
+      "rank": 1,
+      "hit_at": {
+        "1": true,
+        "3": true,
+        "5": true
+      },
+      "status": "EVALUATED"
+    },
+    {
+      "qa_id": "V011",
+      "query": "esploso della trinciatrice Benassi T623",
+      "role": "tecnico",
+      "latency": 0.11964708300365601,
+      "candidates": [
+        [
+          "benassi_t623_flail_mower",
+          1
+        ],
+        [
+          "westermann_kehrmaschine",
+          2
+        ],
+        [
+          "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+          214
+        ]
+      ],
+      "expected": [
+        [
+          "benassi_t623_flail_mower",
+          12
+        ],
+        [
+          "benassi_t623_flail_mower",
+          2
+        ],
+        [
+          "benassi_t623_flail_mower",
+          18
+        ],
+        [
+          "benassi_t623_flail_mower",
+          8
+        ],
+        [
+          "benassi_t623_flail_mower",
+          20
+        ],
+        [
+          "benassi_t623_flail_mower",
+          4
+        ],
+        [
+          "benassi_t623_flail_mower",
+          16
+        ],
+        [
+          "benassi_t623_flail_mower",
+          22
+        ],
+        [
+          "benassi_t623_flail_mower",
+          6
+        ]
+      ],
+      "rank": null,
+      "hit_at": {
+        "1": false,
+        "3": false,
+        "5": false
+      },
+      "status": "EVALUATED"
+    },
+    {
+      "qa_id": "V012",
+      "query": "despiece de la trituradora Panciroli BL200",
+      "role": "tecnico",
+      "latency": 0.11919525000121212,
+      "candidates": [
+        [
+          "panciroli_garmec_BL200",
+          24
+        ],
+        [
+          "panciroli_garmec_BL200",
+          41
+        ],
+        [
+          "panciroli_garmec_BL200",
+          29
+        ]
+      ],
+      "expected": [
+        [
+          "panciroli_garmec_BL200",
+          35
+        ],
+        [
+          "panciroli_garmec_BL200",
+          47
+        ],
+        [
+          "panciroli_garmec_BL200",
+          16
+        ],
+        [
+          "panciroli_garmec_BL200",
+          22
+        ],
+        [
+          "panciroli_garmec_BL200",
+          31
+        ],
+        [
+          "panciroli_garmec_BL200",
+          37
+        ],
+        [
+          "panciroli_garmec_BL200",
+          43
+        ],
+        [
+          "panciroli_garmec_BL200",
+          49
+        ],
+        [
+          "panciroli_garmec_BL200",
+          6
+        ],
+        [
+          "panciroli_garmec_BL200",
+          12
+        ],
+        [
+          "panciroli_garmec_BL200",
+          18
+        ],
+        [
+          "panciroli_garmec_BL200",
+          24
+        ],
+        [
+          "panciroli_garmec_BL200",
+          33
+        ],
+        [
+          "panciroli_garmec_BL200",
+          39
+        ],
+        [
+          "panciroli_garmec_BL200",
+          45
+        ],
+        [
+          "panciroli_garmec_BL200",
+          51
+        ],
+        [
+          "panciroli_garmec_BL200",
+          57
+        ],
+        [
+          "panciroli_garmec_BL200",
+          2
+        ],
+        [
+          "panciroli_garmec_BL200",
+          14
+        ]
+      ],
+      "rank": 1,
+      "hit_at": {
+        "1": true,
+        "3": true,
+        "5": true
+      },
+      "status": "EVALUATED"
+    },
+    {
+      "qa_id": "V013",
+      "query": "esploso della duplicatrice Silca Triax con tabella ricambi",
+      "role": "tecnico",
+      "latency": 0.22243750000052387,
+      "candidates": [
+        [
+          "Silca_TriaxPro_Ricambi_Multilingua",
+          2
+        ],
+        [
+          "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+          214
+        ],
+        [
+          "flow_exploded_2022",
+          6
+        ]
+      ],
+      "expected": [
+        [
+          "Silca_TriaxPro_Ricambi_Multilingua",
+          2
+        ]
+      ],
+      "rank": 1,
+      "hit_at": {
+        "1": true,
+        "3": true,
+        "5": true
+      },
+      "status": "EVALUATED"
+    },
+    {
+      "qa_id": "V014",
+      "query": "tavola ricambi della macchina per cucire Rimoldi 327",
+      "role": "tecnico",
+      "latency": 0.24786641699756728,
+      "candidates": [
+        [
+          "rimoldi_327_spareparts",
+          47
+        ],
+        [
+          "rimoldi_327_spareparts",
+          52
+        ],
+        [
+          "rimoldi_327_spareparts",
+          7
+        ]
+      ],
+      "expected": [
+        [
+          "rimoldi_327_spareparts",
+          17
+        ],
+        [
+          "rimoldi_327_spareparts",
+          33
+        ],
+        [
+          "rimoldi_327_spareparts",
+          39
+        ],
+        [
+          "rimoldi_327_spareparts",
+          23
+        ],
+        [
+          "rimoldi_327_spareparts",
+          7
+        ],
+        [
+          "rimoldi_327_spareparts",
+          13
+        ],
+        [
+          "rimoldi_327_spareparts",
+          29
+        ],
+        [
+          "rimoldi_327_spareparts",
+          19
+        ],
+        [
+          "rimoldi_327_spareparts",
+          25
+        ],
+        [
+          "rimoldi_327_spareparts",
+          9
+        ],
+        [
+          "rimoldi_327_spareparts",
+          15
+        ],
+        [
+          "rimoldi_327_spareparts",
+          31
+        ],
+        [
+          "rimoldi_327_spareparts",
+          44
+        ],
+        [
+          "rimoldi_327_spareparts",
+          54
+        ],
+        [
+          "rimoldi_327_spareparts",
+          21
+        ],
+        [
+          "rimoldi_327_spareparts",
+          27
+        ]
+      ],
+      "rank": 3,
+      "hit_at": {
+        "1": false,
+        "3": true,
+        "5": true
+      },
+      "status": "EVALUATED"
+    },
+    {
+      "qa_id": "V015",
+      "query": "disegno del volano del motore marino Kohler",
+      "role": "tecnico",
+      "latency": 0.21186199999647215,
+      "candidates": [
+        [
+          "kohler_marine_tp6954",
+          14
+        ],
+        [
+          "kohler_marine_tp6954",
+          100
+        ],
+        [
+          "kohler_industrial_tp7120",
+          14
+        ]
+      ],
+      "expected": [
+        [
+          "kohler_marine_tp6954",
+          14
+        ]
+      ],
+      "rank": 1,
+      "hit_at": {
+        "1": true,
+        "3": true,
+        "5": true
+      },
+      "status": "EVALUATED"
+    }
+  ]
+}
