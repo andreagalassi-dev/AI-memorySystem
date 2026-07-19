@@ -1,0 +1,602 @@
+[
+  {
+    "id": "NAT-1",
+    "classe": "naturale",
+    "query": "il D906969ZR è il filtro dell'aria della ventola?",
+    "run_level": "ALTA",
+    "fonte_ok": true,
+    "cit_vuote": false,
+    "rifiuto": false,
+    "guardrail": "PASS",
+    "latenza_s": 43.68,
+    "fallback_count": 0,
+    "eccezione": null,
+    "answer_preview": "Sì, il D906969ZR — FILTRO VENTILATORE (Silca_TriaxPro_Ricambi_Multilingua, pag. 3).",
+    "n_citations": 1,
+    "citations_raw": [
+      [
+        "Silca_TriaxPro_Ricambi_Multilingua",
+        3
+      ]
+    ],
+    "run_n": 1
+  },
+  {
+    "id": "NAT-1",
+    "classe": "naturale",
+    "query": "il D906969ZR è il filtro dell'aria della ventola?",
+    "run_level": "ALTA",
+    "fonte_ok": true,
+    "cit_vuote": false,
+    "rifiuto": false,
+    "guardrail": "PASS",
+    "latenza_s": 6.14,
+    "fallback_count": 0,
+    "eccezione": null,
+    "answer_preview": "Sì, il D906969ZR — FILTRO VENTILATORE (Silca_TriaxPro_Ricambi_Multilingua, pag. 3).",
+    "n_citations": 1,
+    "citations_raw": [
+      [
+        "Silca_TriaxPro_Ricambi_Multilingua",
+        3
+      ]
+    ],
+    "run_n": 2
+  },
+  {
+    "id": "NAT-1",
+    "classe": "naturale",
+    "query": "il D906969ZR è il filtro dell'aria della ventola?",
+    "run_level": "ALTA",
+    "fonte_ok": true,
+    "cit_vuote": false,
+    "rifiuto": false,
+    "guardrail": "PASS",
+    "latenza_s": 5.5,
+    "fallback_count": 0,
+    "eccezione": null,
+    "answer_preview": "Sì, il D906969ZR — FILTRO VENTILATORE (Silca_TriaxPro_Ricambi_Multilingua, pag. 3).",
+    "n_citations": 1,
+    "citations_raw": [
+      [
+        "Silca_TriaxPro_Ricambi_Multilingua",
+        3
+      ]
+    ],
+    "run_n": 3
+  },
+  {
+    "id": "NAT-2",
+    "classe": "naturale",
+    "query": "chiusura di scarico con la retina per i capelli, diametro 72",
+    "run_level": "MEDIA",
+    "fonte_ok": true,
+    "cit_vuote": false,
+    "rifiuto": false,
+    "guardrail": "PASS",
+    "latenza_s": 20.0,
+    "fallback_count": 0,
+    "eccezione": null,
+    "answer_preview": "Il tappo con filtro per il diametro ø72 è identificato dal codice **12045** e costa **17,50** (Mamoli_Catalogo_Ricambi_2021_IT_EN, pag. 133).",
+    "n_citations": 1,
+    "citations_raw": [
+      [
+        "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+        133
+      ]
+    ],
+    "run_n": 1
+  },
+  {
+    "id": "NAT-2",
+    "classe": "naturale",
+    "query": "chiusura di scarico con la retina per i capelli, diametro 72",
+    "run_level": "MEDIA",
+    "fonte_ok": true,
+    "cit_vuote": false,
+    "rifiuto": false,
+    "guardrail": "PASS",
+    "latenza_s": 7.62,
+    "fallback_count": 0,
+    "eccezione": null,
+    "answer_preview": "Il tappo con filtro per il diametro ø72 è identificato dal codice **12045** e costa **17,50** (Mamoli_Catalogo_Ricambi_2021_IT_EN, pag. 133).",
+    "n_citations": 1,
+    "citations_raw": [
+      [
+        "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+        133
+      ]
+    ],
+    "run_n": 2
+  },
+  {
+    "id": "NAT-2",
+    "classe": "naturale",
+    "query": "chiusura di scarico con la retina per i capelli, diametro 72",
+    "run_level": "MEDIA",
+    "fonte_ok": true,
+    "cit_vuote": false,
+    "rifiuto": false,
+    "guardrail": "PASS",
+    "latenza_s": 7.58,
+    "fallback_count": 0,
+    "eccezione": null,
+    "answer_preview": "Il tappo con filtro per il diametro ø72 è identificato dal codice **12045** e costa **17,50** (Mamoli_Catalogo_Ricambi_2021_IT_EN, pag. 133).",
+    "n_citations": 1,
+    "citations_raw": [
+      [
+        "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+        133
+      ]
+    ],
+    "run_n": 3
+  },
+  {
+    "id": "NAT-3",
+    "classe": "naturale",
+    "query": "vite testa svasata cinque per trenta zincata scura",
+    "run_level": "MEDIA",
+    "fonte_ok": true,
+    "cit_vuote": false,
+    "rifiuto": false,
+    "guardrail": "PASS",
+    "latenza_s": 12.64,
+    "fallback_count": 0,
+    "eccezione": null,
+    "answer_preview": "438304 — VITE M5x30 UNI 7688 ZINC NERO (manzoni_comac_spareparts_B, pag. 14)",
+    "n_citations": 1,
+    "citations_raw": [
+      [
+        "manzoni_comac_spareparts_B",
+        14
+      ]
+    ],
+    "run_n": 1
+  },
+  {
+    "id": "NAT-3",
+    "classe": "naturale",
+    "query": "vite testa svasata cinque per trenta zincata scura",
+    "run_level": "MEDIA",
+    "fonte_ok": true,
+    "cit_vuote": false,
+    "rifiuto": false,
+    "guardrail": "PASS",
+    "latenza_s": 4.8,
+    "fallback_count": 0,
+    "eccezione": null,
+    "answer_preview": "438304 — VITE M5x30 UNI 7688 ZINC NERO (manzoni_comac_spareparts_B, pag. 14)",
+    "n_citations": 1,
+    "citations_raw": [
+      [
+        "manzoni_comac_spareparts_B",
+        14
+      ]
+    ],
+    "run_n": 2
+  },
+  {
+    "id": "NAT-3",
+    "classe": "naturale",
+    "query": "vite testa svasata cinque per trenta zincata scura",
+    "run_level": "MEDIA",
+    "fonte_ok": true,
+    "cit_vuote": false,
+    "rifiuto": false,
+    "guardrail": "PASS",
+    "latenza_s": 4.79,
+    "fallback_count": 0,
+    "eccezione": null,
+    "answer_preview": "438304 — VITE M5x30 UNI 7688 ZINC NERO (manzoni_comac_spareparts_B, pag. 14)",
+    "n_citations": 1,
+    "citations_raw": [
+      [
+        "manzoni_comac_spareparts_B",
+        14
+      ]
+    ],
+    "run_n": 3
+  },
+  {
+    "id": "NAT-4",
+    "classe": "naturale",
+    "query": "spia trasparente per controllare l'olio della centralina SCV",
+    "run_level": "MEDIA",
+    "fonte_ok": null,
+    "cit_vuote": false,
+    "rifiuto": false,
+    "guardrail": "PASS",
+    "latenza_s": 21.58,
+    "fallback_count": 0,
+    "eccezione": null,
+    "answer_preview": "Per il controllo del livello dell'olio nella centralina SCV, esistono componenti specifici come:\n\n- LVA10SAPM10 — Livello visivo per SCV 25-50 (prezzo 19,00) (arol_listino_oleodinamica_2024, pag. 18)\n",
+    "n_citations": 2,
+    "citations_raw": [
+      [
+        "arol_listino_oleodinamica_2024",
+        18
+      ],
+      [
+        "arol_listino_oleodinamica_2024",
+        18
+      ]
+    ],
+    "run_n": 1
+  },
+  {
+    "id": "NAT-4",
+    "classe": "naturale",
+    "query": "spia trasparente per controllare l'olio della centralina SCV",
+    "run_level": "MEDIA",
+    "fonte_ok": null,
+    "cit_vuote": false,
+    "rifiuto": false,
+    "guardrail": "PASS",
+    "latenza_s": 14.43,
+    "fallback_count": 0,
+    "eccezione": null,
+    "answer_preview": "Per il controllo del livello dell'olio nella centralina SCV, esistono componenti specifici come:\n\n- LVA10SAPM10 — Livello visivo per SCV 25-50 (prezzo 19,00) (arol_listino_oleodinamica_2024, pag. 18)\n",
+    "n_citations": 2,
+    "citations_raw": [
+      [
+        "arol_listino_oleodinamica_2024",
+        18
+      ],
+      [
+        "arol_listino_oleodinamica_2024",
+        18
+      ]
+    ],
+    "run_n": 2
+  },
+  {
+    "id": "NAT-4",
+    "classe": "naturale",
+    "query": "spia trasparente per controllare l'olio della centralina SCV",
+    "run_level": "MEDIA",
+    "fonte_ok": null,
+    "cit_vuote": false,
+    "rifiuto": false,
+    "guardrail": "PASS",
+    "latenza_s": 14.39,
+    "fallback_count": 0,
+    "eccezione": null,
+    "answer_preview": "Per il controllo del livello dell'olio nella centralina SCV, esistono componenti specifici come:\n\n- LVA10SAPM10 — Livello visivo per SCV 25-50 (prezzo 19,00) (arol_listino_oleodinamica_2024, pag. 18)\n",
+    "n_citations": 2,
+    "citations_raw": [
+      [
+        "arol_listino_oleodinamica_2024",
+        18
+      ],
+      [
+        "arol_listino_oleodinamica_2024",
+        18
+      ]
+    ],
+    "run_n": 3
+  },
+  {
+    "id": "TEC-1",
+    "classe": "tecnica",
+    "query": "Quali sono i termini di garanzia?",
+    "run_level": "MEDIA",
+    "fonte_ok": null,
+    "cit_vuote": false,
+    "rifiuto": false,
+    "guardrail": "PASS",
+    "latenza_s": 47.88,
+    "fallback_count": 0,
+    "eccezione": null,
+    "answer_preview": "I termini di garanzia variano a seconda del produttore e del tipo di prodotto:\n\n- **Smem Motori Elettrici**: La garanzia ha validità di 1 anno dall'emissione della fattura (smem_motori_elettrici_catal",
+    "n_citations": 6,
+    "citations_raw": [
+      [
+        "smem_motori_elettrici_catalogo_2025",
+        35
+      ],
+      [
+        "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+        232
+      ],
+      [
+        "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+        232
+      ],
+      [
+        "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+        232
+      ],
+      [
+        "Silca_TriaxPro_Ricambi_Multilingua",
+        1
+      ],
+      [
+        "DirectKitchen_Forni_Schemi_IT_EN",
+        3
+      ]
+    ],
+    "run_n": 1
+  },
+  {
+    "id": "TEC-1",
+    "classe": "tecnica",
+    "query": "Quali sono i termini di garanzia?",
+    "run_level": "MEDIA",
+    "fonte_ok": null,
+    "cit_vuote": false,
+    "rifiuto": false,
+    "guardrail": "PASS",
+    "latenza_s": 32.39,
+    "fallback_count": 0,
+    "eccezione": null,
+    "answer_preview": "I termini di garanzia variano a seconda del produttore e del tipo di prodotto:\n\n- **Smem Motori Elettrici**: La garanzia ha validità di 1 anno dall'emissione della fattura (smem_motori_elettrici_catal",
+    "n_citations": 6,
+    "citations_raw": [
+      [
+        "smem_motori_elettrici_catalogo_2025",
+        35
+      ],
+      [
+        "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+        232
+      ],
+      [
+        "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+        232
+      ],
+      [
+        "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+        232
+      ],
+      [
+        "Silca_TriaxPro_Ricambi_Multilingua",
+        1
+      ],
+      [
+        "DirectKitchen_Forni_Schemi_IT_EN",
+        3
+      ]
+    ],
+    "run_n": 2
+  },
+  {
+    "id": "TEC-1",
+    "classe": "tecnica",
+    "query": "Quali sono i termini di garanzia?",
+    "run_level": "MEDIA",
+    "fonte_ok": null,
+    "cit_vuote": false,
+    "rifiuto": false,
+    "guardrail": "PASS",
+    "latenza_s": 32.49,
+    "fallback_count": 0,
+    "eccezione": null,
+    "answer_preview": "I termini di garanzia variano a seconda del produttore e del tipo di prodotto:\n\n- **Smem Motori Elettrici**: La garanzia ha validità di 1 anno dall'emissione della fattura (smem_motori_elettrici_catal",
+    "n_citations": 6,
+    "citations_raw": [
+      [
+        "smem_motori_elettrici_catalogo_2025",
+        35
+      ],
+      [
+        "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+        232
+      ],
+      [
+        "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+        232
+      ],
+      [
+        "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+        232
+      ],
+      [
+        "Silca_TriaxPro_Ricambi_Multilingua",
+        1
+      ],
+      [
+        "DirectKitchen_Forni_Schemi_IT_EN",
+        3
+      ]
+    ],
+    "run_n": 3
+  },
+  {
+    "id": "COD-1",
+    "classe": "codice",
+    "query": "codice GM41013",
+    "run_level": "ALTA",
+    "fonte_ok": true,
+    "cit_vuote": false,
+    "rifiuto": false,
+    "guardrail": "PASS",
+    "latenza_s": 5.07,
+    "fallback_count": 0,
+    "eccezione": null,
+    "answer_preview": "Il codice GM41013 si riferisce all'assembly del filtro separatore acqua-carburante (qty 1) (kohler_marine_tp6954, pag. 95).",
+    "n_citations": 1,
+    "citations_raw": [
+      [
+        "kohler_marine_tp6954",
+        95
+      ]
+    ],
+    "run_n": 1
+  },
+  {
+    "id": "COD-1",
+    "classe": "codice",
+    "query": "codice GM41013",
+    "run_level": "ALTA",
+    "fonte_ok": true,
+    "cit_vuote": false,
+    "rifiuto": false,
+    "guardrail": "PASS",
+    "latenza_s": 4.19,
+    "fallback_count": 0,
+    "eccezione": null,
+    "answer_preview": "Il codice GM41013 si riferisce all'assembly del filtro separatore acqua-carburante (qty 1) (kohler_marine_tp6954, pag. 95).",
+    "n_citations": 1,
+    "citations_raw": [
+      [
+        "kohler_marine_tp6954",
+        95
+      ]
+    ],
+    "run_n": 2
+  },
+  {
+    "id": "COD-1",
+    "classe": "codice",
+    "query": "codice GM41013",
+    "run_level": "ALTA",
+    "fonte_ok": true,
+    "cit_vuote": false,
+    "rifiuto": false,
+    "guardrail": "PASS",
+    "latenza_s": 4.19,
+    "fallback_count": 0,
+    "eccezione": null,
+    "answer_preview": "Il codice GM41013 si riferisce all'assembly del filtro separatore acqua-carburante (qty 1) (kohler_marine_tp6954, pag. 95).",
+    "n_citations": 1,
+    "citations_raw": [
+      [
+        "kohler_marine_tp6954",
+        95
+      ]
+    ],
+    "run_n": 3
+  },
+  {
+    "id": "COD-2",
+    "classe": "codice",
+    "query": "codice 415869",
+    "run_level": "ALTA",
+    "fonte_ok": true,
+    "cit_vuote": false,
+    "rifiuto": false,
+    "guardrail": "PASS",
+    "latenza_s": 5.7,
+    "fallback_count": 0,
+    "eccezione": null,
+    "answer_preview": "Il codice 415869 corrisponde a \"VITE D.3,5X16 TSPTC AUTOF. UNI 6955 NERA\" (manzoni_comac_spareparts_A, pag. 45).",
+    "n_citations": 1,
+    "citations_raw": [
+      [
+        "manzoni_comac_spareparts_A",
+        45
+      ]
+    ],
+    "run_n": 1
+  },
+  {
+    "id": "COD-2",
+    "classe": "codice",
+    "query": "codice 415869",
+    "run_level": "ALTA",
+    "fonte_ok": true,
+    "cit_vuote": false,
+    "rifiuto": false,
+    "guardrail": "PASS",
+    "latenza_s": 5.06,
+    "fallback_count": 0,
+    "eccezione": null,
+    "answer_preview": "Il codice 415869 corrisponde a \"VITE D.3,5X16 TSPTC AUTOF. UNI 6955 NERA\" (manzoni_comac_spareparts_A, pag. 45).",
+    "n_citations": 1,
+    "citations_raw": [
+      [
+        "manzoni_comac_spareparts_A",
+        45
+      ]
+    ],
+    "run_n": 2
+  },
+  {
+    "id": "COD-2",
+    "classe": "codice",
+    "query": "codice 415869",
+    "run_level": "ALTA",
+    "fonte_ok": true,
+    "cit_vuote": false,
+    "rifiuto": false,
+    "guardrail": "PASS",
+    "latenza_s": 4.99,
+    "fallback_count": 0,
+    "eccezione": null,
+    "answer_preview": "Il codice 415869 corrisponde a \"VITE D.3,5X16 TSPTC AUTOF. UNI 6955 NERA\" (manzoni_comac_spareparts_A, pag. 45).",
+    "n_citations": 1,
+    "citations_raw": [
+      [
+        "manzoni_comac_spareparts_A",
+        45
+      ]
+    ],
+    "run_n": 3
+  },
+  {
+    "id": "COD-3",
+    "classe": "codice",
+    "query": "codice 14576",
+    "run_level": "ALTA",
+    "fonte_ok": true,
+    "cit_vuote": false,
+    "rifiuto": false,
+    "guardrail": "PASS",
+    "latenza_s": 6.45,
+    "fallback_count": 0,
+    "eccezione": null,
+    "answer_preview": "Il codice 14576 corrisponde a \"Bocca s/foro asta scarico\" o in inglese \"Spout without pop-up hole\". (Mamoli_Catalogo_Ricambi_2021_IT_EN, pag. 100)",
+    "n_citations": 1,
+    "citations_raw": [
+      [
+        "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+        100
+      ]
+    ],
+    "run_n": 1
+  },
+  {
+    "id": "COD-3",
+    "classe": "codice",
+    "query": "codice 14576",
+    "run_level": "ALTA",
+    "fonte_ok": true,
+    "cit_vuote": false,
+    "rifiuto": false,
+    "guardrail": "PASS",
+    "latenza_s": 5.48,
+    "fallback_count": 0,
+    "eccezione": null,
+    "answer_preview": "Il codice 14576 corrisponde a \"Bocca s/foro asta scarico\" o in inglese \"Spout without pop-up hole\". (Mamoli_Catalogo_Ricambi_2021_IT_EN, pag. 100)",
+    "n_citations": 1,
+    "citations_raw": [
+      [
+        "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+        100
+      ]
+    ],
+    "run_n": 2
+  },
+  {
+    "id": "COD-3",
+    "classe": "codice",
+    "query": "codice 14576",
+    "run_level": "ALTA",
+    "fonte_ok": true,
+    "cit_vuote": false,
+    "rifiuto": false,
+    "guardrail": "PASS",
+    "latenza_s": 5.46,
+    "fallback_count": 0,
+    "eccezione": null,
+    "answer_preview": "Il codice 14576 corrisponde a \"Bocca s/foro asta scarico\" o in inglese \"Spout without pop-up hole\". (Mamoli_Catalogo_Ricambi_2021_IT_EN, pag. 100)",
+    "n_citations": 1,
+    "citations_raw": [
+      [
+        "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+        100
+      ]
+    ],
+    "run_n": 3
+  }
+]

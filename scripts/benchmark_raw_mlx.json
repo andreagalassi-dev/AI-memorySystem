@@ -1,0 +1,584 @@
+[
+  {
+    "id": "NAT-1",
+    "classe": "naturale",
+    "query": "il D906969ZR è il filtro dell'aria della ventola?",
+    "run_level": "ALTA",
+    "fonte_ok": true,
+    "cit_vuote": false,
+    "rifiuto": false,
+    "guardrail": "PASS",
+    "latenza_s": 42.57,
+    "fallback_count": 0,
+    "eccezione": null,
+    "answer_preview": "Sì, il D906969ZR è un FILTRO VENTILATORE (Silca_TriaxPro_Ricambi_Multilingua, pag. 3).",
+    "n_citations": 1,
+    "citations_raw": [
+      [
+        "Silca_TriaxPro_Ricambi_Multilingua",
+        3
+      ]
+    ],
+    "run_n": 1
+  },
+  {
+    "id": "NAT-1",
+    "classe": "naturale",
+    "query": "il D906969ZR è il filtro dell'aria della ventola?",
+    "run_level": "ALTA",
+    "fonte_ok": true,
+    "cit_vuote": false,
+    "rifiuto": false,
+    "guardrail": "PASS",
+    "latenza_s": 12.98,
+    "fallback_count": 0,
+    "eccezione": null,
+    "answer_preview": "Sì, il D906969ZR è un FILTRO VENTILATORE (Silca_TriaxPro_Ricambi_Multilingua, pag. 3).",
+    "n_citations": 1,
+    "citations_raw": [
+      [
+        "Silca_TriaxPro_Ricambi_Multilingua",
+        3
+      ]
+    ],
+    "run_n": 2
+  },
+  {
+    "id": "NAT-1",
+    "classe": "naturale",
+    "query": "il D906969ZR è il filtro dell'aria della ventola?",
+    "run_level": "ALTA",
+    "fonte_ok": true,
+    "cit_vuote": false,
+    "rifiuto": false,
+    "guardrail": "PASS",
+    "latenza_s": 11.22,
+    "fallback_count": 0,
+    "eccezione": null,
+    "answer_preview": "Sì, il D906969ZR è un FILTRO VENTILATORE (Silca_TriaxPro_Ricambi_Multilingua, pag. 3).",
+    "n_citations": 1,
+    "citations_raw": [
+      [
+        "Silca_TriaxPro_Ricambi_Multilingua",
+        3
+      ]
+    ],
+    "run_n": 3
+  },
+  {
+    "id": "NAT-2",
+    "classe": "naturale",
+    "query": "chiusura di scarico con la retina per i capelli, diametro 72",
+    "run_level": "MEDIA",
+    "fonte_ok": true,
+    "cit_vuote": false,
+    "rifiuto": false,
+    "guardrail": "PASS",
+    "latenza_s": 11.54,
+    "fallback_count": 0,
+    "eccezione": null,
+    "answer_preview": "Tappo con filtro ø72/ø72 plug with hair filter (quantità 1, prezzo 17,50) (Mamoli_Catalogo_Ricambi_2021_IT_EN, pag. 133).",
+    "n_citations": 1,
+    "citations_raw": [
+      [
+        "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+        133
+      ]
+    ],
+    "run_n": 1
+  },
+  {
+    "id": "NAT-2",
+    "classe": "naturale",
+    "query": "chiusura di scarico con la retina per i capelli, diametro 72",
+    "run_level": "MEDIA",
+    "fonte_ok": true,
+    "cit_vuote": false,
+    "rifiuto": false,
+    "guardrail": "PASS",
+    "latenza_s": 11.31,
+    "fallback_count": 0,
+    "eccezione": null,
+    "answer_preview": "Tappo con filtro ø72/ø72 plug with hair filter (quantità 1, prezzo 17,50) (Mamoli_Catalogo_Ricambi_2021_IT_EN, pag. 133).",
+    "n_citations": 1,
+    "citations_raw": [
+      [
+        "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+        133
+      ]
+    ],
+    "run_n": 2
+  },
+  {
+    "id": "NAT-2",
+    "classe": "naturale",
+    "query": "chiusura di scarico con la retina per i capelli, diametro 72",
+    "run_level": "MEDIA",
+    "fonte_ok": true,
+    "cit_vuote": false,
+    "rifiuto": false,
+    "guardrail": "PASS",
+    "latenza_s": 11.29,
+    "fallback_count": 0,
+    "eccezione": null,
+    "answer_preview": "Tappo con filtro ø72/ø72 plug with hair filter (quantità 1, prezzo 17,50) (Mamoli_Catalogo_Ricambi_2021_IT_EN, pag. 133).",
+    "n_citations": 1,
+    "citations_raw": [
+      [
+        "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+        133
+      ]
+    ],
+    "run_n": 3
+  },
+  {
+    "id": "NAT-3",
+    "classe": "naturale",
+    "query": "vite testa svasata cinque per trenta zincata scura",
+    "run_level": "BASSA",
+    "fonte_ok": false,
+    "cit_vuote": true,
+    "rifiuto": true,
+    "guardrail": "PASS",
+    "latenza_s": 6.89,
+    "fallback_count": 0,
+    "eccezione": null,
+    "answer_preview": "Non ho evidenza sufficiente per rispondere.",
+    "n_citations": 0,
+    "citations_raw": [],
+    "run_n": 1
+  },
+  {
+    "id": "NAT-3",
+    "classe": "naturale",
+    "query": "vite testa svasata cinque per trenta zincata scura",
+    "run_level": "BASSA",
+    "fonte_ok": false,
+    "cit_vuote": true,
+    "rifiuto": true,
+    "guardrail": "PASS",
+    "latenza_s": 6.29,
+    "fallback_count": 0,
+    "eccezione": null,
+    "answer_preview": "Non ho evidenza sufficiente per rispondere.",
+    "n_citations": 0,
+    "citations_raw": [],
+    "run_n": 2
+  },
+  {
+    "id": "NAT-3",
+    "classe": "naturale",
+    "query": "vite testa svasata cinque per trenta zincata scura",
+    "run_level": "BASSA",
+    "fonte_ok": false,
+    "cit_vuote": true,
+    "rifiuto": true,
+    "guardrail": "PASS",
+    "latenza_s": 6.31,
+    "fallback_count": 0,
+    "eccezione": null,
+    "answer_preview": "Non ho evidenza sufficiente per rispondere.",
+    "n_citations": 0,
+    "citations_raw": [],
+    "run_n": 3
+  },
+  {
+    "id": "NAT-4",
+    "classe": "naturale",
+    "query": "spia trasparente per controllare l'olio della centralina SCV",
+    "run_level": "BASSA",
+    "fonte_ok": null,
+    "cit_vuote": true,
+    "rifiuto": true,
+    "guardrail": "PASS",
+    "latenza_s": 5.7,
+    "fallback_count": 0,
+    "eccezione": null,
+    "answer_preview": "Non ho evidenza sufficiente per rispondere.",
+    "n_citations": 0,
+    "citations_raw": [],
+    "run_n": 1
+  },
+  {
+    "id": "NAT-4",
+    "classe": "naturale",
+    "query": "spia trasparente per controllare l'olio della centralina SCV",
+    "run_level": "BASSA",
+    "fonte_ok": null,
+    "cit_vuote": true,
+    "rifiuto": true,
+    "guardrail": "PASS",
+    "latenza_s": 5.63,
+    "fallback_count": 0,
+    "eccezione": null,
+    "answer_preview": "Non ho evidenza sufficiente per rispondere.",
+    "n_citations": 0,
+    "citations_raw": [],
+    "run_n": 2
+  },
+  {
+    "id": "NAT-4",
+    "classe": "naturale",
+    "query": "spia trasparente per controllare l'olio della centralina SCV",
+    "run_level": "BASSA",
+    "fonte_ok": null,
+    "cit_vuote": true,
+    "rifiuto": true,
+    "guardrail": "PASS",
+    "latenza_s": 5.62,
+    "fallback_count": 0,
+    "eccezione": null,
+    "answer_preview": "Non ho evidenza sufficiente per rispondere.",
+    "n_citations": 0,
+    "citations_raw": [],
+    "run_n": 3
+  },
+  {
+    "id": "TEC-1",
+    "classe": "tecnica",
+    "query": "Quali sono i termini di garanzia?",
+    "run_level": "MEDIA",
+    "fonte_ok": null,
+    "cit_vuote": false,
+    "rifiuto": false,
+    "guardrail": "PASS",
+    "latenza_s": 23.03,
+    "fallback_count": 0,
+    "eccezione": null,
+    "answer_preview": "I termini di garanzia variano a seconda del produttore:\n\n*   **Smem**: La garanzia ha validità di 1 anno dall'emissione della fattura di vendita e copre la riparazione o sostituzione di prodotti o par",
+    "n_citations": 8,
+    "citations_raw": [
+      [
+        "smem_motori_elettrici_catalogo_2025",
+        35
+      ],
+      [
+        "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+        232
+      ],
+      [
+        "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+        232
+      ],
+      [
+        "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+        232
+      ],
+      [
+        "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+        232
+      ],
+      [
+        "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+        232
+      ],
+      [
+        "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+        232
+      ],
+      [
+        "DirectKitchen_Forni_Schemi_IT_EN",
+        3
+      ]
+    ],
+    "run_n": 1
+  },
+  {
+    "id": "TEC-1",
+    "classe": "tecnica",
+    "query": "Quali sono i termini di garanzia?",
+    "run_level": "MEDIA",
+    "fonte_ok": null,
+    "cit_vuote": false,
+    "rifiuto": false,
+    "guardrail": "PASS",
+    "latenza_s": 22.88,
+    "fallback_count": 0,
+    "eccezione": null,
+    "answer_preview": "I termini di garanzia variano a seconda del produttore:\n\n*   **Smem**: La garanzia ha validità di 1 anno dall'emissione della fattura di vendita e copre la riparazione o sostituzione di prodotti o par",
+    "n_citations": 8,
+    "citations_raw": [
+      [
+        "smem_motori_elettrici_catalogo_2025",
+        35
+      ],
+      [
+        "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+        232
+      ],
+      [
+        "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+        232
+      ],
+      [
+        "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+        232
+      ],
+      [
+        "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+        232
+      ],
+      [
+        "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+        232
+      ],
+      [
+        "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+        232
+      ],
+      [
+        "DirectKitchen_Forni_Schemi_IT_EN",
+        3
+      ]
+    ],
+    "run_n": 2
+  },
+  {
+    "id": "TEC-1",
+    "classe": "tecnica",
+    "query": "Quali sono i termini di garanzia?",
+    "run_level": "MEDIA",
+    "fonte_ok": null,
+    "cit_vuote": false,
+    "rifiuto": false,
+    "guardrail": "PASS",
+    "latenza_s": 22.91,
+    "fallback_count": 0,
+    "eccezione": null,
+    "answer_preview": "I termini di garanzia variano a seconda del produttore:\n\n*   **Smem**: La garanzia ha validità di 1 anno dall'emissione della fattura di vendita e copre la riparazione o sostituzione di prodotti o par",
+    "n_citations": 8,
+    "citations_raw": [
+      [
+        "smem_motori_elettrici_catalogo_2025",
+        35
+      ],
+      [
+        "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+        232
+      ],
+      [
+        "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+        232
+      ],
+      [
+        "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+        232
+      ],
+      [
+        "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+        232
+      ],
+      [
+        "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+        232
+      ],
+      [
+        "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+        232
+      ],
+      [
+        "DirectKitchen_Forni_Schemi_IT_EN",
+        3
+      ]
+    ],
+    "run_n": 3
+  },
+  {
+    "id": "COD-1",
+    "classe": "codice",
+    "query": "codice GM41013",
+    "run_level": "ALTA",
+    "fonte_ok": true,
+    "cit_vuote": false,
+    "rifiuto": false,
+    "guardrail": "PASS",
+    "latenza_s": 2.92,
+    "fallback_count": 0,
+    "eccezione": null,
+    "answer_preview": "GM41013 — Assembly, fuel/water separator filter (qty 1) (kohler_marine_tp6954, pag. 95).",
+    "n_citations": 1,
+    "citations_raw": [
+      [
+        "kohler_marine_tp6954",
+        95
+      ]
+    ],
+    "run_n": 1
+  },
+  {
+    "id": "COD-1",
+    "classe": "codice",
+    "query": "codice GM41013",
+    "run_level": "ALTA",
+    "fonte_ok": true,
+    "cit_vuote": false,
+    "rifiuto": false,
+    "guardrail": "PASS",
+    "latenza_s": 2.89,
+    "fallback_count": 0,
+    "eccezione": null,
+    "answer_preview": "GM41013 — Assembly, fuel/water separator filter (qty 1) (kohler_marine_tp6954, pag. 95).",
+    "n_citations": 1,
+    "citations_raw": [
+      [
+        "kohler_marine_tp6954",
+        95
+      ]
+    ],
+    "run_n": 2
+  },
+  {
+    "id": "COD-1",
+    "classe": "codice",
+    "query": "codice GM41013",
+    "run_level": "ALTA",
+    "fonte_ok": true,
+    "cit_vuote": false,
+    "rifiuto": false,
+    "guardrail": "PASS",
+    "latenza_s": 2.89,
+    "fallback_count": 0,
+    "eccezione": null,
+    "answer_preview": "GM41013 — Assembly, fuel/water separator filter (qty 1) (kohler_marine_tp6954, pag. 95).",
+    "n_citations": 1,
+    "citations_raw": [
+      [
+        "kohler_marine_tp6954",
+        95
+      ]
+    ],
+    "run_n": 3
+  },
+  {
+    "id": "COD-2",
+    "classe": "codice",
+    "query": "codice 415869",
+    "run_level": "ALTA",
+    "fonte_ok": true,
+    "cit_vuote": false,
+    "rifiuto": false,
+    "guardrail": "PASS",
+    "latenza_s": 3.31,
+    "fallback_count": 0,
+    "eccezione": null,
+    "answer_preview": "Il codice 415869 corrisponde a VITE D.3,5X16 TSPTC AUTOF. UNI 6955 NERA (manzoni_comac_spareparts_A, pag. 45).",
+    "n_citations": 1,
+    "citations_raw": [
+      [
+        "manzoni_comac_spareparts_A",
+        45
+      ]
+    ],
+    "run_n": 1
+  },
+  {
+    "id": "COD-2",
+    "classe": "codice",
+    "query": "codice 415869",
+    "run_level": "ALTA",
+    "fonte_ok": true,
+    "cit_vuote": false,
+    "rifiuto": false,
+    "guardrail": "PASS",
+    "latenza_s": 3.32,
+    "fallback_count": 0,
+    "eccezione": null,
+    "answer_preview": "Il codice 415869 corrisponde a VITE D.3,5X16 TSPTC AUTOF. UNI 6955 NERA (manzoni_comac_spareparts_A, pag. 45).",
+    "n_citations": 1,
+    "citations_raw": [
+      [
+        "manzoni_comac_spareparts_A",
+        45
+      ]
+    ],
+    "run_n": 2
+  },
+  {
+    "id": "COD-2",
+    "classe": "codice",
+    "query": "codice 415869",
+    "run_level": "ALTA",
+    "fonte_ok": true,
+    "cit_vuote": false,
+    "rifiuto": false,
+    "guardrail": "PASS",
+    "latenza_s": 3.31,
+    "fallback_count": 0,
+    "eccezione": null,
+    "answer_preview": "Il codice 415869 corrisponde a VITE D.3,5X16 TSPTC AUTOF. UNI 6955 NERA (manzoni_comac_spareparts_A, pag. 45).",
+    "n_citations": 1,
+    "citations_raw": [
+      [
+        "manzoni_comac_spareparts_A",
+        45
+      ]
+    ],
+    "run_n": 3
+  },
+  {
+    "id": "COD-3",
+    "classe": "codice",
+    "query": "codice 14576",
+    "run_level": "ALTA",
+    "fonte_ok": true,
+    "cit_vuote": false,
+    "rifiuto": false,
+    "guardrail": "PASS",
+    "latenza_s": 3.7,
+    "fallback_count": 0,
+    "eccezione": null,
+    "answer_preview": "Il codice 14576 corrisponde a Bocca s/foro asta scarico/Spout without pop-up hole (quantità 1, prezzo 68,00) (Mamoli_Catalogo_Ricambi_2021_IT_EN, pag. 100).",
+    "n_citations": 1,
+    "citations_raw": [
+      [
+        "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+        100
+      ]
+    ],
+    "run_n": 1
+  },
+  {
+    "id": "COD-3",
+    "classe": "codice",
+    "query": "codice 14576",
+    "run_level": "ALTA",
+    "fonte_ok": true,
+    "cit_vuote": false,
+    "rifiuto": false,
+    "guardrail": "PASS",
+    "latenza_s": 3.71,
+    "fallback_count": 0,
+    "eccezione": null,
+    "answer_preview": "Il codice 14576 corrisponde a Bocca s/foro asta scarico/Spout without pop-up hole (quantità 1, prezzo 68,00) (Mamoli_Catalogo_Ricambi_2021_IT_EN, pag. 100).",
+    "n_citations": 1,
+    "citations_raw": [
+      [
+        "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+        100
+      ]
+    ],
+    "run_n": 2
+  },
+  {
+    "id": "COD-3",
+    "classe": "codice",
+    "query": "codice 14576",
+    "run_level": "ALTA",
+    "fonte_ok": true,
+    "cit_vuote": false,
+    "rifiuto": false,
+    "guardrail": "PASS",
+    "latenza_s": 3.72,
+    "fallback_count": 0,
+    "eccezione": null,
+    "answer_preview": "Il codice 14576 corrisponde a Bocca s/foro asta scarico/Spout without pop-up hole (quantità 1, prezzo 68,00) (Mamoli_Catalogo_Ricambi_2021_IT_EN, pag. 100).",
+    "n_citations": 1,
+    "citations_raw": [
+      [
+        "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+        100
+      ]
+    ],
+    "run_n": 3
+  }
+]
