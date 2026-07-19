@@ -62,64 +62,98 @@ def get_document_roles():
 
 def build_sample():
     qc = get_qdrant_client()
-    records, _ = qc.scroll("aike_chunks", limit=10000, with_payload=True)
     
-    # We want to stratify: ~40 total codes, >= 8 brands/docs, 3 languages (IT/EN/DE), max 5 per doc.
-    # Group chunks by doc and lang
+    # Scroll paginato
+    records = []
+    offset = None
+    while True:
+        page, offset = qc.scroll("aike_chunks", limit=1000, offset=offset, with_payload=True)
+        records.extend(page)
+        if offset is None:
+            break
+            
     docs_chunks = defaultdict(list)
     for r in records:
         if not r.payload:
             continue
         doc = r.payload.get("doc")
-        if not doc:
+        code = r.payload.get("code")
+        lang = r.payload.get("lang")
+        
+        if not doc or not code:
             continue
-        docs_chunks[doc].append(r)
+            
+        code = str(code).strip()
+        if len(code) < 4:
+            continue
+            
+        # Raccogliamo per lang per facilitare l'estrazione
+        docs_chunks[(doc, lang)].append(r)
         
     random.seed(42) # fixed seed for reproducibility
     
-    # doc roles
     doc_roles = get_document_roles()
     
+    # Separiamo in buckets per lingua
+    de_buckets = [(d, l) for (d, l) in docs_chunks.keys() if l == "DE"]
+    other_buckets = [(d, l) for (d, l) in docs_chunks.keys() if l != "DE"]
+    
+    random.shuffle(de_buckets)
+    random.shuffle(other_buckets)
+    
     sampled_codes = []
+    doc_code_counts = defaultdict(int)
     
-    # Try to pick docs that cover 3 languages and at least 8 docs.
-    # Actually we can just iterate shuffled docs.
-    all_docs = list(docs_chunks.keys())
-    random.shuffle(all_docs)
+    # Obbligo: almeno 4 codici DE
+    for (doc, lang) in de_buckets:
+        if len(sampled_codes) >= 4:
+            break
+        role = doc_roles.get(doc)
+        if not role:
+            continue
+        chunks = docs_chunks[(doc, lang)]
+        random.shuffle(chunks)
+        for r in chunks:
+            c = str(r.payload["code"]).strip()
+            if doc_code_counts[doc] < 5:
+                sampled_codes.append({
+                    "code": c,
+                    "doc": doc,
+                    "lang": lang,
+                    "role": role
+                })
+                doc_code_counts[doc] += 1
+                break # 1 per doc in this pass to distribute
+                
+    # Aggiungiamo dal resto per arrivare a 40
+    all_buckets = de_buckets + other_buckets
+    random.shuffle(all_buckets)
     
-    for doc in all_docs:
+    for (doc, lang) in all_buckets:
         if len(sampled_codes) >= 40:
             break
         role = doc_roles.get(doc)
         if not role:
-            continue # We need a role to query
-            
-        chunks = docs_chunks[doc]
+            continue
+        chunks = docs_chunks[(doc, lang)]
         random.shuffle(chunks)
         
-        doc_codes = set()
         for r in chunks:
-            if len(doc_codes) >= 5:
+            if len(sampled_codes) >= 40:
                 break
-                
-            payload = r.payload
-            text = f"{payload.get('text', '')} {payload.get('desc', '')} {payload.get('code', '')}"
-            # Extract candidates using existing guardrail logic (src/retrieval/guardrail.py extract_candidates)
-            candidates = extract_candidates(text)
-            
-            # Mamoli duplicates note (from B1.a report): do not repair. If we hit one, that's fine.
-            # But let's just pick one candidate from the chunk.
-            for c in candidates:
-                if c not in doc_codes and len(doc_codes) < 5:
-                    doc_codes.add(c)
-                    sampled_codes.append({
-                        "code": c,
-                        "doc": doc,
-                        "lang": payload.get("lang"),
-                        "role": role
-                    })
-                    break
-                    
+            c = str(r.payload["code"]).strip()
+            # check duplicate code in sample
+            if any(s["code"] == c and s["doc"] == doc for s in sampled_codes):
+                continue
+            if doc_code_counts[doc] < 5:
+                sampled_codes.append({
+                    "code": c,
+                    "doc": doc,
+                    "lang": lang,
+                    "role": role
+                })
+                doc_code_counts[doc] += 1
+
     return sampled_codes[:40]
 
 def main():
@@ -172,7 +206,7 @@ def main():
             "root_cause": root_cause
         })
         
-        with open(out_dir / "b1b_degraded_codes.json", "w", encoding="utf-8") as f:
+        with open(out_dir / "b1b_degraded_codes_v2.json", "w", encoding="utf-8") as f:
             json.dump(output_data, f, indent=2, ensure_ascii=False)
             
     print(f"Audit completed in {datetime.datetime.now() - start_time}. Data saved.")
