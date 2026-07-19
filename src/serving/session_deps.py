@@ -1,5 +1,6 @@
 """Dependencies for the serving session, providing shared singletons."""
 import logging
+import concurrent.futures
 import threading
 from typing import Optional
 from dataclasses import replace
@@ -13,6 +14,8 @@ _llm = None
 _visual_search = None
 _multiplexer = None
 _CACHE: dict[str, Deps] = {}
+
+_LLM_EXECUTOR = concurrent.futures.ThreadPoolExecutor(max_workers=1, thread_name_prefix="LLMProxy")
 
 _INIT_LOCK = threading.Lock()
 _INFERENCE_LOCK = threading.Lock()
@@ -31,6 +34,7 @@ def _init_shared_singletons():
         from src.serving.multiplexer import ModelMultiplexer, MlxModelRuntime
         from src.backend.clients.ollama_client import OllamaModel
         from src.backend.config import settings
+        import requests
     
         global _multiplexer
         mlx_runtime = MlxModelRuntime(default_num_ctx=settings.local_ctx_cap)
@@ -39,6 +43,20 @@ def _init_shared_singletons():
         primary_llm = MLXModel(settings.logic_model, _multiplexer)
         fallback_llm = OllamaModel()
         
+        try:
+            r = requests.get(f"{settings.ollama_host}/api/tags", timeout=3)
+            r.raise_for_status()
+            models = [m.get("name") for m in r.json().get("models", [])]
+            if settings.ollama_model not in models:
+                logger.warning(
+                    "\n=== ATTENZIONE: FALLBACK ASSENTE ===\n"
+                    f"Il modello Ollama '{settings.ollama_model}' non è installato.\n"
+                    f"Esegui: ollama pull {settings.ollama_model}\n"
+                    "====================================="
+                )
+        except Exception as e:
+            logger.warning("Impossibile contattare Ollama per il probe del fallback: %s", e)
+            
         _llm = FallbackLLM(primary_llm, fallback_llm)
         
         # Initialize shared Visual Search
@@ -64,7 +82,8 @@ class LockedLLMProxy:
         
     def generate(self, system: str, user: str) -> str:
         with _INFERENCE_LOCK:
-            return self.target.generate(system, user)
+            future = _LLM_EXECUTOR.submit(self.target.generate, system, user)
+            return future.result()
 
 def locked_callable(target):
     if target is None:
@@ -82,17 +101,14 @@ def get_deps(role: str) -> Deps:
     if role_key in _CACHE:
         return _CACHE[role_key]
         
-    _init_shared_singletons()
+    _LLM_EXECUTOR.submit(_init_shared_singletons).result()
     
     deps = build_default_deps(validated, llm=_llm, visual_search=_visual_search)
     
     locked_deps = replace(
         deps,
         llm=LockedLLMProxy(deps.llm) if deps.llm is not None else None,
-        visual_search=locked_callable(deps.visual_search),
-        retrieve=locked_callable(deps.retrieve),
-        retrieve_superseded=locked_callable(deps.retrieve_superseded),
-        retrieve_deleted=locked_callable(deps.retrieve_deleted)
+        visual_search=locked_callable(deps.visual_search)
     )
     
     _CACHE[role_key] = locked_deps

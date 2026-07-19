@@ -114,26 +114,30 @@ def test_init_shared_singletons_concurrent_is_thread_safe(monkeypatch):
         
     assert len(calls) == 1
 
-def test_inference_is_serialized(monkeypatch):
+def test_inference_is_serialized_and_affinity(monkeypatch):
     import src.serving.session_deps as sd
     sd._CACHE.clear()
     sd._llm = None
     
-    class FakeSlowLLM:
+    class FakeLLMWithAffinityAndFallback:
         def __init__(self):
             self.calls = []
+            self.thread_ids = set()
+            
         def generate(self, system, user):
+            self.thread_ids.add(threading.get_ident())
             start = time.time()
-            time.sleep(0.2)
+            time.sleep(0.1)
             end = time.time()
             self.calls.append((start, end))
-            return "ok"
+            return "ok from fallback"
             
-    fake_llm = FakeSlowLLM()
+    fake_llm = FakeLLMWithAffinityAndFallback()
     monkeypatch.setattr(sd, "_llm", fake_llm)
     
     def mock_build_default(*args, llm=None, visual_search=None):
         from src.retrieval.confidence import Thresholds
+        from src.graph.pipeline import Deps
         return Deps(
             retrieve=lambda: None,
             synthesize=lambda: None,
@@ -146,9 +150,15 @@ def test_inference_is_serialized(monkeypatch):
     deps = sd.get_deps("tecnico")
     
     threads = []
+    results = []
+    
     def worker():
-        deps.llm.generate("sys", "user")
-        
+        try:
+            res = deps.llm.generate("sys", "user")
+            results.append(res)
+        except Exception as e:
+            results.append(e)
+            
     for _ in range(2):
         t = threading.Thread(target=worker)
         threads.append(t)
@@ -158,9 +168,18 @@ def test_inference_is_serialized(monkeypatch):
     for t in threads:
         t.join()
         
+    # a) check affinity: all generates executed on exactly 1 distinct thread
+    assert len(fake_llm.thread_ids) == 1, f"Expected exactly 1 thread ID, got {len(fake_llm.thread_ids)}"
+    
+    # Check that it's NOT the main thread if possible, or at least a dedicated one
+    # If the user says: STESSO thread, we check length is 1.
+    
+    # b) con fallback che risponde, due generate concorrenti completano entrambe
+    assert len(results) == 2
+    assert all(r == "ok from fallback" for r in results)
     assert len(fake_llm.calls) == 2
+    
+    # Serialized check
     (start1, end1) = fake_llm.calls[0]
     (start2, end2) = fake_llm.calls[1]
-    
-    # Check serialization: one ends before the next begins
     assert end1 <= start2 or end2 <= start1

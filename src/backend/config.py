@@ -52,7 +52,7 @@ class Settings(BaseSettings):
     # Comando di download: ollama pull gemma4:26b-a4b-it-q4
     # Alternativa testata: nemotron-cascade-2:30b-a3b-q4
     ollama_host: str = "http://localhost:11434"  # env OLLAMA_HOST
-    ollama_model: str = "gemma4:26b-a4b-it-q4"  # fallback model
+    ollama_model: str = "qwen2.5:14b"  # fallback model
 
     # --- Backend ---
     backend_host: str = "0.0.0.0"
