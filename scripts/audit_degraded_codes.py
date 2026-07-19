@@ -105,8 +105,9 @@ def build_sample():
     doc_code_counts = defaultdict(int)
     
     # Obbligo: almeno 4 codici DE
+    de_needed = 4
     for (doc, lang) in de_buckets:
-        if len(sampled_codes) >= 4:
+        if len(sampled_codes) >= de_needed:
             break
         role = doc_roles.get(doc)
         if not role:
@@ -114,7 +115,12 @@ def build_sample():
         chunks = docs_chunks[(doc, lang)]
         random.shuffle(chunks)
         for r in chunks:
+            if len(sampled_codes) >= de_needed:
+                break
             c = str(r.payload["code"]).strip()
+            # check duplicate code in sample
+            if any(s["code"] == c and s["doc"] == doc for s in sampled_codes):
+                continue
             if doc_code_counts[doc] < 5:
                 sampled_codes.append({
                     "code": c,
@@ -123,7 +129,7 @@ def build_sample():
                     "role": role
                 })
                 doc_code_counts[doc] += 1
-                break # 1 per doc in this pass to distribute
+                # Non interrompiamo subito: se servono più codici, li prendiamo dallo stesso doc se necessario
                 
     # Aggiungiamo dal resto per arrivare a 40
     all_buckets = de_buckets + other_buckets
