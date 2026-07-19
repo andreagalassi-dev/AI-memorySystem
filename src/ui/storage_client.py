@@ -76,6 +76,7 @@ class LocalStorageClient(BaseStorageClient):
         else:
             if isinstance(data, str):
                 data = data.encode("utf-8")
+            file_path.parent.mkdir(parents=True, exist_ok=True)
             file_path.write_bytes(data)
             
         return {

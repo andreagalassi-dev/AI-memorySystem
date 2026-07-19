@@ -67,9 +67,6 @@ async def on_message(msg: cl.Message):
 
     role = user.metadata.get("role")
     
-    wait_msg = cl.Message(content="⏳ Elaborazione in corso...")
-    await wait_msg.send()
-
     try:
         # Chiama graph pipeline in thread separato
         res = await asyncio.to_thread(answer, msg.content, role, deps=get_deps(role))
@@ -78,21 +75,16 @@ async def on_message(msg: cl.Message):
         final_level = res.get("final_level", "")
         citations = res.get("citations", [])
         
-        # Formatta le citazioni
-        cit_text = ""
-        if citations:
-            cit_text = "\n\n**Citazioni:**\n" + "\n".join(
-                f"- Documento: {doc}, Pagina: {page}" for doc, page in citations
-            )
-            
         display_level = LEVEL_EMOJI.get(final_level, final_level)
-        content = f"**Livello di confidenza:** {display_level}\n\n**Risposta:**\n{final_answer}{cit_text}"
         
         # Pagine renderizzate (max 8 dedup)
         elements = []
+        actions = []
         seen = set()
         
-        actions = []
+        main_citation = citations[0] if citations else None
+        cit_text_lines = []
+        
         for doc, page in citations:
             if (doc, page) not in seen:
                 seen.add((doc, page))
@@ -100,18 +92,32 @@ async def on_message(msg: cl.Message):
                 # Ottieni PNG
                 png_path = ensure_page_render(doc, page)
                 if png_path:
-                    elements.append(
-                        cl.Image(path=str(png_path), name=f"{doc} p.{page}", display="inline")
-                    )
-                    actions.append(
-                        cl.Action(name="paginate", payload={"doc": doc, "page": page, "dir": "prec"}, label=f"◀ Pagina prec ({doc})")
-                    )
-                    actions.append(
-                        cl.Action(name="paginate", payload={"doc": doc, "page": page, "dir": "succ"}, label=f"Pagina succ ▶ ({doc})")
-                    )
+                    element_name = f"{doc} p.{page}"
+                    if (doc, page) == main_citation:
+                        elements.append(
+                            cl.Image(path=str(png_path), name=element_name, display="inline")
+                        )
+                        cit_text_lines.append(f"- Principale: {element_name}")
+                        actions.append(
+                            cl.Action(name="paginate", payload={"doc": doc, "page": page, "dir": "prec"}, label="◀ Pagina prec")
+                        )
+                        actions.append(
+                            cl.Action(name="paginate", payload={"doc": doc, "page": page, "dir": "succ"}, label="Pagina succ ▶")
+                        )
+                    else:
+                        elements.append(
+                            cl.Image(path=str(png_path), name=element_name, display="side")
+                        )
+                        cit_text_lines.append(f"- Vedi: {element_name}")
                 
                 if len(seen) >= 8:
                     break
+        
+        cit_text = ""
+        if cit_text_lines:
+            cit_text = "\n\n**Citazioni:**\n" + "\n".join(cit_text_lines)
+            
+        content = f"**Livello di confidenza:** {display_level}\n\n**Risposta:**\n{final_answer}{cit_text}"
         
         actions.extend([
             cl.Action(name="feedback", payload={"verdetto": "conferma"}, label="✓ Conferma"),
@@ -119,31 +125,30 @@ async def on_message(msg: cl.Message):
             cl.Action(name="feedback", payload={"verdetto": "segnala"}, label="⚑ Segnala"),
         ])
         
-        wait_msg.content = content
-        wait_msg.elements = elements
-        wait_msg.actions = actions
-        await wait_msg.update()
-        
         # Prepara l'evidenza troncata per il DB
         ev_list = []
         for e in res.get("evidence", []):
             try:
-                doc = e.doc if hasattr(e, "doc") else e.get("doc")
-                page = e.page if hasattr(e, "page") else e.get("page")
-                code = e.code if hasattr(e, "code") else e.get("code")
-                score = e.score if hasattr(e, "score") else e.get("score")
-                text = e.text if hasattr(e, "text") else e.get("text")
+                edoc = e.doc if hasattr(e, "doc") else e.get("doc")
+                epage = e.page if hasattr(e, "page") else e.get("page")
+                ecode = e.code if hasattr(e, "code") else e.get("code")
+                escore = e.score if hasattr(e, "score") else e.get("score")
+                etext = e.text if hasattr(e, "text") else e.get("text")
                 
                 ev_dict = {
-                    "doc": doc,
-                    "page": page,
-                    "code": code,
-                    "score": score,
-                    "text": text[:500] if text else None
+                    "doc": edoc,
+                    "page": epage,
+                    "code": ecode,
+                    "score": escore,
+                    "text": etext[:500] if etext else None
                 }
                 ev_list.append(ev_dict)
             except Exception:
                 pass
+
+        # Invia messaggio finale ROOT (parent_id=None) con tutti gli elements
+        final_msg = cl.Message(content=content, elements=elements, actions=actions, parent_id=None)
+        await final_msg.send()
 
         # Salva lo stato per il feedback (chiave: ID del messaggio di risposta)
         interaction_state = {
@@ -157,12 +162,11 @@ async def on_message(msg: cl.Message):
             }
         }
         interactions = cl.user_session.get("interactions", {})
-        interactions[wait_msg.id] = interaction_state
+        interactions[final_msg.id] = interaction_state
         cl.user_session.set("interactions", interactions)
         
     except Exception as e:
-        wait_msg.content = f"Errore durante l'elaborazione: {e}"
-        await wait_msg.update()
+        await cl.Message(content=f"Errore durante l'elaborazione: {e}", parent_id=None).send()
 
 
 @cl.action_callback("feedback")
@@ -238,14 +242,15 @@ async def on_paginate(action: cl.Action):
         cl.Image(path=str(png_path), name=f"{doc} p.{target_page}", display="inline")
     ]
     actions = [
-        cl.Action(name="paginate", payload={"doc": doc, "page": target_page, "dir": "prec"}, label=f"◀ Pagina prec ({doc})"),
-        cl.Action(name="paginate", payload={"doc": doc, "page": target_page, "dir": "succ"}, label=f"Pagina succ ▶ ({doc})")
+        cl.Action(name="paginate", payload={"doc": doc, "page": target_page, "dir": "prec"}, label="◀ Pagina prec"),
+        cl.Action(name="paginate", payload={"doc": doc, "page": target_page, "dir": "succ"}, label="Pagina succ ▶")
     ]
     
     await cl.Message(
         content=f"Pagina {target_page} del documento **{doc}**:",
         elements=elements,
-        actions=actions
+        actions=actions,
+        parent_id=None
     ).send()
 
 from chainlit.server import app  # noqa: E402
