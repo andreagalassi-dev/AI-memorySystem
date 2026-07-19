@@ -86,6 +86,12 @@ Il lavoro vero vive su `feature/fase1-model-multiplexer`; main è 60+ commit ind
 
 ### F — Memoria a tre livelli e apprendimento dai feedback
 - Identità reale via auth Chainlit; RBAC per utente.
+- **Requisito utente (19/07, dal collaudo UI): contesto conversazionale di sessione**
+  — oggi ogni domanda è indipendente (answer stateless, scelta fase 0); il prodotto
+  deve capire i riferimenti alla conversazione in corso ("e per il modello più
+  grande?"). Da progettare qui con vincolo epica D: il contesto non deve mai diluire
+  il grounding (affermazioni sempre ancorate a evidenza recuperata, mai alla sola
+  chat precedente).
 - **Tre livelli di memoria** (decisione utente 15/07):
   1. aziendale (generale, condivisa da tutti);
   2. di categoria (amministrazione/tecnici/commerciali… — agganciata al RBAC:
