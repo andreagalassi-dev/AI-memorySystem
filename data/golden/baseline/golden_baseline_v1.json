@@ -10,7 +10,8 @@
     "hit": true,
     "status": "PASS_ALTA",
     "citation_ok": true,
-    "stable": "N/A"
+    "stable": "N/A",
+    "matched_expected_page": true
   },
   "C002": {
     "intent": "code",
@@ -23,7 +24,8 @@
     "hit": true,
     "status": "PASS_ALTA",
     "citation_ok": true,
-    "stable": "N/A"
+    "stable": "N/A",
+    "matched_expected_page": true
   },
   "C003": {
     "intent": "code",
@@ -36,7 +38,8 @@
     "hit": true,
     "status": "PASS_ALTA",
     "citation_ok": true,
-    "stable": "N/A"
+    "stable": "N/A",
+    "matched_expected_page": true
   },
   "C004": {
     "intent": "code",
@@ -50,7 +53,8 @@
     "hit": true,
     "status": "PASS_ALTA",
     "citation_ok": true,
-    "stable": "N/A"
+    "stable": "N/A",
+    "matched_expected_page": true
   },
   "C005": {
     "intent": "code",
@@ -63,7 +67,8 @@
     "hit": true,
     "status": "MISS",
     "citation_ok": true,
-    "stable": "N/A"
+    "stable": "N/A",
+    "matched_expected_page": true
   },
   "C006": {
     "intent": "code",
@@ -76,7 +81,8 @@
     "hit": true,
     "status": "PASS_ALTA",
     "citation_ok": true,
-    "stable": "N/A"
+    "stable": "N/A",
+    "matched_expected_page": true
   },
   "C007": {
     "intent": "code",
@@ -89,7 +95,8 @@
     "hit": true,
     "status": "PASS_ALTA",
     "citation_ok": true,
-    "stable": "N/A"
+    "stable": "N/A",
+    "matched_expected_page": true
   },
   "C008": {
     "intent": "code",
@@ -102,7 +109,8 @@
     "hit": true,
     "status": "PASS_ALTA",
     "citation_ok": true,
-    "stable": "N/A"
+    "stable": "N/A",
+    "matched_expected_page": true
   },
   "C009": {
     "intent": "code",
@@ -115,7 +123,8 @@
     "hit": true,
     "status": "PASS_ALTA",
     "citation_ok": true,
-    "stable": "N/A"
+    "stable": "N/A",
+    "matched_expected_page": true
   },
   "C010": {
     "intent": "code",
@@ -128,7 +137,8 @@
     "hit": true,
     "status": "PASS_ALTA",
     "citation_ok": true,
-    "stable": "N/A"
+    "stable": "N/A",
+    "matched_expected_page": true
   },
   "C011": {
     "intent": "code",
@@ -141,7 +151,8 @@
     "hit": true,
     "status": "PASS_ALTA",
     "citation_ok": true,
-    "stable": "N/A"
+    "stable": "N/A",
+    "matched_expected_page": true
   },
   "C012": {
     "intent": "code",
@@ -154,7 +165,8 @@
     "hit": true,
     "status": "PASS_ALTA",
     "citation_ok": true,
-    "stable": "N/A"
+    "stable": "N/A",
+    "matched_expected_page": true
   },
   "C013": {
     "intent": "code",
@@ -167,7 +179,8 @@
     "hit": true,
     "status": "PASS_ALTA",
     "citation_ok": true,
-    "stable": "N/A"
+    "stable": "N/A",
+    "matched_expected_page": true
   },
   "C014": {
     "intent": "code",
@@ -180,7 +193,8 @@
     "hit": false,
     "status": "MISS",
     "citation_ok": false,
-    "stable": "N/A"
+    "stable": "N/A",
+    "matched_expected_page": false
   },
   "C015": {
     "intent": "code",
@@ -193,7 +207,8 @@
     "hit": true,
     "status": "PASS_ALTA",
     "citation_ok": true,
-    "stable": "N/A"
+    "stable": "N/A",
+    "matched_expected_page": true
   },
   "V001": {
     "intent": "visual",
@@ -207,7 +222,8 @@
     "hit": true,
     "status": "PASS",
     "citation_ok": true,
-    "stable": "N/A"
+    "stable": "N/A",
+    "matched_expected_page": null
   },
   "V002": {
     "intent": "visual",
@@ -221,7 +237,8 @@
     "hit": false,
     "status": "MISS",
     "citation_ok": false,
-    "stable": "N/A"
+    "stable": "N/A",
+    "matched_expected_page": null
   },
   "V003": {
     "intent": "visual",
@@ -235,7 +252,8 @@
     "hit": false,
     "status": "MISS",
     "citation_ok": false,
-    "stable": "N/A"
+    "stable": "N/A",
+    "matched_expected_page": null
   },
   "V004": {
     "intent": "visual",
@@ -249,7 +267,8 @@
     "hit": false,
     "status": "MISS",
     "citation_ok": false,
-    "stable": "N/A"
+    "stable": "N/A",
+    "matched_expected_page": null
   },
   "V005": {
     "intent": "visual",
@@ -263,7 +282,8 @@
     "hit": true,
     "status": "PASS",
     "citation_ok": true,
-    "stable": "N/A"
+    "stable": "N/A",
+    "matched_expected_page": null
   },
   "V006": {
     "intent": "visual",
@@ -277,7 +297,8 @@
     "hit": false,
     "status": "MISS",
     "citation_ok": false,
-    "stable": "N/A"
+    "stable": "N/A",
+    "matched_expected_page": null
   },
   "V007": {
     "intent": "visual",
@@ -291,7 +312,8 @@
     "hit": false,
     "status": "MISS",
     "citation_ok": false,
-    "stable": "N/A"
+    "stable": "N/A",
+    "matched_expected_page": null
   },
   "V008": {
     "intent": "visual",
@@ -305,7 +327,8 @@
     "hit": true,
     "status": "PASS",
     "citation_ok": true,
-    "stable": "N/A"
+    "stable": "N/A",
+    "matched_expected_page": null
   },
   "V009": {
     "intent": "visual",
@@ -319,7 +342,8 @@
     "hit": false,
     "status": "MISS",
     "citation_ok": false,
-    "stable": "N/A"
+    "stable": "N/A",
+    "matched_expected_page": null
   },
   "V010": {
     "intent": "visual",
@@ -333,7 +357,8 @@
     "hit": true,
     "status": "PASS",
     "citation_ok": true,
-    "stable": "N/A"
+    "stable": "N/A",
+    "matched_expected_page": null
   },
   "V011": {
     "intent": "visual",
@@ -347,7 +372,8 @@
     "hit": false,
     "status": "MISS",
     "citation_ok": false,
-    "stable": "N/A"
+    "stable": "N/A",
+    "matched_expected_page": null
   },
   "V012": {
     "intent": "visual",
@@ -361,7 +387,8 @@
     "hit": true,
     "status": "PASS",
     "citation_ok": true,
-    "stable": "N/A"
+    "stable": "N/A",
+    "matched_expected_page": null
   },
   "V013": {
     "intent": "visual",
@@ -375,7 +402,8 @@
     "hit": true,
     "status": "PASS",
     "citation_ok": true,
-    "stable": "N/A"
+    "stable": "N/A",
+    "matched_expected_page": null
   },
   "V014": {
     "intent": "visual",
@@ -389,7 +417,8 @@
     "hit": true,
     "status": "PASS",
     "citation_ok": true,
-    "stable": "N/A"
+    "stable": "N/A",
+    "matched_expected_page": null
   },
   "V015": {
     "intent": "visual",
@@ -403,7 +432,8 @@
     "hit": true,
     "status": "PASS",
     "citation_ok": true,
-    "stable": "N/A"
+    "stable": "N/A",
+    "matched_expected_page": null
   },
   "N001": {
     "intent": "narrative",
@@ -415,7 +445,8 @@
     "hit": true,
     "status": "PASS",
     "citation_ok": true,
-    "stable": "STABILE"
+    "stable": "STABILE",
+    "matched_expected_page": null
   },
   "N002": {
     "intent": "narrative",
@@ -427,7 +458,8 @@
     "hit": true,
     "status": "PASS",
     "citation_ok": true,
-    "stable": "STABILE"
+    "stable": "STABILE",
+    "matched_expected_page": null
   },
   "N003": {
     "intent": "narrative",
@@ -439,7 +471,8 @@
     "hit": true,
     "status": "PASS",
     "citation_ok": true,
-    "stable": "STABILE"
+    "stable": "STABILE",
+    "matched_expected_page": null
   },
   "R001": {
     "intent": "refusal",
@@ -448,7 +481,8 @@
     "hit": true,
     "status": "PASS",
     "citation_ok": true,
-    "stable": "N/A"
+    "stable": "N/A",
+    "matched_expected_page": null
   },
   "C_DE_01": {
     "intent": "code",
@@ -461,7 +495,8 @@
     "hit": true,
     "status": "PASS_ALTA",
     "citation_ok": true,
-    "stable": "N/A"
+    "stable": "N/A",
+    "matched_expected_page": true
   },
   "C_DE_02": {
     "intent": "code",
@@ -471,10 +506,11 @@
       "code": "70167"
     },
     "final_level": "ALTA",
-    "hit": false,
-    "status": "WRONG_ALTA",
-    "citation_ok": false,
-    "stable": "N/A"
+    "hit": true,
+    "status": "PASS_ALTA",
+    "citation_ok": true,
+    "stable": "N/A",
+    "matched_expected_page": false
   },
   "C_DE_03": {
     "intent": "code",
@@ -487,7 +523,8 @@
     "hit": true,
     "status": "PASS_ALTA",
     "citation_ok": true,
-    "stable": "N/A"
+    "stable": "N/A",
+    "matched_expected_page": true
   },
   "C_EN_01": {
     "intent": "code",
@@ -500,7 +537,8 @@
     "hit": true,
     "status": "PASS_ALTA",
     "citation_ok": true,
-    "stable": "N/A"
+    "stable": "N/A",
+    "matched_expected_page": true
   },
   "C_EN_02": {
     "intent": "code",
@@ -510,10 +548,11 @@
       "code": "22112"
     },
     "final_level": "ALTA",
-    "hit": false,
-    "status": "WRONG_ALTA",
-    "citation_ok": false,
-    "stable": "N/A"
+    "hit": true,
+    "status": "PASS_ALTA",
+    "citation_ok": true,
+    "stable": "N/A",
+    "matched_expected_page": false
   },
   "C_EN_03": {
     "intent": "code",
@@ -526,7 +565,8 @@
     "hit": true,
     "status": "PASS_ALTA",
     "citation_ok": true,
-    "stable": "N/A"
+    "stable": "N/A",
+    "matched_expected_page": true
   },
   "RBAC002": {
     "intent": "rbac_negative",
@@ -539,6 +579,7 @@
     "hit": true,
     "status": "PASS",
     "citation_ok": true,
-    "stable": "N/A"
+    "stable": "N/A",
+    "matched_expected_page": null
   }
 }

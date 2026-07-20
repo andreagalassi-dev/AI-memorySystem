@@ -196,8 +196,11 @@ def run_harness(update_baseline=False, limit=None):
     deps_cache = {}
     
     # Initialize index clients for answerability checking
-    qdrant = QdrantClient(url=settings.QDRANT_URL, api_key=settings.QDRANT_API_KEY)
-    pg_conn = psycopg.connect(settings.POSTGRES_URI)
+    qdrant_url = f"http://{settings.qdrant_host}:{settings.qdrant_port}"
+    qdrant = QdrantClient(url=qdrant_url, api_key=settings.qdrant_api_key)
+    
+    pg_uri = f"postgresql://{settings.postgres_user}:{settings.postgres_password}@{settings.postgres_host}:{settings.postgres_port}/{settings.postgres_db}"
+    pg_conn = psycopg.connect(pg_uri)
     
     def check_index_fn(c_doc, c_page, c_code):
         results = qdrant.scroll(
@@ -336,7 +339,8 @@ def run_harness(update_baseline=False, limit=None):
             "final_level": rep["final_level"],
             "hit": rep["hit"],
             "status": rep["status"],
-            "citation_ok": rep["citation_ok"]
+            "citation_ok": rep["citation_ok"],
+            "matched_expected_page": rep.get("matched_expected_page")
         }
         
     # Generate Baseline & Compare
@@ -359,7 +363,8 @@ def run_harness(update_baseline=False, limit=None):
                 "hit": v["hit"],
                 "status": v["status"],
                 "citation_ok": v["citation_ok"],
-                "stable": v["stable"]
+                "stable": v["stable"],
+                "matched_expected_page": v.get("matched_expected_page")
             }
         with open(baseline_path, "w") as f:
             json.dump(base_to_write, f, indent=2)

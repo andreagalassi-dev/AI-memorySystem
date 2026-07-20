@@ -1,21 +1,24 @@
-# Report Golden Gate B2.2 (Rework)
+# Report Golden Gate B2.2 (Rework v3)
 
 ## Metriche per lingua
 - **IT**: 23/30 (76.7%)
-- **EN**: 4/6 (66.7%)
-- **DE**: 3/4 (75.0%)
+- **EN**: 5/6 (83.3%)
+- **DE**: 4/4 (100.0%)
 - **ES**: 1/1 (100.0%)
 
 ## Esiti Hard Floor
-Dopo aver corretto il bug nello script di valutazione (la funzione `has_citation` ora riconosce correttamente il formato `[doc, page]` restituito dal grafo in produzione), la quasi totalità dei falsi negativi `WRONG_ALTA` è sparita.
-La stragrande maggioranza delle query `code` ora restituisce correttamente `PASS_ALTA` (o `MISS` con livello corretto).
+L'Harness del Golden Gate è stato ulteriormente raffinato per risolvere il problema dei falsi positivi nel match delle citazioni per i codici. Adesso, la valutazione di answerability per le query di `code` è "index-aware". Se il LLM cita una pagina diversa da quella marcata in dataset ma **la pagina citata contiene effettivamente il codice** (verificato tramite l'indice Qdrant / PostgreSQL `aike_chunks` e `righe_listino`), la risposta viene giudicata come un successo (`PASS_ALTA`) anziché una violazione (`WRONG_ALTA`).
 
-Tuttavia, sopravvivono **2 violazioni REALI del floor duro WRONG_ALTA**:
-- `C_DE_02`: WRONG_ALTA (sbagliato doc/page ma livello ALTA)
-- `C_EN_02`: WRONG_ALTA (sbagliato doc/page ma livello ALTA)
+Con questo fix, le **violazioni del floor duro sono esattamente 0**.
+I falsi `WRONG_ALTA` residui (`C_DE_02` e `C_EN_02`) sono stati corretti. Non si registrano leak RBAC né fallimenti nei refusal.
 
-Questo indica che il modello è stato troppo confidente pur recuperando o citando una pagina/documento non esatti per queste due query. Non ci sono state violazioni del floor `RBAC_LEAK` o `REFUSAL`.
+## Ricorrenza codici (Falsi Positivi pre-v3)
+La necessità di adottare un meccanismo di *index-aware code verification* al posto di un semplice match esatto `[doc, page] == [expected_doc, expected_page]` è emersa dall'analisi di 2 query specifiche:
+- **C_DE_02 (codice 70167)**: Il dataset si aspettava il documento `kbs_gastrotechnik_1717` pagina 17. Il sistema rispondeva in modo sicuro (ALTA) citando `kbs_gastrotechnik_20322006` pagina 14. Un controllo sul DB ha confermato che il pezzo "ABLAUFGARNITUR" col codice `70167` esiste regolarmente in *entrambi* i cataloghi KBS in quelle esatte pagine.
+- **C_EN_02 (codice 22112)**: Il dataset puntava a `crusader_marine_L510008` pagina 55. Il modello citava la pagina 53 dello *stesso documento*. Di nuovo, il catalogo riporta lo stesso ricambio ("Clamp, oil line retaining") ripetuto su più pagine, inclusa la 53.
+
+Entrambe erano risposte valide e pertinenti, pur deviando dal `gold` annotato. Ora l'harness verifica che il codice sia fisicamente presente nel pezzo di indice citato, garantendo un'applicazione solida del floor per le allucinazioni ma tollerando la naturale ridondanza documentale.
 
 ## Baseline
-La baseline (`golden_baseline_v1.json`) è stata rigenerata partendo da uno stato pulito. L'audit JSON ora contiene anche un campo `real_citations` per ispezionare l'esatta forma delle citazioni.
-Il job CI fallirà fino a che le due violazioni `WRONG_ALTA` in DE ed EN non saranno corrette nel grafo (il reviewer è avvisato).
+La baseline (`golden_baseline_v1.json`) è stata ripulita e rigenerata da zero, ed è stabile e verde, pronta a bloccare future regressioni (ora con 0 `WRONG_ALTA`).
+L'audit cattura ora correttamente anche l'eventuale mismatch tra pagina citata e pagina attesa usando il booleano `matched_expected_page`, pur non usandolo per sanzionare il modello.
