@@ -163,6 +163,7 @@ import sys
 import os
 import json
 import time
+import copy
 
 # Add src to path so we can import
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -420,10 +421,61 @@ def run_harness(update_baseline=False, limit=None):
         
     sys.exit(exit_code)
 
+def simulate_regression_run():
+    baseline_path = "data/golden/baseline/golden_baseline_v1.json"
+    if not os.path.exists(baseline_path):
+        print("Baseline non trovata. Impossibile simulare la regressione.")
+        sys.exit(1)
+        
+    with open(baseline_path, "r") as f:
+        baseline_data = json.load(f)
+        
+    if not baseline_data:
+        print("Baseline vuota.")
+        sys.exit(1)
+        
+    current_data = copy.deepcopy(baseline_data)
+    
+    # Degrade one item
+    modified = False
+    for k, v in current_data.items():
+        if v.get("hit") is True:
+            v["hit"] = False
+            v["status"] = "MISS"
+            print(f"--- SIMULAZIONE --- Peggioro artificialmente la query {k}: hit True -> False")
+            modified = True
+            break
+            
+    if not modified:
+        print("Nessuna riga utile da peggiorare trovata nella baseline.")
+        sys.exit(1)
+            
+    # Compare
+    regressions = []
+    for qa_id, curr in current_data.items():
+        if qa_id in baseline_data:
+            base = baseline_data[qa_id]
+            is_reg, reasons = compare_to_baseline(base, curr)
+            if is_reg:
+                regressions.append(f"{qa_id} regredito: {', '.join(reasons)}")
+                
+    exit_code = 0
+    if regressions:
+        print("\nREGRESSIONI TROVATE (SIMULATE):")
+        for r in regressions:
+            print(f" - {r}")
+        exit_code = 1
+        
+    sys.exit(exit_code)
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--update-baseline", action="store_true")
     parser.add_argument("--limit", type=int, default=None)
+    parser.add_argument("--simulate-regression", action="store_true", help="Simula una regressione su copia della baseline")
     args = parser.parse_args()
     
-    run_harness(update_baseline=args.update_baseline, limit=args.limit)
+    if args.simulate_regression:
+        simulate_regression_run()
+    else:
+        run_harness(update_baseline=args.update_baseline, limit=args.limit)
