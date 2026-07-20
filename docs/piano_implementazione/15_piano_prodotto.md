@@ -84,7 +84,12 @@ Il lavoro vero vive su `feature/fase1-model-multiplexer`; main è 60+ commit ind
 - **C2 — Fix routing borderless Mamoli** (`is_table_page` prima del branch fast_text;
   baseline B1.c: 1.698 righe recuperabili vs 280 in DB — **verificato reviewer 20/07**:
   righe_listino Mamoli=280 (p8-185), p224-231=0).
-  - **C2.a** (ATTIVO): nel branch FAST_TEXT di `run_massive_extraction.py:253`, prima del
+  - **C2.a** ✅ **FATTO e APPROVATO (20/07, verificato reviewer coi tool)**: fix commit
+    `0d3789b`, test rosso-prima `d2e2c2e` (provato: fallisce contro sorgente pre-fix).
+    Risultato reale: Mamoli **280→1852 righe** (p224-231 0→1323), p230 codici borderless
+    reali, golden gate exit 0 (N003 PASS, 0 WRONG_ALTA), aike_chunks intatto, suite 767/2.
+    Follow-on possibile: re-estrarre gli altri doc già in `righe_listino` col routing nuovo
+    (il fix è generale, non solo Mamoli). Nel branch FAST_TEXT di `run_massive_extraction.py:253`, prima del
     `continue`, esegui `is_table_page(page)` (che HA già il segnale borderless text-based:
     colonne allineate + numeric_ratio, table_detect.py:112-122, indip. dalle linee vettoriali)
     → se tabella, instrada al **TextTableExtractor** (text-layer, no VLM); altrimenti bypass.
