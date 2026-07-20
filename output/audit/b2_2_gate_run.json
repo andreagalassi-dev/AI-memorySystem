@@ -9,18 +9,24 @@
     },
     "runs": [
       {
-        "latency": 2.208858013153076,
+        "latency": 13.200350761413574,
         "final_level": "ALTA",
-        "hit": false,
-        "status": "WRONG_ALTA",
-        "citation_ok": false
+        "hit": true,
+        "status": "PASS_ALTA",
+        "citation_ok": true,
+        "real_citations": [
+          [
+            "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+            100
+          ]
+        ]
       }
     ],
     "stable": "N/A",
     "final_level": "ALTA",
-    "hit": false,
-    "status": "WRONG_ALTA",
-    "citation_ok": false
+    "hit": true,
+    "status": "PASS_ALTA",
+    "citation_ok": true
   },
   "C002": {
     "intent": "code",
@@ -32,18 +38,24 @@
     },
     "runs": [
       {
-        "latency": 0.9922990798950195,
+        "latency": 1.5441341400146484,
         "final_level": "ALTA",
-        "hit": false,
-        "status": "WRONG_ALTA",
-        "citation_ok": false
+        "hit": true,
+        "status": "PASS_ALTA",
+        "citation_ok": true,
+        "real_citations": [
+          [
+            "gehl_v270_parts",
+            171
+          ]
+        ]
       }
     ],
     "stable": "N/A",
     "final_level": "ALTA",
-    "hit": false,
-    "status": "WRONG_ALTA",
-    "citation_ok": false
+    "hit": true,
+    "status": "PASS_ALTA",
+    "citation_ok": true
   },
   "C003": {
     "intent": "code",
@@ -55,18 +67,24 @@
     },
     "runs": [
       {
-        "latency": 1.171722173690796,
+        "latency": 1.7087581157684326,
         "final_level": "ALTA",
-        "hit": false,
-        "status": "WRONG_ALTA",
-        "citation_ok": false
+        "hit": true,
+        "status": "PASS_ALTA",
+        "citation_ok": true,
+        "real_citations": [
+          [
+            "kohler_marine_tp6954",
+            95
+          ]
+        ]
       }
     ],
     "stable": "N/A",
     "final_level": "ALTA",
-    "hit": false,
-    "status": "WRONG_ALTA",
-    "citation_ok": false
+    "hit": true,
+    "status": "PASS_ALTA",
+    "citation_ok": true
   },
   "C004": {
     "intent": "code",
@@ -79,18 +97,24 @@
     },
     "runs": [
       {
-        "latency": 1.6594550609588623,
+        "latency": 1.5764060020446777,
         "final_level": "ALTA",
-        "hit": false,
-        "status": "WRONG_ALTA",
-        "citation_ok": false
+        "hit": true,
+        "status": "PASS_ALTA",
+        "citation_ok": true,
+        "real_citations": [
+          [
+            "kohler_industrial_tp7120",
+            41
+          ]
+        ]
       }
     ],
     "stable": "N/A",
     "final_level": "ALTA",
-    "hit": false,
-    "status": "WRONG_ALTA",
-    "citation_ok": false
+    "hit": true,
+    "status": "PASS_ALTA",
+    "citation_ok": true
   },
   "C005": {
     "intent": "code",
@@ -102,18 +126,24 @@
     },
     "runs": [
       {
-        "latency": 2.7986559867858887,
+        "latency": 2.8181161880493164,
         "final_level": "BASSA",
-        "hit": false,
+        "hit": true,
         "status": "MISS",
-        "citation_ok": false
+        "citation_ok": true,
+        "real_citations": [
+          [
+            "rotax_912_914_IPC",
+            79
+          ]
+        ]
       }
     ],
     "stable": "N/A",
     "final_level": "BASSA",
-    "hit": false,
+    "hit": true,
     "status": "MISS",
-    "citation_ok": false
+    "citation_ok": true
   },
   "C006": {
     "intent": "code",
@@ -125,18 +155,24 @@
     },
     "runs": [
       {
-        "latency": 1.7566280364990234,
+        "latency": 1.621600866317749,
         "final_level": "ALTA",
-        "hit": false,
-        "status": "WRONG_ALTA",
-        "citation_ok": false
+        "hit": true,
+        "status": "PASS_ALTA",
+        "citation_ok": true,
+        "real_citations": [
+          [
+            "rotax_912iS_IPC",
+            15
+          ]
+        ]
       }
     ],
     "stable": "N/A",
     "final_level": "ALTA",
-    "hit": false,
-    "status": "WRONG_ALTA",
-    "citation_ok": false
+    "hit": true,
+    "status": "PASS_ALTA",
+    "citation_ok": true
   },
   "C007": {
     "intent": "code",
@@ -148,18 +184,24 @@
     },
     "runs": [
       {
-        "latency": 1.9461610317230225,
+        "latency": 1.7372479438781738,
         "final_level": "ALTA",
-        "hit": false,
-        "status": "WRONG_ALTA",
-        "citation_ok": false
+        "hit": true,
+        "status": "PASS_ALTA",
+        "citation_ok": true,
+        "real_citations": [
+          [
+            "lycoming_IGO540_PC116",
+            76
+          ]
+        ]
       }
     ],
     "stable": "N/A",
     "final_level": "ALTA",
-    "hit": false,
-    "status": "WRONG_ALTA",
-    "citation_ok": false
+    "hit": true,
+    "status": "PASS_ALTA",
+    "citation_ok": true
   },
   "C008": {
     "intent": "code",
@@ -171,18 +213,24 @@
     },
     "runs": [
       {
-        "latency": 1.5963377952575684,
+        "latency": 1.3845980167388916,
         "final_level": "ALTA",
-        "hit": false,
-        "status": "WRONG_ALTA",
-        "citation_ok": false
+        "hit": true,
+        "status": "PASS_ALTA",
+        "citation_ok": true,
+        "real_citations": [
+          [
+            "lycoming_IGO540_PC116",
+            99
+          ]
+        ]
       }
     ],
     "stable": "N/A",
     "final_level": "ALTA",
-    "hit": false,
-    "status": "WRONG_ALTA",
-    "citation_ok": false
+    "hit": true,
+    "status": "PASS_ALTA",
+    "citation_ok": true
   },
   "C009": {
     "intent": "code",
@@ -194,18 +242,24 @@
     },
     "runs": [
       {
-        "latency": 2.2043368816375732,
+        "latency": 2.052642822265625,
         "final_level": "ALTA",
-        "hit": false,
-        "status": "WRONG_ALTA",
-        "citation_ok": false
+        "hit": true,
+        "status": "PASS_ALTA",
+        "citation_ok": true,
+        "real_citations": [
+          [
+            "branson_4520R_parts",
+            14
+          ]
+        ]
       }
     ],
     "stable": "N/A",
     "final_level": "ALTA",
-    "hit": false,
-    "status": "WRONG_ALTA",
-    "citation_ok": false
+    "hit": true,
+    "status": "PASS_ALTA",
+    "citation_ok": true
   },
   "C010": {
     "intent": "code",
@@ -217,18 +271,24 @@
     },
     "runs": [
       {
-        "latency": 1.9453938007354736,
+        "latency": 1.776343822479248,
         "final_level": "ALTA",
-        "hit": false,
-        "status": "WRONG_ALTA",
-        "citation_ok": false
+        "hit": true,
+        "status": "PASS_ALTA",
+        "citation_ok": true,
+        "real_citations": [
+          [
+            "branson_4520R_parts",
+            8
+          ]
+        ]
       }
     ],
     "stable": "N/A",
     "final_level": "ALTA",
-    "hit": false,
-    "status": "WRONG_ALTA",
-    "citation_ok": false
+    "hit": true,
+    "status": "PASS_ALTA",
+    "citation_ok": true
   },
   "C011": {
     "intent": "code",
@@ -240,18 +300,24 @@
     },
     "runs": [
       {
-        "latency": 2.2611351013183594,
+        "latency": 1.9776461124420166,
         "final_level": "ALTA",
-        "hit": false,
-        "status": "WRONG_ALTA",
-        "citation_ok": false
+        "hit": true,
+        "status": "PASS_ALTA",
+        "citation_ok": true,
+        "real_citations": [
+          [
+            "manzoni_comac_spareparts_A",
+            45
+          ]
+        ]
       }
     ],
     "stable": "N/A",
     "final_level": "ALTA",
-    "hit": false,
-    "status": "WRONG_ALTA",
-    "citation_ok": false
+    "hit": true,
+    "status": "PASS_ALTA",
+    "citation_ok": true
   },
   "C012": {
     "intent": "code",
@@ -263,18 +329,24 @@
     },
     "runs": [
       {
-        "latency": 2.1789400577545166,
+        "latency": 1.9427211284637451,
         "final_level": "ALTA",
-        "hit": false,
-        "status": "WRONG_ALTA",
-        "citation_ok": false
+        "hit": true,
+        "status": "PASS_ALTA",
+        "citation_ok": true,
+        "real_citations": [
+          [
+            "manzoni_comac_spareparts_A",
+            47
+          ]
+        ]
       }
     ],
     "stable": "N/A",
     "final_level": "ALTA",
-    "hit": false,
-    "status": "WRONG_ALTA",
-    "citation_ok": false
+    "hit": true,
+    "status": "PASS_ALTA",
+    "citation_ok": true
   },
   "C013": {
     "intent": "code",
@@ -286,18 +358,24 @@
     },
     "runs": [
       {
-        "latency": 1.925584077835083,
+        "latency": 1.9834251403808594,
         "final_level": "ALTA",
-        "hit": false,
-        "status": "WRONG_ALTA",
-        "citation_ok": false
+        "hit": true,
+        "status": "PASS_ALTA",
+        "citation_ok": true,
+        "real_citations": [
+          [
+            "iwaki_TC-X252PH-NPT",
+            3
+          ]
+        ]
       }
     ],
     "stable": "N/A",
     "final_level": "ALTA",
-    "hit": false,
-    "status": "WRONG_ALTA",
-    "citation_ok": false
+    "hit": true,
+    "status": "PASS_ALTA",
+    "citation_ok": true
   },
   "C014": {
     "intent": "code",
@@ -309,11 +387,12 @@
     },
     "runs": [
       {
-        "latency": 1.998790979385376,
+        "latency": 1.8636908531188965,
         "final_level": "BASSA",
         "hit": false,
         "status": "MISS",
-        "citation_ok": false
+        "citation_ok": false,
+        "real_citations": []
       }
     ],
     "stable": "N/A",
@@ -332,18 +411,24 @@
     },
     "runs": [
       {
-        "latency": 3.344816207885742,
+        "latency": 3.0436880588531494,
         "final_level": "ALTA",
-        "hit": false,
-        "status": "WRONG_ALTA",
-        "citation_ok": false
+        "hit": true,
+        "status": "PASS_ALTA",
+        "citation_ok": true,
+        "real_citations": [
+          [
+            "oleodinamica_sangro_catalogo_generale",
+            35
+          ]
+        ]
       }
     ],
     "stable": "N/A",
     "final_level": "ALTA",
-    "hit": false,
-    "status": "WRONG_ALTA",
-    "citation_ok": false
+    "hit": true,
+    "status": "PASS_ALTA",
+    "citation_ok": true
   },
   "V001": {
     "intent": "visual",
@@ -356,11 +441,25 @@
     },
     "runs": [
       {
-        "latency": 20.578240156173706,
+        "latency": 20.60990810394287,
         "final_level": "MEDIA",
         "hit": true,
         "status": "PASS",
-        "citation_ok": true
+        "citation_ok": true,
+        "real_citations": [
+          [
+            "branson_4520R_parts",
+            67
+          ],
+          [
+            "branson_4520R_parts",
+            113
+          ],
+          [
+            "branson_4520R_parts",
+            22
+          ]
+        ]
       }
     ],
     "stable": "N/A",
@@ -380,11 +479,25 @@
     },
     "runs": [
       {
-        "latency": 0.28015589714050293,
+        "latency": 0.27943897247314453,
         "final_level": "MEDIA",
         "hit": false,
         "status": "MISS",
-        "citation_ok": false
+        "citation_ok": false,
+        "real_citations": [
+          [
+            "branson_4520R_parts",
+            94
+          ],
+          [
+            "branson_4520R_parts",
+            69
+          ],
+          [
+            "branson_4520R_parts",
+            67
+          ]
+        ]
       }
     ],
     "stable": "N/A",
@@ -404,11 +517,25 @@
     },
     "runs": [
       {
-        "latency": 0.17910408973693848,
+        "latency": 0.17469000816345215,
         "final_level": "MEDIA",
         "hit": false,
         "status": "MISS",
-        "citation_ok": false
+        "citation_ok": false,
+        "real_citations": [
+          [
+            "manzoni_comac_spareparts_B",
+            8
+          ],
+          [
+            "rotax_912iS_IPC",
+            78
+          ],
+          [
+            "rotax_912_914_IPC",
+            149
+          ]
+        ]
       }
     ],
     "stable": "N/A",
@@ -428,11 +555,25 @@
     },
     "runs": [
       {
-        "latency": 0.13915085792541504,
+        "latency": 0.13681769371032715,
         "final_level": "MEDIA",
         "hit": false,
         "status": "MISS",
-        "citation_ok": false
+        "citation_ok": false,
+        "real_citations": [
+          [
+            "gehl_v270_parts",
+            54
+          ],
+          [
+            "gehl_v270_parts",
+            96
+          ],
+          [
+            "gehl_v270_parts",
+            126
+          ]
+        ]
       }
     ],
     "stable": "N/A",
@@ -452,11 +593,25 @@
     },
     "runs": [
       {
-        "latency": 0.13104772567749023,
+        "latency": 0.12323379516601562,
         "final_level": "MEDIA",
         "hit": true,
         "status": "PASS",
-        "citation_ok": true
+        "citation_ok": true,
+        "real_citations": [
+          [
+            "gehl_v270_parts",
+            167
+          ],
+          [
+            "flow_exploded_2022",
+            6
+          ],
+          [
+            "gehl_v270_parts",
+            126
+          ]
+        ]
       }
     ],
     "stable": "N/A",
@@ -476,11 +631,25 @@
     },
     "runs": [
       {
-        "latency": 0.2442638874053955,
+        "latency": 0.23668122291564941,
         "final_level": "MEDIA",
         "hit": false,
         "status": "MISS",
-        "citation_ok": false
+        "citation_ok": false,
+        "real_citations": [
+          [
+            "kohler_marine_tp6954",
+            88
+          ],
+          [
+            "flow_exploded_2022",
+            6
+          ],
+          [
+            "kohler_marine_tp6954",
+            90
+          ]
+        ]
       }
     ],
     "stable": "N/A",
@@ -500,11 +669,25 @@
     },
     "runs": [
       {
-        "latency": 0.2694098949432373,
+        "latency": 0.2791919708251953,
         "final_level": "MEDIA",
         "hit": false,
         "status": "MISS",
-        "citation_ok": false
+        "citation_ok": false,
+        "real_citations": [
+          [
+            "hydrogear_Pseries_pump",
+            74
+          ],
+          [
+            "hydrogear_Pseries_pump",
+            38
+          ],
+          [
+            "edwards_booster_pump_parts",
+            39
+          ]
+        ]
       }
     ],
     "stable": "N/A",
@@ -524,11 +707,25 @@
     },
     "runs": [
       {
-        "latency": 0.22498369216918945,
+        "latency": 0.22997307777404785,
         "final_level": "MEDIA",
         "hit": true,
         "status": "PASS",
-        "citation_ok": true
+        "citation_ok": true,
+        "real_citations": [
+          [
+            "NordCap_Esploso_Ricambi_DE",
+            1
+          ],
+          [
+            "crusader_marine_L510008",
+            30
+          ],
+          [
+            "NordCap_Esploso_Ricambi_DE",
+            2
+          ]
+        ]
       }
     ],
     "stable": "N/A",
@@ -548,11 +745,25 @@
     },
     "runs": [
       {
-        "latency": 0.23267292976379395,
+        "latency": 0.2245938777923584,
         "final_level": "MEDIA",
         "hit": false,
         "status": "MISS",
-        "citation_ok": false
+        "citation_ok": false,
+        "real_citations": [
+          [
+            "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+            14
+          ],
+          [
+            "DirectKitchen_Forni_Schemi_IT_EN",
+            60
+          ],
+          [
+            "kbs_gastrotechnik_4055041",
+            4
+          ]
+        ]
       }
     ],
     "stable": "N/A",
@@ -572,11 +783,25 @@
     },
     "runs": [
       {
-        "latency": 0.11760616302490234,
+        "latency": 0.1171882152557373,
         "final_level": "MEDIA",
         "hit": true,
         "status": "PASS",
-        "citation_ok": true
+        "citation_ok": true,
+        "real_citations": [
+          [
+            "flow_exploded_2022",
+            16
+          ],
+          [
+            "flow_exploded_2022",
+            15
+          ],
+          [
+            "flow_exploded_2022",
+            6
+          ]
+        ]
       }
     ],
     "stable": "N/A",
@@ -596,11 +821,25 @@
     },
     "runs": [
       {
-        "latency": 0.12748956680297852,
+        "latency": 0.12665081024169922,
         "final_level": "MEDIA",
         "hit": false,
         "status": "MISS",
-        "citation_ok": false
+        "citation_ok": false,
+        "real_citations": [
+          [
+            "benassi_t623_flail_mower",
+            1
+          ],
+          [
+            "westermann_kehrmaschine",
+            2
+          ],
+          [
+            "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+            214
+          ]
+        ]
       }
     ],
     "stable": "N/A",
@@ -620,11 +859,25 @@
     },
     "runs": [
       {
-        "latency": 0.11686301231384277,
+        "latency": 0.11725497245788574,
         "final_level": "MEDIA",
         "hit": true,
         "status": "PASS",
-        "citation_ok": true
+        "citation_ok": true,
+        "real_citations": [
+          [
+            "panciroli_garmec_BL200",
+            24
+          ],
+          [
+            "panciroli_garmec_BL200",
+            41
+          ],
+          [
+            "panciroli_garmec_BL200",
+            29
+          ]
+        ]
       }
     ],
     "stable": "N/A",
@@ -644,11 +897,25 @@
     },
     "runs": [
       {
-        "latency": 0.238875150680542,
+        "latency": 0.23977994918823242,
         "final_level": "MEDIA",
         "hit": true,
         "status": "PASS",
-        "citation_ok": true
+        "citation_ok": true,
+        "real_citations": [
+          [
+            "Silca_TriaxPro_Ricambi_Multilingua",
+            2
+          ],
+          [
+            "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+            214
+          ],
+          [
+            "flow_exploded_2022",
+            6
+          ]
+        ]
       }
     ],
     "stable": "N/A",
@@ -668,11 +935,25 @@
     },
     "runs": [
       {
-        "latency": 0.2778949737548828,
+        "latency": 0.2820878028869629,
         "final_level": "MEDIA",
         "hit": true,
         "status": "PASS",
-        "citation_ok": true
+        "citation_ok": true,
+        "real_citations": [
+          [
+            "rimoldi_327_spareparts",
+            47
+          ],
+          [
+            "rimoldi_327_spareparts",
+            52
+          ],
+          [
+            "rimoldi_327_spareparts",
+            7
+          ]
+        ]
       }
     ],
     "stable": "N/A",
@@ -692,11 +973,25 @@
     },
     "runs": [
       {
-        "latency": 0.23097920417785645,
+        "latency": 0.2288520336151123,
         "final_level": "MEDIA",
         "hit": true,
         "status": "PASS",
-        "citation_ok": true
+        "citation_ok": true,
+        "real_citations": [
+          [
+            "kohler_marine_tp6954",
+            14
+          ],
+          [
+            "kohler_marine_tp6954",
+            100
+          ],
+          [
+            "kohler_industrial_tp7120",
+            14
+          ]
+        ]
       }
     ],
     "stable": "N/A",
@@ -714,32 +1009,50 @@
     },
     "runs": [
       {
-        "latency": 50.07761287689209,
+        "latency": 52.25773596763611,
         "final_level": "ALTA",
-        "hit": false,
-        "status": "MISS",
-        "citation_ok": false
+        "hit": true,
+        "status": "PASS",
+        "citation_ok": true,
+        "real_citations": [
+          [
+            "Silca_TriaxPro_Ricambi_Multilingua",
+            3
+          ]
+        ]
       },
       {
-        "latency": 12.566427230834961,
+        "latency": 12.139851093292236,
         "final_level": "ALTA",
-        "hit": false,
-        "status": "MISS",
-        "citation_ok": false
+        "hit": true,
+        "status": "PASS",
+        "citation_ok": true,
+        "real_citations": [
+          [
+            "Silca_TriaxPro_Ricambi_Multilingua",
+            3
+          ]
+        ]
       },
       {
-        "latency": 11.585253953933716,
+        "latency": 11.27091383934021,
         "final_level": "ALTA",
-        "hit": false,
-        "status": "MISS",
-        "citation_ok": false
+        "hit": true,
+        "status": "PASS",
+        "citation_ok": true,
+        "real_citations": [
+          [
+            "Silca_TriaxPro_Ricambi_Multilingua",
+            3
+          ]
+        ]
       }
     ],
     "stable": "STABILE",
     "final_level": "ALTA",
-    "hit": false,
-    "status": "MISS",
-    "citation_ok": false
+    "hit": true,
+    "status": "PASS",
+    "citation_ok": true
   },
   "N002": {
     "intent": "narrative",
@@ -750,32 +1063,50 @@
     },
     "runs": [
       {
-        "latency": 18.898842096328735,
+        "latency": 77.65465807914734,
         "final_level": "MEDIA",
-        "hit": false,
-        "status": "MISS",
-        "citation_ok": false
+        "hit": true,
+        "status": "PASS",
+        "citation_ok": true,
+        "real_citations": [
+          [
+            "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+            133
+          ]
+        ]
       },
       {
-        "latency": 9.309803009033203,
+        "latency": 12.63593602180481,
         "final_level": "MEDIA",
-        "hit": false,
-        "status": "MISS",
-        "citation_ok": false
+        "hit": true,
+        "status": "PASS",
+        "citation_ok": true,
+        "real_citations": [
+          [
+            "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+            133
+          ]
+        ]
       },
       {
-        "latency": 13.942744970321655,
+        "latency": 14.659151077270508,
         "final_level": "MEDIA",
-        "hit": false,
-        "status": "MISS",
-        "citation_ok": false
+        "hit": true,
+        "status": "PASS",
+        "citation_ok": true,
+        "real_citations": [
+          [
+            "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+            133
+          ]
+        ]
       }
     ],
     "stable": "STABILE",
     "final_level": "MEDIA",
-    "hit": false,
-    "status": "MISS",
-    "citation_ok": false
+    "hit": true,
+    "status": "PASS",
+    "citation_ok": true
   },
   "N003": {
     "intent": "narrative",
@@ -786,32 +1117,50 @@
     },
     "runs": [
       {
-        "latency": 16.33511972427368,
+        "latency": 16.92461585998535,
         "final_level": "MEDIA",
-        "hit": false,
-        "status": "MISS",
-        "citation_ok": false
+        "hit": true,
+        "status": "PASS",
+        "citation_ok": true,
+        "real_citations": [
+          [
+            "manzoni_comac_spareparts_B",
+            14
+          ]
+        ]
       },
       {
-        "latency": 59.0200400352478,
+        "latency": 15.775325775146484,
         "final_level": "MEDIA",
-        "hit": false,
-        "status": "MISS",
-        "citation_ok": false
+        "hit": true,
+        "status": "PASS",
+        "citation_ok": true,
+        "real_citations": [
+          [
+            "manzoni_comac_spareparts_B",
+            14
+          ]
+        ]
       },
       {
-        "latency": 12.464178800582886,
+        "latency": 7.104554891586304,
         "final_level": "MEDIA",
-        "hit": false,
-        "status": "MISS",
-        "citation_ok": false
+        "hit": true,
+        "status": "PASS",
+        "citation_ok": true,
+        "real_citations": [
+          [
+            "manzoni_comac_spareparts_B",
+            14
+          ]
+        ]
       }
     ],
     "stable": "STABILE",
     "final_level": "MEDIA",
-    "hit": false,
-    "status": "MISS",
-    "citation_ok": false
+    "hit": true,
+    "status": "PASS",
+    "citation_ok": true
   },
   "R001": {
     "intent": "refusal",
@@ -819,11 +1168,12 @@
     "expected": {},
     "runs": [
       {
-        "latency": 26.50004291534424,
+        "latency": 13.52253007888794,
         "final_level": "BASSA",
         "hit": true,
         "status": "PASS",
-        "citation_ok": true
+        "citation_ok": true,
+        "real_citations": []
       }
     ],
     "stable": "N/A",
@@ -842,18 +1192,24 @@
     },
     "runs": [
       {
-        "latency": 1.6597750186920166,
+        "latency": 1.6268980503082275,
         "final_level": "ALTA",
-        "hit": false,
-        "status": "WRONG_ALTA",
-        "citation_ok": false
+        "hit": true,
+        "status": "PASS_ALTA",
+        "citation_ok": true,
+        "real_citations": [
+          [
+            "kbs_gastrotechnik_1717",
+            18
+          ]
+        ]
       }
     ],
     "stable": "N/A",
     "final_level": "ALTA",
-    "hit": false,
-    "status": "WRONG_ALTA",
-    "citation_ok": false
+    "hit": true,
+    "status": "PASS_ALTA",
+    "citation_ok": true
   },
   "C_DE_02": {
     "intent": "code",
@@ -865,11 +1221,17 @@
     },
     "runs": [
       {
-        "latency": 1.645934820175171,
+        "latency": 1.710768222808838,
         "final_level": "ALTA",
         "hit": false,
         "status": "WRONG_ALTA",
-        "citation_ok": false
+        "citation_ok": false,
+        "real_citations": [
+          [
+            "kbs_gastrotechnik_20322006",
+            14
+          ]
+        ]
       }
     ],
     "stable": "N/A",
@@ -888,18 +1250,24 @@
     },
     "runs": [
       {
-        "latency": 1.673198938369751,
+        "latency": 1.8301570415496826,
         "final_level": "ALTA",
-        "hit": false,
-        "status": "WRONG_ALTA",
-        "citation_ok": false
+        "hit": true,
+        "status": "PASS_ALTA",
+        "citation_ok": true,
+        "real_citations": [
+          [
+            "kbs_gastrotechnik_1717",
+            15
+          ]
+        ]
       }
     ],
     "stable": "N/A",
     "final_level": "ALTA",
-    "hit": false,
-    "status": "WRONG_ALTA",
-    "citation_ok": false
+    "hit": true,
+    "status": "PASS_ALTA",
+    "citation_ok": true
   },
   "C_EN_01": {
     "intent": "code",
@@ -911,18 +1279,24 @@
     },
     "runs": [
       {
-        "latency": 1.8270788192749023,
+        "latency": 1.9275188446044922,
         "final_level": "ALTA",
-        "hit": false,
-        "status": "WRONG_ALTA",
-        "citation_ok": false
+        "hit": true,
+        "status": "PASS_ALTA",
+        "citation_ok": true,
+        "real_citations": [
+          [
+            "rotax_912_914_IPC",
+            24
+          ]
+        ]
       }
     ],
     "stable": "N/A",
     "final_level": "ALTA",
-    "hit": false,
-    "status": "WRONG_ALTA",
-    "citation_ok": false
+    "hit": true,
+    "status": "PASS_ALTA",
+    "citation_ok": true
   },
   "C_EN_02": {
     "intent": "code",
@@ -934,11 +1308,17 @@
     },
     "runs": [
       {
-        "latency": 1.6608738899230957,
+        "latency": 1.7330529689788818,
         "final_level": "ALTA",
         "hit": false,
         "status": "WRONG_ALTA",
-        "citation_ok": false
+        "citation_ok": false,
+        "real_citations": [
+          [
+            "crusader_marine_L510008",
+            53
+          ]
+        ]
       }
     ],
     "stable": "N/A",
@@ -957,18 +1337,24 @@
     },
     "runs": [
       {
-        "latency": 2.665527105331421,
+        "latency": 4.700727939605713,
         "final_level": "ALTA",
-        "hit": false,
-        "status": "WRONG_ALTA",
-        "citation_ok": false
+        "hit": true,
+        "status": "PASS_ALTA",
+        "citation_ok": true,
+        "real_citations": [
+          [
+            "rotax_912_914_IPC",
+            84
+          ]
+        ]
       }
     ],
     "stable": "N/A",
     "final_level": "ALTA",
-    "hit": false,
-    "status": "WRONG_ALTA",
-    "citation_ok": false
+    "hit": true,
+    "status": "PASS_ALTA",
+    "citation_ok": true
   },
   "RBAC002": {
     "intent": "rbac_negative",
@@ -980,11 +1366,12 @@
     },
     "runs": [
       {
-        "latency": 0.05671334266662598,
+        "latency": 0.0925748348236084,
         "final_level": "BASSA",
         "hit": true,
         "status": "PASS",
-        "citation_ok": true
+        "citation_ok": true,
+        "real_citations": []
       }
     ],
     "stable": "N/A",

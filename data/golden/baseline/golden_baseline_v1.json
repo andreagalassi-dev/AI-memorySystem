@@ -7,9 +7,9 @@
       "code": "14576"
     },
     "final_level": "ALTA",
-    "hit": false,
-    "status": "WRONG_ALTA",
-    "citation_ok": false,
+    "hit": true,
+    "status": "PASS_ALTA",
+    "citation_ok": true,
     "stable": "N/A"
   },
   "C002": {
@@ -20,9 +20,9 @@
       "code": "242788"
     },
     "final_level": "ALTA",
-    "hit": false,
-    "status": "WRONG_ALTA",
-    "citation_ok": false,
+    "hit": true,
+    "status": "PASS_ALTA",
+    "citation_ok": true,
     "stable": "N/A"
   },
   "C003": {
@@ -33,9 +33,9 @@
       "code": "GM41013"
     },
     "final_level": "ALTA",
-    "hit": false,
-    "status": "WRONG_ALTA",
-    "citation_ok": false,
+    "hit": true,
+    "status": "PASS_ALTA",
+    "citation_ok": true,
     "stable": "N/A"
   },
   "C004": {
@@ -47,9 +47,9 @@
       "value": "16.0"
     },
     "final_level": "ALTA",
-    "hit": false,
-    "status": "WRONG_ALTA",
-    "citation_ok": false,
+    "hit": true,
+    "status": "PASS_ALTA",
+    "citation_ok": true,
     "stable": "N/A"
   },
   "C005": {
@@ -60,9 +60,9 @@
       "code": "961267"
     },
     "final_level": "BASSA",
-    "hit": false,
+    "hit": true,
     "status": "MISS",
-    "citation_ok": false,
+    "citation_ok": true,
     "stable": "N/A"
   },
   "C006": {
@@ -73,9 +73,9 @@
       "code": "877615"
     },
     "final_level": "ALTA",
-    "hit": false,
-    "status": "WRONG_ALTA",
-    "citation_ok": false,
+    "hit": true,
+    "status": "PASS_ALTA",
+    "citation_ok": true,
     "stable": "N/A"
   },
   "C007": {
@@ -86,9 +86,9 @@
       "code": "77300"
     },
     "final_level": "ALTA",
-    "hit": false,
-    "status": "WRONG_ALTA",
-    "citation_ok": false,
+    "hit": true,
+    "status": "PASS_ALTA",
+    "citation_ok": true,
     "stable": "N/A"
   },
   "C008": {
@@ -99,9 +99,9 @@
       "code": "67193"
     },
     "final_level": "ALTA",
-    "hit": false,
-    "status": "WRONG_ALTA",
-    "citation_ok": false,
+    "hit": true,
+    "status": "PASS_ALTA",
+    "citation_ok": true,
     "stable": "N/A"
   },
   "C009": {
@@ -112,9 +112,9 @@
       "code": "AF02110000E4"
     },
     "final_level": "ALTA",
-    "hit": false,
-    "status": "WRONG_ALTA",
-    "citation_ok": false,
+    "hit": true,
+    "status": "PASS_ALTA",
+    "citation_ok": true,
     "stable": "N/A"
   },
   "C010": {
@@ -125,9 +125,9 @@
       "code": "HRA0100700A4"
     },
     "final_level": "ALTA",
-    "hit": false,
-    "status": "WRONG_ALTA",
-    "citation_ok": false,
+    "hit": true,
+    "status": "PASS_ALTA",
+    "citation_ok": true,
     "stable": "N/A"
   },
   "C011": {
@@ -138,9 +138,9 @@
       "code": "415869"
     },
     "final_level": "ALTA",
-    "hit": false,
-    "status": "WRONG_ALTA",
-    "citation_ok": false,
+    "hit": true,
+    "status": "PASS_ALTA",
+    "citation_ok": true,
     "stable": "N/A"
   },
   "C012": {
@@ -151,9 +151,9 @@
       "code": "420025"
     },
     "final_level": "ALTA",
-    "hit": false,
-    "status": "WRONG_ALTA",
-    "citation_ok": false,
+    "hit": true,
+    "status": "PASS_ALTA",
+    "citation_ok": true,
     "stable": "N/A"
   },
   "C013": {
@@ -164,9 +164,9 @@
       "code": "1H30023MM"
     },
     "final_level": "ALTA",
-    "hit": false,
-    "status": "WRONG_ALTA",
-    "citation_ok": false,
+    "hit": true,
+    "status": "PASS_ALTA",
+    "citation_ok": true,
     "stable": "N/A"
   },
   "C014": {
@@ -190,9 +190,9 @@
       "code": "154060130"
     },
     "final_level": "ALTA",
-    "hit": false,
-    "status": "WRONG_ALTA",
-    "citation_ok": false,
+    "hit": true,
+    "status": "PASS_ALTA",
+    "citation_ok": true,
     "stable": "N/A"
   },
   "V001": {
@@ -412,9 +412,9 @@
       "page": 3
     },
     "final_level": "ALTA",
-    "hit": false,
-    "status": "MISS",
-    "citation_ok": false,
+    "hit": true,
+    "status": "PASS",
+    "citation_ok": true,
     "stable": "STABILE"
   },
   "N002": {
@@ -424,9 +424,9 @@
       "page": 133
     },
     "final_level": "MEDIA",
-    "hit": false,
-    "status": "MISS",
-    "citation_ok": false,
+    "hit": true,
+    "status": "PASS",
+    "citation_ok": true,
     "stable": "STABILE"
   },
   "N003": {
@@ -436,9 +436,9 @@
       "page": 14
     },
     "final_level": "MEDIA",
-    "hit": false,
-    "status": "MISS",
-    "citation_ok": false,
+    "hit": true,
+    "status": "PASS",
+    "citation_ok": true,
     "stable": "STABILE"
   },
   "R001": {
@@ -458,9 +458,9 @@
       "code": "80637"
     },
     "final_level": "ALTA",
-    "hit": false,
-    "status": "WRONG_ALTA",
-    "citation_ok": false,
+    "hit": true,
+    "status": "PASS_ALTA",
+    "citation_ok": true,
     "stable": "N/A"
   },
   "C_DE_02": {
@@ -484,9 +484,9 @@
       "code": "87131"
     },
     "final_level": "ALTA",
-    "hit": false,
-    "status": "WRONG_ALTA",
-    "citation_ok": false,
+    "hit": true,
+    "status": "PASS_ALTA",
+    "citation_ok": true,
     "stable": "N/A"
   },
   "C_EN_01": {
@@ -497,9 +497,9 @@
       "code": "877380"
     },
     "final_level": "ALTA",
-    "hit": false,
-    "status": "WRONG_ALTA",
-    "citation_ok": false,
+    "hit": true,
+    "status": "PASS_ALTA",
+    "citation_ok": true,
     "stable": "N/A"
   },
   "C_EN_02": {
@@ -523,9 +523,9 @@
       "code": "874300"
     },
     "final_level": "ALTA",
-    "hit": false,
-    "status": "WRONG_ALTA",
-    "citation_ok": false,
+    "hit": true,
+    "status": "PASS_ALTA",
+    "citation_ok": true,
     "stable": "N/A"
   },
   "RBAC002": {

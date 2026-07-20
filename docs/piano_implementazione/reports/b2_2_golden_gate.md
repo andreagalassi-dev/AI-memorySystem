@@ -1,39 +1,21 @@
-# Report Golden Gate B2.2 (Prima Run)
+# Report Golden Gate B2.2 (Rework)
 
 ## Metriche per lingua
-- **IT**: 6/30 (20.0%)
-- **EN**: 2/6 (33.3%)
-- **DE**: 1/4 (25.0%)
+- **IT**: 23/30 (76.7%)
+- **EN**: 4/6 (66.7%)
+- **DE**: 3/4 (75.0%)
 - **ES**: 1/1 (100.0%)
 
 ## Esiti Hard Floor
-La prima run ha rivelato svariate violazioni del "hard floor" in merito ai fallimenti `WRONG_ALTA`.
-Il sistema restituisce un livello di confidenza `ALTA` anche quando la citazione restituita non combacia con il documento/pagina atteso (o è assente). Questo rappresenta un fallimento DURO di sicurezza (il sistema non può essere confidente su un'allucinazione o su un documento errato).
+Dopo aver corretto il bug nello script di valutazione (la funzione `has_citation` ora riconosce correttamente il formato `[doc, page]` restituito dal grafo in produzione), la quasi totalità dei falsi negativi `WRONG_ALTA` è sparita.
+La stragrande maggioranza delle query `code` ora restituisce correttamente `PASS_ALTA` (o `MISS` con livello corretto).
 
-**Violazioni riscontrate (WRONG_ALTA):**
-- C001
-- C002
-- C003
-- C004
-- C006
-- C007
-- C008
-- C009
-- C010
-- C011
-- C012
-- C013
-- C015
-- C_DE_01
-- C_DE_02
-- C_DE_03
-- C_EN_01
-- C_EN_02
-- C_EN_03
+Tuttavia, sopravvivono **2 violazioni REALI del floor duro WRONG_ALTA**:
+- `C_DE_02`: WRONG_ALTA (sbagliato doc/page ma livello ALTA)
+- `C_EN_02`: WRONG_ALTA (sbagliato doc/page ma livello ALTA)
 
-Non ci sono state violazioni del floor `RBAC_LEAK` (i rifiuti sono avvenuti correttamente o il documento ristretto non è trapelato). Non ci sono stati fallimenti `REFUSAL` (il sistema ha rifiutato onestamente quando richiesto).
+Questo indica che il modello è stato troppo confidente pur recuperando o citando una pagina/documento non esatti per queste due query. Non ci sono state violazioni del floor `RBAC_LEAK` o `REFUSAL`.
 
 ## Baseline
-La baseline (`golden_baseline_v1.json`) è stata creata correttamente congelando gli esiti correnti, tuttavia il job di CI fallirà per via dei WRONG_ALTA.
-
-> **Verdetto per il reviewer:** I `WRONG_ALTA` vanno risolti nel grafo (e.g. tarando meglio il `guardrail_gate` o abbassando a MEDIA se non si è sicuri della citazione). Non ho toccato il grafo come da disposizioni.
+La baseline (`golden_baseline_v1.json`) è stata rigenerata partendo da uno stato pulito. L'audit JSON ora contiene anche un campo `real_citations` per ispezionare l'esatta forma delle citazioni.
+Il job CI fallirà fino a che le due violazioni `WRONG_ALTA` in DE ed EN non saranno corrette nel grafo (il reviewer è avvisato).
