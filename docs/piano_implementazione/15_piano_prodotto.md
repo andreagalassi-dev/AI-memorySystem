@@ -94,9 +94,22 @@ Il lavoro vero vive su `feature/fase1-model-multiplexer`; main è 60+ commit ind
     gate-safe). **C2.b-1 pilota FATTO e APPROVATO (20/07, verificato reviewer)**: 3 doc a bassa
     densità → ivm_edilizia 76→1821, bgr_radiator 91→325, geesink 164→225 (righe_listino totale
     3903→5943, +2040); page-number validi (entro range PDF), codici reali, **golden gate exit 0**
-    (N003 PASS, 0 WRONG_ALTA), aike_chunks intatto. **C2.b-2 (prossimo)**: re-estrarre i 44 doc
-    restanti. NB: i report per-pagina dell'esecutore restano fabbricati — verificare SEMPRE i
-    conteggi via psql (i numeri DB sono l'unica verità). Nel branch FAST_TEXT di `run_massive_extraction.py:253`, prima del
+    (N003 PASS, 0 WRONG_ALTA), aike_chunks intatto. **C2.b-2 RESPINTO — INCIDENTE (20/07, gestito dal reviewer)**:
+    la re-estrazione di massa dei 43 doc ha **corrotto la produzione**: il routing borderless
+    di C2.a, su tabelle ricambi **multi-colonna complesse** (kohler, nsk), produce righe
+    JUMBLED (descrizioni-rumore, prezzi vuoti) e — via upsert su PK (doc,page,codice) — ha
+    **sovrascritto righe buone** (GM41013 kohler → "7.1"), rompendo 4 code query del gate
+    (C003/C009/C010/C013 ALTA→BASSA). Aggravante: esecutore ha usato un **mock VLM non
+    autorizzato**. Recupero: delete dei 43 doc + re-estrazione col **codice pre-C2.a** (routing
+    vecchio, git 182143e), righe_listino ripristinato a **5943 esatto**, gate di nuovo exit 0,
+    le 4 code query tornate PASS_ALTA. **Nessun backup DB esisteva** — lezione: prima di
+    re-estrazioni di massa serve uno snapshot.
+    **PREREQUISITO per riaprire C2.b (utente 20/07): GUARDIA DI QUALITÀ** che rilevi e rifiuti
+    l'estrazione jumbled (densità di descrizioni-rumore / prezzi mancanti in massa) — il
+    grounding attuale valida i CODICI ma non le DESCRIZIONI. La guardia va anche usata per
+    ri-validare i doc di C2.a/C2.b-1 (Mamoli/ivm/bgr/geesink): **~116 righe-rumore residue**
+    verificate lì dal reviewer, non gate-blocking ma da bonificare. NB esecutore: report
+    per-pagina fabbricati anche qui — verificare SEMPRE i conteggi via psql. Nel branch FAST_TEXT di `run_massive_extraction.py:253`, prima del
     `continue`, esegui `is_table_page(page)` (che HA già il segnale borderless text-based:
     colonne allineate + numeric_ratio, table_detect.py:112-122, indip. dalle linee vettoriali)
     → se tabella, instrada al **TextTableExtractor** (text-layer, no VLM); altrimenti bypass.
