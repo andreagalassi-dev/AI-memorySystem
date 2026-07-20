@@ -70,6 +70,35 @@ Il lavoro vero vive su `feature/fase1-model-multiplexer`; main è 60+ commit ind
 - Riconciliazione Fase 2 ripensata (oggi 11 linked / 2320 orfani per design sbagliato).
 - Il ramo prezzi entra nel prodotto SOLO quando passa il gate B2.
 
+**Decomposizione operativa (reviewer v4, 20/07/2026 — nomenclatura `punto.lettera` come B1.a):**
+- **C1 — Rotta di ingestion autonoma (copertura degli 88 PDF scoperti).**
+  - **C1.a** — attivazione ingestion **testo** (BGE-M3+BM25 → `aike_chunks`) via il
+    percorso watchdog già scritto e testato (`src/watchdog/`), scope i **soli 88
+    MAI_TENTATO**. Task 1: schema `tracked_files` + runner con `--dry-run` + test
+    rosso-prima + **pilota su 3 file** (STOP reviewer). Task 2: ingestion restanti 85
+    + golden gate + ricollaudo demo file 14.
+  - **C1.b** — backfill **visivo** (`aike_pages_visual`, Qwen3-VL) degli 88.
+  - **C1.c** — **strutturato** (`estrazione.righe_listino`) degli 88 — dopo C2 (routing).
+  - **C1.d** (follow-on) — riconciliare i **54 già indicizzati** dentro `tracked_files`
+    (mappatura slug→filename, ambiguità nota B1.a) + accensione daemon *live*.
+- **C2 — Fix routing borderless Mamoli** (`is_table_page` prima del branch fast_text;
+  baseline B1.c: 1.698 righe recuperabili vs 280 in DB).
+- **C3 — Riconciliazione prezzi↔pagine** ripensata (11 linked / 2320 orfani).
+- **C4 — Dashboard scarti** per risoluzione umana (i `tracked_files.status='failed'`
+  con `error_log` di C1.a sono il primo alimentatore).
+- **C5 — Bonifica igiene** (176 chunk Mamoli dup + 3 `_Test`; uniformare `doc`/`doc_stem`
+  — tocca `aike_chunks`, richiede ok esplicito + ricollaudo demo).
+
+**Fondamento architetturale di C1 (analisi reviewer, verificata coi tool 20/07):** un
+profilo brand NON è un prerequisito di ingestion (`src/watchdog/profile.py:21-26` →
+fallback `default` passthrough); la precisione ("mai un ALTA falso") è garantita a valle
+dal **guardrail**, indipendente dal profilo (B1.b: 0 promozioni ad ALTA su campione
+sporco). Perciò l'autonomia sui PDF di clienti nuovi si ottiene **accendendo l'ingestion
+autonoma** (profilo = raffinamento opzionale di recall), non curando i brand a mano.
+L'auto-detector delle code-families (opzione "C" del brainstorming) è rimandato: attacca
+una causa minoritaria (B1.b: ≥62% del degrado codici è dato povero/estrazione, non
+normalizzazione) e presuppone comunque C1.a.
+
 ### D — Correttezza e stabilità della risposta
 - Ramo STRUCTURED deterministico: l'LLM **formatta, non genera** (come da visione) —
   mai più "IEC 34-7" quando l'evidenza dice "EN60034-7".
