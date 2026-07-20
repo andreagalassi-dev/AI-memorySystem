@@ -117,6 +117,14 @@ Il lavoro vero vive su `feature/fase1-model-multiplexer`; main è 60+ commit ind
     impattata; grounding fail-closed regge sui falsi-positivi). Persist è UPSERT (idempotente).
     DoD: righe Mamoli ↑ (target ~1.698, mecc. verificabile via psql), golden gate verde,
     TDD rosso-prima su pagina borderless reale (Mamoli p230: oggi 0 righe → dopo N).
+  - **C2.c — Guardia di qualità anti-jumbling (ATTIVO, sblocca C2.b).** Check per-pagina
+    post-estrazione, pre-persist: se la frazione di righe "spillover" supera una soglia →
+    RIFIUTA l'estrazione della pagina (fail-closed, log scarto). **Segnale validato dal
+    reviewer sui dati reali** (il word-ratio è stato PROVATO inadeguato: ivm-buono e
+    bgr-jumbled entrambi 0.19): riga spillover = descrizione con **≥4 token-valore (con cifre)
+    OPPURE un token ripetuto ≥3 volte**. % spillover per doc: ivm 13%, geesink 16%, Mamoli 22%
+    (buoni) vs **bgr 79% (jumbled)** → soglia pagina ~40%. Doppia utilità: (1) sblocca la
+    re-estrazione C2.b in sicurezza; (2) bonifica delle ~116 righe jumbled residue.
 - **C3 — Riconciliazione prezzi↔pagine** ripensata (11 linked / 2320 orfani).
 - **C4 — Dashboard scarti** per risoluzione umana (i `tracked_files.status='failed'`
   con `error_log` di C1.a sono il primo alimentatore).
