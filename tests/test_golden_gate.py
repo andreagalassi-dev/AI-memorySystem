@@ -34,6 +34,19 @@ def test_evaluate_code_real_format():
     assert res["status"] == "PASS_ALTA"
     assert res["hit"] is True
 
+def test_evaluate_code_index_aware():
+    citations = [["wrong_doc", 999]]
+    
+    def mock_check_index(doc, page, code):
+        if doc == "wrong_doc" and page == 999 and code == "MY_CODE":
+            return True
+        return False
+        
+    res = evaluate_code("ALTA", citations, "expected_doc", 100, "MY_CODE", check_index_fn=mock_check_index)
+    assert res["status"] == "PASS_ALTA"
+    assert res["hit"] is True
+    assert res.get("matched_expected_page") is False
+
 def test_evaluate_code():
     citations = [MockHit("doc1", 10)]
     

@@ -2,6 +2,12 @@ import sys
 import os
 import json
 from datetime import datetime
+import psycopg
+from qdrant_client import QdrantClient
+from qdrant_client.http import models
+
+sys.path.append(str(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+from src.backend.config import settings
 
 def has_citation(citations, expected_doc, expected_page=None):
     for c in citations:
@@ -38,21 +44,45 @@ def get_level_rank(level):
         return 1
     return 0
 
-def evaluate_code(final_level, citations, expected_doc, expected_page):
+def evaluate_code(final_level, citations, expected_doc, expected_page, expected_code=None, check_index_fn=None):
     final_level = (final_level or "").upper()
     hit_citation = has_citation(citations, expected_doc, expected_page)
     
-    if hit_citation and final_level == "ALTA":
+    code_in_cited_page = hit_citation
+    
+    if not hit_citation and citations and expected_code and check_index_fn:
+        for c in citations:
+            c_doc = None
+            c_page = None
+            if isinstance(c, (list, tuple)) and len(c) >= 2:
+                c_doc = c[0]
+                c_page = c[1]
+            elif hasattr(c, "doc") and hasattr(c, "page"):
+                c_doc = c.doc
+                c_page = c.page
+            elif isinstance(c, dict):
+                c_doc = c.get("doc")
+                c_page = c.get("page")
+                
+            if c_doc and c_page is not None:
+                if check_index_fn(c_doc, c_page, expected_code):
+                    code_in_cited_page = True
+                    break
+                    
+    matched_expected_page = hit_citation
+    
+    if code_in_cited_page and final_level == "ALTA":
         status = "PASS_ALTA"
-    elif not hit_citation and final_level == "ALTA":
+    elif not code_in_cited_page and final_level == "ALTA":
         status = "WRONG_ALTA"
     else:
         status = "MISS"
         
     return {
-        "hit": hit_citation,
+        "hit": code_in_cited_page,
         "status": status,
-        "level": final_level
+        "level": final_level,
+        "matched_expected_page": matched_expected_page
     }
 
 def evaluate_visual(visual_pages, expected_doc, expected_pages):
@@ -165,6 +195,34 @@ def run_harness(update_baseline=False, limit=None):
         
     deps_cache = {}
     
+    # Initialize index clients for answerability checking
+    qdrant = QdrantClient(url=settings.QDRANT_URL, api_key=settings.QDRANT_API_KEY)
+    pg_conn = psycopg.connect(settings.POSTGRES_URI)
+    
+    def check_index_fn(c_doc, c_page, c_code):
+        results = qdrant.scroll(
+            collection_name='aike_chunks',
+            scroll_filter=models.Filter(
+                must=[
+                    models.FieldCondition(key="doc", match=models.MatchValue(value=c_doc)),
+                    models.FieldCondition(key="page", match=models.MatchValue(value=c_page)),
+                    models.FieldCondition(key="code", match=models.MatchValue(value=c_code))
+                ]
+            ),
+            limit=1
+        )[0]
+        if results:
+            return True
+            
+        with pg_conn.cursor() as cur:
+            cur.execute(
+                "SELECT 1 FROM estrazione.righe_listino WHERE doc_stem = %s AND page = %s AND (codice_originale ILIKE %s OR codice_normalizzato ILIKE %s)",
+                (c_doc, c_page, c_code, c_code)
+            )
+            if cur.fetchone():
+                return True
+        return False
+    
     results = {}
     metrics = {
         "langs": {},
@@ -225,10 +283,11 @@ def run_harness(update_baseline=False, limit=None):
             
             # Evaluate based on intent
             if intent == "code":
-                ev = evaluate_code(final_level, citations, expected.get("doc"), expected.get("page"))
+                ev = evaluate_code(final_level, citations, expected.get("doc"), expected.get("page"), expected.get("code"), check_index_fn)
                 run_res["hit"] = ev["hit"]
                 run_res["status"] = ev["status"]
                 run_res["citation_ok"] = ev["hit"]
+                run_res["matched_expected_page"] = ev.get("matched_expected_page", False)
                 if ev["status"] == "WRONG_ALTA":
                     hard_floors_violated.append(f"{qa_id}: WRONG_ALTA (sbagliato doc/page ma livello ALTA)")
                     
