@@ -87,6 +87,22 @@ class GoldenValidator:
                 return False, f"Page {page} not found in chunks for doc {doc}"
             return True, ""
             
+        elif intent == "rbac_negative":
+            role = row.get("role")
+            with self.pg.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT 1 
+                    FROM document_roles dr
+                    JOIN documents d ON dr.document_id = d.id
+                    WHERE d.slug = %s AND dr.role = %s
+                    """,
+                    (doc, role)
+                )
+                if cur.fetchone():
+                    return False, f"RBAC finta: doc {doc} è accessibile al ruolo {role}"
+            return True, ""
+            
         return False, "Unknown intent"
 
 def main():

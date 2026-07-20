@@ -1,7 +1,6 @@
 import pytest
 from unittest.mock import MagicMock
 from scripts.validate_golden import GoldenValidator
-from qdrant_client.http import models
 
 class MockQdrant:
     def __init__(self):
@@ -56,6 +55,14 @@ def test_validator_code_miss():
     row = {"intent": "code", "expected": {"doc": "D", "page": 1, "code": "C"}}
     ok, err = v.validate_row(row)
     assert not ok
+
+def test_rbac_negative_fails_if_accessible():
+    q = MockQdrant()
+    p = MockPG()
+    p.cursor_mock.fetchone.return_value = (1,) # Role has access!
+    v = GoldenValidator(q, p)
     
-
-
+    row = {"intent": "rbac_negative", "role": "commerciale", "expected": {"doc": "test_doc"}}
+    ok, err = v.validate_row(row)
+    assert not ok
+    assert "accessibile al ruolo" in err or "accessible to role" in err
