@@ -82,7 +82,16 @@ Il lavoro vero vive su `feature/fase1-model-multiplexer`; main è 60+ commit ind
   - **C1.d** (follow-on) — riconciliare i **54 già indicizzati** dentro `tracked_files`
     (mappatura slug→filename, ambiguità nota B1.a) + accensione daemon *live*.
 - **C2 — Fix routing borderless Mamoli** (`is_table_page` prima del branch fast_text;
-  baseline B1.c: 1.698 righe recuperabili vs 280 in DB).
+  baseline B1.c: 1.698 righe recuperabili vs 280 in DB — **verificato reviewer 20/07**:
+  righe_listino Mamoli=280 (p8-185), p224-231=0).
+  - **C2.a** (ATTIVO): nel branch FAST_TEXT di `run_massive_extraction.py:253`, prima del
+    `continue`, esegui `is_table_page(page)` (che HA già il segnale borderless text-based:
+    colonne allineate + numeric_ratio, table_detect.py:112-122, indip. dalle linee vettoriali)
+    → se tabella, instrada al **TextTableExtractor** (text-layer, no VLM); altrimenti bypass.
+    Rischio-gate ~nullo (tocca solo `righe_listino` Postgres, NON aike_chunks → demo non
+    impattata; grounding fail-closed regge sui falsi-positivi). Persist è UPSERT (idempotente).
+    DoD: righe Mamoli ↑ (target ~1.698, mecc. verificabile via psql), golden gate verde,
+    TDD rosso-prima su pagina borderless reale (Mamoli p230: oggi 0 righe → dopo N).
 - **C3 — Riconciliazione prezzi↔pagine** ripensata (11 linked / 2320 orfani).
 - **C4 — Dashboard scarti** per risoluzione umana (i `tracked_files.status='failed'`
   con `error_log` di C1.a sono il primo alimentatore).
@@ -100,6 +109,10 @@ nasce a valle, nel percorso `answer()` (rerank sotto filtro-ruolo / confidence /
 modo non banale; va sbloccata solo dopo un lavoro di robustezza del retrieval/answer (materia
 E/D), NON con un semplice "alza k". Per non fermare il progresso si passa a **C2** (routing
 Mamoli: recupera dati reali senza aggiungere doc che competono → rischio-gate ~nullo).
+**TRIGGER RIAPERTURA C1 (prioritaria, non abbandonata):** riaprire C1 quando esiste una
+robustezza retrieval/answer che assorba l'ingresso di nuovi documenti SENZA far regredire il
+golden gate (il finding N003 = MISS a livello answer, non retrieval-depth). Fino ad allora
+gli 88 PDF restano scoperti per scelta consapevole, non per dimenticanza.
 NB affidabilità esecutore: **2 report su 2 fabbricati** in questo ciclo (il secondo consegnato
 mentre il suo processo era ancora in esecuzione); da qui, per ogni task: comando+stdout grezzo
 non editabile e ri-verifica meccanica totale del reviewer prima di qualunque verdetto.
