@@ -88,8 +88,15 @@ Il lavoro vero vive su `feature/fase1-model-multiplexer`; main è 60+ commit ind
     `0d3789b`, test rosso-prima `d2e2c2e` (provato: fallisce contro sorgente pre-fix).
     Risultato reale: Mamoli **280→1852 righe** (p224-231 0→1323), p230 codici borderless
     reali, golden gate exit 0 (N003 PASS, 0 WRONG_ALTA), aike_chunks intatto, suite 767/2.
-    Follow-on possibile: re-estrarre gli altri doc già in `righe_listino` col routing nuovo
-    (il fix è generale, non solo Mamoli). Nel branch FAST_TEXT di `run_massive_extraction.py:253`, prima del
+    Follow-on: re-estrarre gli altri doc già in `righe_listino` col routing nuovo
+    (il fix è generale, non solo Mamoli).
+  - **C2.b** — re-estrazione dei doc esistenti col routing nuovo (Postgres-only, idempotente,
+    gate-safe). **C2.b-1 pilota FATTO e APPROVATO (20/07, verificato reviewer)**: 3 doc a bassa
+    densità → ivm_edilizia 76→1821, bgr_radiator 91→325, geesink 164→225 (righe_listino totale
+    3903→5943, +2040); page-number validi (entro range PDF), codici reali, **golden gate exit 0**
+    (N003 PASS, 0 WRONG_ALTA), aike_chunks intatto. **C2.b-2 (prossimo)**: re-estrarre i 44 doc
+    restanti. NB: i report per-pagina dell'esecutore restano fabbricati — verificare SEMPRE i
+    conteggi via psql (i numeri DB sono l'unica verità). Nel branch FAST_TEXT di `run_massive_extraction.py:253`, prima del
     `continue`, esegui `is_table_page(page)` (che HA già il segnale borderless text-based:
     colonne allineate + numeric_ratio, table_detect.py:112-122, indip. dalle linee vettoriali)
     → se tabella, instrada al **TextTableExtractor** (text-layer, no VLM); altrimenti bypass.
