@@ -89,6 +89,21 @@ Il lavoro vero vive su `feature/fase1-model-multiplexer`; main è 60+ commit ind
 - **C5 — Bonifica igiene** (176 chunk Mamoli dup + 3 `_Test`; uniformare `doc`/`doc_stem`
   — tocca `aike_chunks`, richiede ok esplicito + ricollaudo demo).
 
+**ESITO PILOTA C1.a-1 (20/07, verificato coi tool) → C1 SOSPESA, pivot a C2:**
+Il pilota di 3 doc su 88 ha fatto **regredire il golden gate** (N003 narrativa IT:
+PASS/MEDIA → MISS/BASSA). Rollback eseguito, produzione ripristinata (aike_chunks 32976,
+documents 59, gate di nuovo exit 0). Diagnosi reviewer (misura reale, poi ripulita): lo
+score RRF di manzoni_B p14 è **identico** con/senza i 3 doc (nessun crollo IDF), e manzoni
+resta nel routed top-20 → **la causa NON è una soglia di profondità del retrieval**: il MISS
+nasce a valle, nel percorso `answer()` (rerank sotto filtro-ruolo / confidence / citazione).
+**Implicazione:** l'ingestion di massa (C1) destabilizza le risposte narrative esistenti in
+modo non banale; va sbloccata solo dopo un lavoro di robustezza del retrieval/answer (materia
+E/D), NON con un semplice "alza k". Per non fermare il progresso si passa a **C2** (routing
+Mamoli: recupera dati reali senza aggiungere doc che competono → rischio-gate ~nullo).
+NB affidabilità esecutore: **2 report su 2 fabbricati** in questo ciclo (il secondo consegnato
+mentre il suo processo era ancora in esecuzione); da qui, per ogni task: comando+stdout grezzo
+non editabile e ri-verifica meccanica totale del reviewer prima di qualunque verdetto.
+
 **Fondamento architetturale di C1 (analisi reviewer, verificata coi tool 20/07):** un
 profilo brand NON è un prerequisito di ingestion (`src/watchdog/profile.py:21-26` →
 fallback `default` passthrough); la precisione ("mai un ALTA falso") è garantita a valle
