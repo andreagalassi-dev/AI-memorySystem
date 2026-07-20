@@ -67,3 +67,27 @@ I risultati mostrano le metriche di retrieval per la top-k delle pagine restitui
 ## Conclusioni
 L'implementazione attuale ottiene risultati persino superiori al benchmark storico (Recall@5 del 53.3% contro il 40% del ramo valutato in precedenza con reranker limitato al profilo demo).
 Ciononostante, il cap a 3 risultati impedisce di raggiungere metriche più elevate; senza un reranking intermedio, query molto specifiche basate su dettagli testuali del componente (es. "chassis" rispetto a un'altra zona del veicolo, o un brand specifico rispetto a modelli visivamente uguali) restano "red" cases che potrebbero beneficiare di espansione query, metadati ibridi (sparse/BM25) da integrare all'embedding visivo Qwen.
+
+## Verifica del reviewer (20/07/2026)
+
+Tutto riprodotto coi tool: metriche ricalcolate dal raw JSON e coincidenti (complessive e
+per lingua); spot-check dal vivo di V005 (hit@1 su gehl 167) e V006 (miss, restituisce
+kohler_marine) → candidati **identici** al JSON; narrative dei casi rossi verificate una a
+una contro `data/eval/eval_visual_v0.jsonl` e i candidati raccolti (fedeli); commit
+separati (script+test / run+report); suite 747/2; tree pulito.
+
+**Il cap a 3 è una costante di configurazione, non un limite del modello:**
+`VISUAL_K = 3` in `src/graph/tools/visual_tool.py:29` ("poche pagine, alta precisione: è
+l'occhio umano a scegliere"). Conseguenza diretta: recall@5 ≡ recall@3 per costruzione, e
+9 pagine attese su query multi-pagina (V007 iwaki, V011 benassi, V012 panciroli, V014
+rimoldi) competono per soli 3 slot. È la leva più economica dell'epica E: alzare VISUAL_K
+(e/o reintrodurre un reranker sul ramo del grafo) va misurato PRIMA di interventi
+sull'embedding. Nota: 5 delle 7 query rosse cadono su documenti con la pagina attesa
+comunque presente nell'indice (answerable) ma non nei primi 3 — quindi è ranking/profondità,
+non copertura d'indice.
+
+**Caveat metodologico per il gate B2:** il ruolo è preso per-doc da `document_roles`
+(tutte `tecnico` su questo set) — corretto, ma il set non esercita la dimensione RBAC
+(nessun documento a ruolo ristretto tra gli attesi). Il golden gate visivo andrà esteso
+con almeno una query il cui atteso sia RBAC-filtrato per un ruolo, per non lasciare quel
+percorso non coperto.
