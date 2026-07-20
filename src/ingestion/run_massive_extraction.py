@@ -125,7 +125,7 @@ class MassivePageOutcome:
     """Esito di UNA pagina nel runner massivo."""
 
     page: int
-    # "FAST_TEXT" | "HEAVY_TABLE_TEXT" | "HEAVY_TABLE_VLM" | "HEAVY_NON_TABLE"
+    # "FAST_TEXT" | "FAST_TABLE_TEXT" | "HEAVY_TABLE_TEXT" | "HEAVY_TABLE_VLM" | "HEAVY_NON_TABLE"
     route: str
     n_valide: int = 0
     n_scarti: int = 0
@@ -249,14 +249,54 @@ def run_document_massive(
             for pd in dispatch.pages:
                 page_no = pd.page
 
-                # --- FAST_TEXT: born-digital solo-testo, skip AI ---
+                # --- FAST_TEXT: born-digital solo-testo, di solito skip AI ---
+                # BUG-FIX C2.a: le tabelle borderless (poche linee vettoriali ma
+                # colonne allineate) sono classificate FAST_TEXT dal dispatcher,
+                # ma contengono dati strutturati estraibili. Controlliamo con
+                # is_table_page (segnale TEXT-BASED, no modelli) e, se positivo,
+                # estraiamo come il ramo HEAVY-text (TextTableExtractor).
                 if pd.route is Route.FAST_TEXT:
-                    page_outcomes.append(
-                        MassivePageOutcome(page=page_no, route="FAST_TEXT", reason=pd.reason)
-                    )
-                    logger.info(
-                        "runner: doc_stem=%s page=%d FAST_TEXT (bypass AI)", doc_stem, page_no
-                    )
+                    ft_page = doc.load_page(page_no - 1)
+                    ft_verdict = is_table_page(ft_page)
+                    if ft_verdict.is_table and text_extractor is not None:
+                        # Tabella borderless born-digital: estrai via text path.
+                        table_pages += 1
+                        ft_page_text = ft_page.get_text("text")
+                        ft_grezze = text_extractor.extract(PageRef(doc_stem, page_no))
+                        ft_righe = [
+                            RigaListino.from_grezza(g, doc_stem=doc_stem, page=page_no)
+                            for g in ft_grezze
+                        ]
+                        ft_valide, ft_scarti = partition(ft_righe, ft_page_text)
+                        ft_summary = _persist_tx(conn, ft_valide, ft_scarti, schema=schema)
+                        tot_valide += ft_summary["righe_upsert"]
+                        tot_scarti += ft_summary["scarti"]
+                        page_outcomes.append(
+                            MassivePageOutcome(
+                                page=page_no,
+                                route="FAST_TABLE_TEXT",
+                                n_valide=ft_summary["righe_upsert"],
+                                n_scarti=ft_summary["scarti"],
+                                reason=ft_verdict.reason,
+                            )
+                        )
+                        logger.info(
+                            "runner: doc_stem=%s page=%d FAST_TABLE_TEXT "
+                            "(borderless born-digital, %d righe, %d scarti)",
+                            doc_stem, page_no,
+                            ft_summary["righe_upsert"], ft_summary["scarti"],
+                        )
+                    else:
+                        # Pagina solo-testo: bypass standard.
+                        page_outcomes.append(
+                            MassivePageOutcome(
+                                page=page_no, route="FAST_TEXT", reason=pd.reason,
+                            )
+                        )
+                        logger.info(
+                            "runner: doc_stem=%s page=%d FAST_TEXT (bypass AI)",
+                            doc_stem, page_no,
+                        )
                     continue
 
                 # --- HEAVY: pagina con immagini/tabelle -> binario estrazione ---
