@@ -5,11 +5,27 @@ from datetime import datetime
 
 def has_citation(citations, expected_doc, expected_page=None):
     for c in citations:
-        doc = getattr(c, "doc", c.get("doc") if isinstance(c, dict) else None)
-        page = getattr(c, "page", c.get("page") if isinstance(c, dict) else None)
+        doc = None
+        page = None
+        if isinstance(c, (list, tuple)) and len(c) >= 2:
+            doc = c[0]
+            page = c[1]
+        elif hasattr(c, "doc") and hasattr(c, "page"):
+            doc = c.doc
+            page = c.page
+        elif isinstance(c, dict):
+            doc = c.get("doc")
+            page = c.get("page")
+            
         if doc == expected_doc:
-            if expected_page is None or page == expected_page:
+            if expected_page is None:
                 return True
+            try:
+                if page is not None and int(page) == int(expected_page):
+                    return True
+            except (ValueError, TypeError):
+                if page == expected_page:
+                    return True
     return False
 
 def get_level_rank(level):
@@ -186,12 +202,25 @@ def run_harness(update_baseline=False, limit=None):
             citations = state.get("citations", [])
             visual_pages = state.get("visual_pages", [])
             
+            # Serialize citations for audit
+            serialized_citations = []
+            for c in citations:
+                if isinstance(c, (list, tuple)):
+                    serialized_citations.append(list(c))
+                elif hasattr(c, "doc") and hasattr(c, "page"):
+                    serialized_citations.append({"doc": c.doc, "page": c.page})
+                elif isinstance(c, dict):
+                    serialized_citations.append(c)
+                else:
+                    serialized_citations.append(str(c))
+                    
             run_res = {
                 "latency": lat,
                 "final_level": final_level,
                 "hit": False, # to be filled
                 "status": "",
-                "citation_ok": len(citations) > 0 # rough generic metric
+                "citation_ok": len(citations) > 0, # rough generic metric
+                "real_citations": serialized_citations
             }
             
             # Evaluate based on intent

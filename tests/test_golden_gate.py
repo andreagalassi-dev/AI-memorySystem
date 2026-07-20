@@ -22,6 +22,18 @@ def test_has_citation():
     assert has_citation(citations, "doc1", 11) is False
     assert has_citation(citations, "doc3", 20) is False
 
+def test_has_citation_real_format():
+    citations_real = [["Mamoli_Catalogo_Ricambi_2021_IT_EN", 100]]
+    assert has_citation(citations_real, "Mamoli_Catalogo_Ricambi_2021_IT_EN", 100) is True
+    assert has_citation(citations_real, "Mamoli_Catalogo_Ricambi_2021_IT_EN", 101) is False
+    assert has_citation(citations_real, "Other", 100) is False
+
+def test_evaluate_code_real_format():
+    citations_real = [["Mamoli_Catalogo_Ricambi_2021_IT_EN", 100]]
+    res = evaluate_code("ALTA", citations_real, "Mamoli_Catalogo_Ricambi_2021_IT_EN", 100)
+    assert res["status"] == "PASS_ALTA"
+    assert res["hit"] is True
+
 def test_evaluate_code():
     citations = [MockHit("doc1", 10)]
     
