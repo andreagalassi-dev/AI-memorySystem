@@ -1,0 +1,544 @@
+{
+  "C001": {
+    "intent": "code",
+    "expected": {
+      "doc": "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+      "page": 100,
+      "code": "14576"
+    },
+    "final_level": "ALTA",
+    "hit": false,
+    "status": "WRONG_ALTA",
+    "citation_ok": false,
+    "stable": "N/A"
+  },
+  "C002": {
+    "intent": "code",
+    "expected": {
+      "doc": "gehl_v270_parts",
+      "page": 171,
+      "code": "242788"
+    },
+    "final_level": "ALTA",
+    "hit": false,
+    "status": "WRONG_ALTA",
+    "citation_ok": false,
+    "stable": "N/A"
+  },
+  "C003": {
+    "intent": "code",
+    "expected": {
+      "doc": "kohler_marine_tp6954",
+      "page": 95,
+      "code": "GM41013"
+    },
+    "final_level": "ALTA",
+    "hit": false,
+    "status": "WRONG_ALTA",
+    "citation_ok": false,
+    "stable": "N/A"
+  },
+  "C004": {
+    "intent": "code",
+    "expected": {
+      "doc": "kohler_industrial_tp7120",
+      "page": 41,
+      "code": "M125A-08-80",
+      "value": "16.0"
+    },
+    "final_level": "ALTA",
+    "hit": false,
+    "status": "WRONG_ALTA",
+    "citation_ok": false,
+    "stable": "N/A"
+  },
+  "C005": {
+    "intent": "code",
+    "expected": {
+      "doc": "rotax_912_914_IPC",
+      "page": 79,
+      "code": "961267"
+    },
+    "final_level": "BASSA",
+    "hit": false,
+    "status": "MISS",
+    "citation_ok": false,
+    "stable": "N/A"
+  },
+  "C006": {
+    "intent": "code",
+    "expected": {
+      "doc": "rotax_912iS_IPC",
+      "page": 15,
+      "code": "877615"
+    },
+    "final_level": "ALTA",
+    "hit": false,
+    "status": "WRONG_ALTA",
+    "citation_ok": false,
+    "stable": "N/A"
+  },
+  "C007": {
+    "intent": "code",
+    "expected": {
+      "doc": "lycoming_IGO540_PC116",
+      "page": 76,
+      "code": "77300"
+    },
+    "final_level": "ALTA",
+    "hit": false,
+    "status": "WRONG_ALTA",
+    "citation_ok": false,
+    "stable": "N/A"
+  },
+  "C008": {
+    "intent": "code",
+    "expected": {
+      "doc": "lycoming_IGO540_PC116",
+      "page": 99,
+      "code": "67193"
+    },
+    "final_level": "ALTA",
+    "hit": false,
+    "status": "WRONG_ALTA",
+    "citation_ok": false,
+    "stable": "N/A"
+  },
+  "C009": {
+    "intent": "code",
+    "expected": {
+      "doc": "branson_4520R_parts",
+      "page": 14,
+      "code": "AF02110000E4"
+    },
+    "final_level": "ALTA",
+    "hit": false,
+    "status": "WRONG_ALTA",
+    "citation_ok": false,
+    "stable": "N/A"
+  },
+  "C010": {
+    "intent": "code",
+    "expected": {
+      "doc": "branson_4520R_parts",
+      "page": 8,
+      "code": "HRA0100700A4"
+    },
+    "final_level": "ALTA",
+    "hit": false,
+    "status": "WRONG_ALTA",
+    "citation_ok": false,
+    "stable": "N/A"
+  },
+  "C011": {
+    "intent": "code",
+    "expected": {
+      "doc": "manzoni_comac_spareparts_A",
+      "page": 45,
+      "code": "415869"
+    },
+    "final_level": "ALTA",
+    "hit": false,
+    "status": "WRONG_ALTA",
+    "citation_ok": false,
+    "stable": "N/A"
+  },
+  "C012": {
+    "intent": "code",
+    "expected": {
+      "doc": "manzoni_comac_spareparts_A",
+      "page": 47,
+      "code": "420025"
+    },
+    "final_level": "ALTA",
+    "hit": false,
+    "status": "WRONG_ALTA",
+    "citation_ok": false,
+    "stable": "N/A"
+  },
+  "C013": {
+    "intent": "code",
+    "expected": {
+      "doc": "iwaki_TC-X252PH-NPT",
+      "page": 3,
+      "code": "1H30023MM"
+    },
+    "final_level": "ALTA",
+    "hit": false,
+    "status": "WRONG_ALTA",
+    "citation_ok": false,
+    "stable": "N/A"
+  },
+  "C014": {
+    "intent": "code",
+    "expected": {
+      "doc": "oleodinamica_sangro_catalogo_generale",
+      "page": 44,
+      "code": "102036200PF"
+    },
+    "final_level": "BASSA",
+    "hit": false,
+    "status": "MISS",
+    "citation_ok": false,
+    "stable": "N/A"
+  },
+  "C015": {
+    "intent": "code",
+    "expected": {
+      "doc": "oleodinamica_sangro_catalogo_generale",
+      "page": 35,
+      "code": "154060130"
+    },
+    "final_level": "ALTA",
+    "hit": false,
+    "status": "WRONG_ALTA",
+    "citation_ok": false,
+    "stable": "N/A"
+  },
+  "V001": {
+    "intent": "visual",
+    "expected": {
+      "doc": "branson_4520R_parts",
+      "pages": [
+        22
+      ]
+    },
+    "final_level": "MEDIA",
+    "hit": true,
+    "status": "PASS",
+    "citation_ok": true,
+    "stable": "N/A"
+  },
+  "V002": {
+    "intent": "visual",
+    "expected": {
+      "doc": "branson_4520R_parts",
+      "pages": [
+        68
+      ]
+    },
+    "final_level": "MEDIA",
+    "hit": false,
+    "status": "MISS",
+    "citation_ok": false,
+    "stable": "N/A"
+  },
+  "V003": {
+    "intent": "visual",
+    "expected": {
+      "doc": "branson_4520R_parts",
+      "pages": [
+        127
+      ]
+    },
+    "final_level": "MEDIA",
+    "hit": false,
+    "status": "MISS",
+    "citation_ok": false,
+    "stable": "N/A"
+  },
+  "V004": {
+    "intent": "visual",
+    "expected": {
+      "doc": "gehl_v270_parts",
+      "pages": [
+        94
+      ]
+    },
+    "final_level": "MEDIA",
+    "hit": false,
+    "status": "MISS",
+    "citation_ok": false,
+    "stable": "N/A"
+  },
+  "V005": {
+    "intent": "visual",
+    "expected": {
+      "doc": "gehl_v270_parts",
+      "pages": [
+        167
+      ]
+    },
+    "final_level": "MEDIA",
+    "hit": true,
+    "status": "PASS",
+    "citation_ok": true,
+    "stable": "N/A"
+  },
+  "V006": {
+    "intent": "visual",
+    "expected": {
+      "doc": "kohler_industrial_tp7120",
+      "pages": [
+        24
+      ]
+    },
+    "final_level": "MEDIA",
+    "hit": false,
+    "status": "MISS",
+    "citation_ok": false,
+    "stable": "N/A"
+  },
+  "V007": {
+    "intent": "visual",
+    "expected": {
+      "doc": "iwaki_TC-X101SH-NPT",
+      "pages": [
+        2
+      ]
+    },
+    "final_level": "MEDIA",
+    "hit": false,
+    "status": "MISS",
+    "citation_ok": false,
+    "stable": "N/A"
+  },
+  "V008": {
+    "intent": "visual",
+    "expected": {
+      "doc": "NordCap_Esploso_Ricambi_DE",
+      "pages": [
+        2
+      ]
+    },
+    "final_level": "MEDIA",
+    "hit": true,
+    "status": "PASS",
+    "citation_ok": true,
+    "stable": "N/A"
+  },
+  "V009": {
+    "intent": "visual",
+    "expected": {
+      "doc": "kbs_gastrotechnik_1717",
+      "pages": [
+        3
+      ]
+    },
+    "final_level": "MEDIA",
+    "hit": false,
+    "status": "MISS",
+    "citation_ok": false,
+    "stable": "N/A"
+  },
+  "V010": {
+    "intent": "visual",
+    "expected": {
+      "doc": "flow_exploded_2022",
+      "pages": [
+        16
+      ]
+    },
+    "final_level": "MEDIA",
+    "hit": true,
+    "status": "PASS",
+    "citation_ok": true,
+    "stable": "N/A"
+  },
+  "V011": {
+    "intent": "visual",
+    "expected": {
+      "doc": "benassi_t623_flail_mower",
+      "pages": [
+        2
+      ]
+    },
+    "final_level": "MEDIA",
+    "hit": false,
+    "status": "MISS",
+    "citation_ok": false,
+    "stable": "N/A"
+  },
+  "V012": {
+    "intent": "visual",
+    "expected": {
+      "doc": "panciroli_garmec_BL200",
+      "pages": [
+        24
+      ]
+    },
+    "final_level": "MEDIA",
+    "hit": true,
+    "status": "PASS",
+    "citation_ok": true,
+    "stable": "N/A"
+  },
+  "V013": {
+    "intent": "visual",
+    "expected": {
+      "doc": "Silca_TriaxPro_Ricambi_Multilingua",
+      "pages": [
+        2
+      ]
+    },
+    "final_level": "MEDIA",
+    "hit": true,
+    "status": "PASS",
+    "citation_ok": true,
+    "stable": "N/A"
+  },
+  "V014": {
+    "intent": "visual",
+    "expected": {
+      "doc": "rimoldi_327_spareparts",
+      "pages": [
+        7
+      ]
+    },
+    "final_level": "MEDIA",
+    "hit": true,
+    "status": "PASS",
+    "citation_ok": true,
+    "stable": "N/A"
+  },
+  "V015": {
+    "intent": "visual",
+    "expected": {
+      "doc": "kohler_marine_tp6954",
+      "pages": [
+        14
+      ]
+    },
+    "final_level": "MEDIA",
+    "hit": true,
+    "status": "PASS",
+    "citation_ok": true,
+    "stable": "N/A"
+  },
+  "N001": {
+    "intent": "narrative",
+    "expected": {
+      "doc": "Silca_TriaxPro_Ricambi_Multilingua",
+      "page": 3
+    },
+    "final_level": "ALTA",
+    "hit": false,
+    "status": "MISS",
+    "citation_ok": false,
+    "stable": "STABILE"
+  },
+  "N002": {
+    "intent": "narrative",
+    "expected": {
+      "doc": "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+      "page": 133
+    },
+    "final_level": "MEDIA",
+    "hit": false,
+    "status": "MISS",
+    "citation_ok": false,
+    "stable": "STABILE"
+  },
+  "N003": {
+    "intent": "narrative",
+    "expected": {
+      "doc": "manzoni_comac_spareparts_B",
+      "page": 14
+    },
+    "final_level": "MEDIA",
+    "hit": false,
+    "status": "MISS",
+    "citation_ok": false,
+    "stable": "STABILE"
+  },
+  "R001": {
+    "intent": "refusal",
+    "expected": {},
+    "final_level": "BASSA",
+    "hit": true,
+    "status": "PASS",
+    "citation_ok": true,
+    "stable": "N/A"
+  },
+  "C_DE_01": {
+    "intent": "code",
+    "expected": {
+      "doc": "kbs_gastrotechnik_1717",
+      "page": 18,
+      "code": "80637"
+    },
+    "final_level": "ALTA",
+    "hit": false,
+    "status": "WRONG_ALTA",
+    "citation_ok": false,
+    "stable": "N/A"
+  },
+  "C_DE_02": {
+    "intent": "code",
+    "expected": {
+      "doc": "kbs_gastrotechnik_1717",
+      "page": 17,
+      "code": "70167"
+    },
+    "final_level": "ALTA",
+    "hit": false,
+    "status": "WRONG_ALTA",
+    "citation_ok": false,
+    "stable": "N/A"
+  },
+  "C_DE_03": {
+    "intent": "code",
+    "expected": {
+      "doc": "kbs_gastrotechnik_1717",
+      "page": 15,
+      "code": "87131"
+    },
+    "final_level": "ALTA",
+    "hit": false,
+    "status": "WRONG_ALTA",
+    "citation_ok": false,
+    "stable": "N/A"
+  },
+  "C_EN_01": {
+    "intent": "code",
+    "expected": {
+      "doc": "rotax_912_914_IPC",
+      "page": 24,
+      "code": "877380"
+    },
+    "final_level": "ALTA",
+    "hit": false,
+    "status": "WRONG_ALTA",
+    "citation_ok": false,
+    "stable": "N/A"
+  },
+  "C_EN_02": {
+    "intent": "code",
+    "expected": {
+      "doc": "crusader_marine_L510008",
+      "page": 55,
+      "code": "22112"
+    },
+    "final_level": "ALTA",
+    "hit": false,
+    "status": "WRONG_ALTA",
+    "citation_ok": false,
+    "stable": "N/A"
+  },
+  "C_EN_03": {
+    "intent": "code",
+    "expected": {
+      "doc": "rotax_912_914_IPC",
+      "page": 84,
+      "code": "874300"
+    },
+    "final_level": "ALTA",
+    "hit": false,
+    "status": "WRONG_ALTA",
+    "citation_ok": false,
+    "stable": "N/A"
+  },
+  "RBAC002": {
+    "intent": "rbac_negative",
+    "expected": {
+      "doc": "branson_4520R_parts",
+      "page": 14,
+      "code": "AF02110000E4"
+    },
+    "final_level": "BASSA",
+    "hit": true,
+    "status": "PASS",
+    "citation_ok": true,
+    "stable": "N/A"
+  }
+}

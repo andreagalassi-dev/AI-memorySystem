@@ -112,3 +112,225 @@ def compare_to_baseline(baseline, current):
         reasons.append("Citation regression (presente -> assente)")
         
     return len(reasons) > 0, reasons
+import argparse
+import sys
+import os
+import json
+import time
+
+# Add src to path so we can import
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+from src.graph.pipeline import answer
+from src.serving.session_deps import get_deps
+from scripts.golden_gate import (
+    evaluate_code, evaluate_visual, evaluate_narrative,
+    evaluate_refusal, evaluate_rbac_negative, evaluate_stability,
+    compare_to_baseline, get_level_rank
+)
+
+def run_harness(update_baseline=False, limit=None):
+    dataset_path = "data/golden/golden_v1.jsonl"
+    baseline_path = "data/golden/baseline/golden_baseline_v1.json"
+    audit_path = "output/audit/b2_2_gate_run.json"
+    
+    os.makedirs(os.path.dirname(baseline_path), exist_ok=True)
+    os.makedirs(os.path.dirname(audit_path), exist_ok=True)
+    
+    # Load dataset
+    rows = []
+    with open(dataset_path, "r") as f:
+        for line in f:
+            if line.strip():
+                rows.append(json.loads(line))
+                
+    if limit is not None:
+        rows = rows[:limit]
+        
+    deps_cache = {}
+    
+    results = {}
+    metrics = {
+        "langs": {},
+        "intents": {}
+    }
+    
+    hard_floors_violated = []
+    
+    # Run evaluations
+    for row in rows:
+        qa_id = row["qa_id"]
+        query = row["query"]
+        role = row["role"]
+        intent = row["intent"]
+        lang = row["lang"]
+        expected = row.get("expected", {})
+        
+        print(f"Running [{qa_id}] ({intent}) - '{query}'")
+        
+        if role not in deps_cache:
+            deps_cache[role] = get_deps(role)
+            
+        deps = deps_cache[role]
+        
+        # Determine how many runs
+        num_runs = 3 if intent == "narrative" else 1
+        
+        row_runs = []
+        for run_idx in range(num_runs):
+            t0 = time.time()
+            state = answer(query, role, deps=deps)
+            lat = time.time() - t0
+            
+            final_level = state.get("final_level")
+            citations = state.get("citations", [])
+            visual_pages = state.get("visual_pages", [])
+            
+            run_res = {
+                "latency": lat,
+                "final_level": final_level,
+                "hit": False, # to be filled
+                "status": "",
+                "citation_ok": len(citations) > 0 # rough generic metric
+            }
+            
+            # Evaluate based on intent
+            if intent == "code":
+                ev = evaluate_code(final_level, citations, expected.get("doc"), expected.get("page"))
+                run_res["hit"] = ev["hit"]
+                run_res["status"] = ev["status"]
+                run_res["citation_ok"] = ev["hit"]
+                if ev["status"] == "WRONG_ALTA":
+                    hard_floors_violated.append(f"{qa_id}: WRONG_ALTA (sbagliato doc/page ma livello ALTA)")
+                    
+            elif intent == "visual":
+                ev = evaluate_visual(visual_pages, expected.get("doc"), expected.get("pages", []))
+                run_res["hit"] = ev["hit"]
+                run_res["status"] = ev["status"]
+                run_res["citation_ok"] = ev["hit"]
+                
+            elif intent == "narrative":
+                ev = evaluate_narrative(final_level, citations, expected.get("doc"), expected.get("page"))
+                run_res["hit"] = ev["hit"]
+                run_res["status"] = "PASS" if ev["hit"] else "MISS"
+                run_res["citation_ok"] = ev["hit"]
+                
+            elif intent == "refusal":
+                ev = evaluate_refusal(final_level, citations)
+                run_res["hit"] = ev["hit"]
+                run_res["status"] = "PASS" if ev["hit"] else "MISS"
+                run_res["citation_ok"] = True # No citations expected
+                if not ev["hit"]:
+                    hard_floors_violated.append(f"{qa_id}: REFUSAL failure (non ha rifiutato onestamente)")
+                    
+            elif intent == "rbac_negative":
+                ev = evaluate_rbac_negative(final_level, citations, expected.get("doc"))
+                run_res["hit"] = ev["status"] == "PASS"
+                run_res["status"] = ev["status"]
+                run_res["citation_ok"] = run_res["hit"]
+                if ev["status"] == "RBAC_LEAK":
+                    hard_floors_violated.append(f"{qa_id}: RBAC_LEAK (esposto documento riservato)")
+                    
+            row_runs.append(run_res)
+            
+        # Determine aggregate outcome for the row
+        stable_status = evaluate_stability(row_runs) if intent == "narrative" else "N/A"
+        
+        # Take the first run as representative for the baseline, except for stability
+        rep = row_runs[0]
+        
+        results[qa_id] = {
+            "intent": intent,
+            "lang": lang,
+            "expected": expected,
+            "runs": row_runs,
+            "stable": stable_status,
+            "final_level": rep["final_level"],
+            "hit": rep["hit"],
+            "status": rep["status"],
+            "citation_ok": rep["citation_ok"]
+        }
+        
+    # Generate Baseline & Compare
+    baseline_exists = os.path.exists(baseline_path)
+    baseline_data = {}
+    if baseline_exists:
+        with open(baseline_path, "r") as f:
+            baseline_data = json.load(f)
+            
+    creating_baseline = not baseline_exists
+    writing_baseline = creating_baseline or update_baseline
+    
+    if writing_baseline:
+        base_to_write = {}
+        for k, v in results.items():
+            base_to_write[k] = {
+                "intent": v["intent"],
+                "expected": v["expected"],
+                "final_level": v["final_level"],
+                "hit": v["hit"],
+                "status": v["status"],
+                "citation_ok": v["citation_ok"],
+                "stable": v["stable"]
+            }
+        with open(baseline_path, "w") as f:
+            json.dump(base_to_write, f, indent=2)
+            
+        if creating_baseline:
+            print("\nBASELINE CREATA.")
+        else:
+            print("\nBASELINE AGGIORNATA.")
+            
+    # Compare to baseline if it existed and we aren't creating it
+    regressions = []
+    if not creating_baseline:
+        for qa_id, curr in results.items():
+            if qa_id in baseline_data:
+                base = baseline_data[qa_id]
+                is_reg, reasons = compare_to_baseline(base, curr)
+                if is_reg:
+                    regressions.append(f"{qa_id} regredito: {', '.join(reasons)}")
+                    
+    # Metrics
+    # (Just some simple aggregations as requested)
+    print("\n--- METRICHE ---")
+    langs = {}
+    for qa_id, curr in results.items():
+        l = curr["lang"]
+        langs.setdefault(l, {"total": 0, "hits": 0})
+        langs[l]["total"] += 1
+        if curr["hit"]:
+            langs[l]["hits"] += 1
+            
+    for l, d in langs.items():
+        print(f"Lingua {l}: {d['hits']}/{d['total']} ({(d['hits']/d['total'])*100:.1f}%)")
+        
+    # Write audit
+    with open(audit_path, "w") as f:
+        json.dump(results, f, indent=2)
+        
+    print(f"\nAudit scritto in {audit_path}")
+    
+    # Floors & Regressions Check
+    exit_code = 0
+    if regressions:
+        print("\nREGRESSIONI TROVATE:")
+        for r in regressions:
+            print(f" - {r}")
+        exit_code = 1
+        
+    if hard_floors_violated:
+        print("\nVIOLAZIONI HARD FLOOR (FALLIMENTO DURO):")
+        for v in hard_floors_violated:
+            print(f" - {v}")
+        exit_code = 1
+        
+    sys.exit(exit_code)
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--update-baseline", action="store_true")
+    parser.add_argument("--limit", type=int, default=None)
+    args = parser.parse_args()
+    
+    run_harness(update_baseline=args.update_baseline, limit=args.limit)
