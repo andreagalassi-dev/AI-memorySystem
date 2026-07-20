@@ -57,7 +57,7 @@ Il lavoro vero vive su `feature/fase1-model-multiplexer`; main è 60+ commit ind
      (estrazione tabelle? normalizzazione? chunking? fusione? generazione?);
   c. estrazione Mamoli morta a pagina 185: dove e perché;
   d. visivo 40% sul set eval: analisi errori per lingua e per tipo di pagina.
-- **B2 Golden dataset gate**: comando unico, baseline salvata, fail su regressione,
+- [x] **B2 Golden dataset gate**: comando unico, baseline salvata, fail su regressione,
   metriche PER LINGUA. Target fissati sui numeri di B1; vincoli già decisi:
   precision ALTA ≥ 0.98 e (a regime, con l'epica H) **copertura ≥ 90% di risposte
   corrette e utili — il "non lo so" deve essere raro**. Include test di stabilità
@@ -132,7 +132,7 @@ Il "non lo so" deve diventare RARO: target di prodotto ≥90% risposte corrette 
 ## Metodo (quello che ha funzionato)
 - Un'epica alla volta; ogni epica spezzata in punti piccoli con DoD e STOP.
 - Agente esecutore implementa; reviewer verifica OGNI claim con i tool prima del verdetto.
-- Da B2 in poi: nessun punto si chiude senza golden gate verde.
+- Da B2 in poi: NESSUN punto di NESSUNA epica si chiude senza `python scripts/golden_gate.py` verde.
 - Commit piccoli; niente push su main senza smoke e2e.
 
 ## Governance documenti

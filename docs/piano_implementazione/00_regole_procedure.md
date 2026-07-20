@@ -21,9 +21,9 @@ Il sistema adotta una **gerarchia di modelli** che scala in base all'hardware:
 
 ## 3. Controllo Qualità AI (Testing di Regressione e MLOps)
 Durante tutto lo sviluppo, il sistema implementa un meccanismo di **Testing di Regressione**.
-*   **Golden Dataset:** Un set di 100 domande difficili sui ricambi con risposta nota e validata.
-*   **Automazione:** Ogni volta che si modifica il codice o un prompt, il sistema riprova in automatico queste 100 domande (tramite framework come Ragas o TruLens).
-*   **Gate di Rilascio:** Se l'AI indovina, la modifica è approvata. Se sbaglia una risposta che ieri sapeva dare (una *regressione*), l'aggiornamento si ferma. Questo garantisce che il sistema diventi progressivamente solo più intelligente.
+*   **Golden Dataset e Gate:** Comando unico `python scripts/golden_gate.py` basato su una baseline versionata (`data/golden/baseline/golden_baseline_v1.json`).
+*   **Metriche ed Esecuzione:** Misura l'accuratezza con metriche separate per lingua (IT/EN/DE) ed esegue test di stabilità (×3 run per le risposte non puramente estrattive).
+*   **Gate di Rilascio:** La modifica è approvata solo se non presenta regressioni rispetto alla baseline (es. una query corretta che inizia a fallire o degrada in stabilità). Introduce **hard floors index-aware** per il livello di affidabilità (precision ALTA), bloccando il merge in caso di allucinazioni documentate. Qualsiasi regressione interrompe l'esecuzione con exit status non nullo.
 
 ## 4. Procedure Operative e Regole di Sviluppo (Enrichment)
 Per garantire un livello Enterprise del codice, tutto il team deve aderire alle seguenti prassi:

@@ -1,5 +1,17 @@
-# Report Golden Gate B2.2 (Rework v3)
+# Report Golden Gate B2.2 (Rework v3) e Istruzioni B2.3
 
+## Istruzioni d'uso del Gate (Aggiunte in B2.3)
+Il Golden Gate è il test di non-regressione vincolante del progetto. NESSUNA modifica può essere mergiata senza il gate verde.
+
+- **Come si esegue:** `python scripts/golden_gate.py`. Questo script ricarica il dataset, interroga i modelli e confronta l'esito con la baseline versionata (`data/golden/baseline/golden_baseline_v1.json`).
+- **Come si legge un fallimento:** Se lo script esce con exit code ≠ 0 (rosso), mostrerà un log con l'elenco delle regressioni o delle violazioni di hard floor.
+  - *Hit regression*: una query che aveva risposto correttamente ora non trova più l'evidenza.
+  - *Level regression*: il livello di confidenza è peggiorato (es. da ALTA a MEDIA).
+  - *Stability regression*: la risposta narrativa era STABILE e ora oscilla (UNSTABLE).
+  - *Hard floor violato*: un errore inaccettabile come `WRONG_ALTA` (falsa citazione certificata), `RBAC_LEAK` o fallimento di un Rifiuto di Rispondere atteso.
+- **Come aggiornare la baseline:** Se il codice è stato migliorato (es. un MISS è diventato un PASS_ALTA), il gate diventerà **verde** (nessuna regressione) ma segnalerà il miglioramento (metriche salite). **Solo a questo punto, dopo revisione umana**, l'utente autorizza l'agente a eseguire `python scripts/golden_gate.py --update-baseline`. Il flag aggiorna la baseline con i nuovi successi, che diventeranno il nuovo standard minimo richiesto.
+
+---
 ## Metriche per lingua
 - **IT**: 23/30 (76.7%)
 - **EN**: 5/6 (83.3%)
