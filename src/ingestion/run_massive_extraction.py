@@ -41,6 +41,7 @@ from src.ingestion.extraction.extractor import PageRef, TableExtractor
 from src.ingestion.extraction.grounding import partition
 from src.ingestion.extraction.load import DEFAULT_SCHEMA
 from src.ingestion.extraction.schema import RigaListino, Scarto
+from src.ingestion.extraction.quality_guard import is_jumbled_page
 from src.ingestion.extraction.table_detect import is_table_page
 from src.ingestion.extraction.text_table import reliable_text_layer
 from src.ingestion.fast_dispatch import DocumentDispatch, Route, dispatch_pdf
@@ -268,6 +269,24 @@ def run_document_massive(
                             for g in ft_grezze
                         ]
                         ft_valide, ft_scarti = partition(ft_righe, ft_page_text)
+                        
+                        if is_jumbled_page(ft_valide):
+                            logger.warning(
+                                "runner: doc_stem=%s page=%d guardia anti-jumbling (FAST_TABLE_TEXT) attivata "
+                                "— righe rifiutate",
+                                doc_stem, page_no
+                            )
+                            page_outcomes.append(
+                                MassivePageOutcome(
+                                    page=page_no,
+                                    route="JUMBLED_SKIP",
+                                    n_valide=0,
+                                    n_scarti=0,
+                                    reason="JUMBLED_SKIP",
+                                )
+                            )
+                            continue
+
                         ft_summary = _persist_tx(conn, ft_valide, ft_scarti, schema=schema)
                         tot_valide += ft_summary["righe_upsert"]
                         tot_scarti += ft_summary["scarti"]
@@ -384,6 +403,24 @@ def run_document_massive(
                 # verita' INDIPENDENTE dal modello. I codici estratti dal VLM
                 # devono essere ancorati a token presenti nel testo della pagina.
                 valide, scarti = partition(righe, page_text)
+
+                if is_jumbled_page(valide):
+                    logger.warning(
+                        "runner: doc_stem=%s page=%d guardia anti-jumbling (%s) attivata "
+                        "— righe rifiutate",
+                        doc_stem, page_no, route_label
+                    )
+                    page_outcomes.append(
+                        MassivePageOutcome(
+                            page=page_no,
+                            route="JUMBLED_SKIP",
+                            n_valide=0,
+                            n_scarti=0,
+                            reason="JUMBLED_SKIP",
+                        )
+                    )
+                    continue
+
                 summary = _persist_tx(conn, valide, scarti, schema=schema)
 
                 tot_valide += summary["righe_upsert"]

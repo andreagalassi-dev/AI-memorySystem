@@ -12,7 +12,17 @@ def is_spillover_row(descrizione: str | None) -> bool:
     - max_rep = massima molteplicità di un token identico
     - SPILLOVER se: len(value_tokens) >= 4 OPPURE max_rep >= 3
     """
-    return False
+    if not descrizione:
+        return False
+        
+    tokens = descrizione.split()
+    if not tokens:
+        return False
+        
+    value_tokens = [t for t in tokens if any(c.isdigit() for c in t)]
+    max_rep = max(tokens.count(t) for t in set(tokens))
+    
+    return len(value_tokens) >= 4 or max_rep >= 3
 
 
 def is_jumbled_page(righe: list[RigaListino], soglia: float = 0.40) -> bool:
@@ -22,4 +32,8 @@ def is_jumbled_page(righe: list[RigaListino], soglia: float = 0.40) -> bool:
     - (righe_spillover / righe_totali) > soglia
     - Applicato SOLO se righe_totali >= 4
     """
-    return False
+    if len(righe) < 4:
+        return False
+        
+    spillover_count = sum(1 for r in righe if is_spillover_row(r.descrizione))
+    return (spillover_count / len(righe)) > soglia
