@@ -30,10 +30,11 @@ def is_jumbled_page(righe: list[RigaListino], soglia: float = 0.40) -> bool:
     
     Criteri:
     - (righe_spillover / righe_totali) > soglia
-    - Applicato SOLO se righe_totali >= 4
+    - Applicato a pagine con >= 2 righe (pagine con 1 sola riga passano)
     """
-    if len(righe) < 4:
+    if len(righe) < 2:
         return False
         
     spillover_count = sum(1 for r in righe if is_spillover_row(r.descrizione))
     return (spillover_count / len(righe)) > soglia
+
