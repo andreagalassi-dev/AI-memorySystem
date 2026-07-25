@@ -202,6 +202,7 @@ def sql_node(state: GraphState, deps: Deps) -> dict:
     except Exception as exc:  # fail-closed: Postgres giu'/timeout
         return {"system_error": True, "level": "BASSA",
                 "audit": _audit(state, f"Sistema non disponibile (sql): {exc}")}
+    rows = [r for r in rows if r.valore is not None and (not isinstance(r.valore, str) or r.valore.strip() != "")]
     if not rows:
         return {"sql_params": params, "sql_rows": [], "level": "BASSA",
                 "audit": _audit(state, f"sql: 0 righe per '{params.codice_normalizzato}' "
