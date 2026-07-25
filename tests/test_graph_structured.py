@@ -19,7 +19,7 @@ from src.graph.pipeline import (
     sql_node,
     _after_sql,
 )
-from src.graph.tools.sql_tool import FakeSqlExecutor
+from src.graph.tools.sql_tool import FakeSqlExecutor, LookupRow
 from src.retrieval.confidence import Thresholds
 from src.retrieval.synthesis import REFUSAL
 
@@ -85,6 +85,14 @@ class TestSqlNode:
                 raise RuntimeError("DB giù")
         out = sql_node({"query": "prezzo", "code_token": CODE}, _deps(sql=Boom()))
         assert out["system_error"] is True and out["level"] == "BASSA"
+
+    def test_righe_presenti_senza_valore_utile_fallback_bassa(self):
+        class NullValoreExecutor:
+            def run(self, params):
+                return [LookupRow(valore=None, doc_stem="listino_x", page=3)]
+        out = sql_node({"query": "prezzo", "code_token": CODE}, _deps(sql=NullValoreExecutor()))
+        assert out["level"] == "BASSA"
+        assert out["sql_rows"] == []
 
 
 # --------------------------------------------------------------- render_node
