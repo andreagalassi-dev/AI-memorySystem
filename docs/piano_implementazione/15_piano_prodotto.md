@@ -144,6 +144,29 @@ Il lavoro vero vive su `feature/fase1-model-multiplexer`; main è 60+ commit ind
     intermedi erano un FALSO ALLARME (ollama di altro utente macOS sulla 11434 senza gemma4 →
     generazione fallita; verificato via ollama dedicata 11435). C2.b ora sbloccabile (guardia
     integrata pre-persist + snapshot DB prima).
+  - **C2.b-2 (tentativo 2, pilota-guardia) — 25/07: RESPINTO (verificato reviewer coi tool).**
+    Staging scelta dall'utente: re-estrarre PRIMA i 3 doc complessi (kohler_marine, kohler_industrial,
+    nsk) con guardia attiva + **snapshot DB** (`pg_dump -Fc` schema estrazione), poi i 40. Esito:
+    la re-estrazione ha creato la garbage-row **`GM41013 → "7.1"`, prezzo NULL, pag 95** (firma
+    identica all'incidente originale) → **C003 ALTA→BASSA** (gate rosso). La staging ha fatto il
+    suo lavoro: incidente riprodotto sui 3 doc, MAI toccati i 40. **Rollback chirurgico eseguito**
+    (DELETE 3 doc + reinserimento 97 righe PRE dallo snapshot validato; righe_listino 8692→**5196/47**,
+    gate di nuovo exit 0, C003 PASS_ALTA). Estrazione verificata **additiva pura** (diff via snapshot:
+    0 righe PRE perse/sovrascritte). **Due difetti di fondo scoperti (→ epica D, vedi D1/D2):**
+    (D1) la guardia è cieca a questa classe di garbage — pag 95 è soup ma solo ~22% righe spillover
+    < soglia 40% → accettata; (D2) il ramo STRUCTURED non fa fallback su prezzo NULL — riga con
+    prezzo NULL fa restituire "non lo so" terminale (`render_node` price-grounding) invece di tornare
+    a retrieval (dove il codice è ALTA in Qdrant). **Raggio**: 1274 righe NULL-price nei soli 3 doc
+    → rischio sistemico in produzione per i parts-list senza prezzo. **Conclusione: C2.b SOSPESO**
+    (borderless net-positivo solo sui listini CON prezzo) finché D1+D2 non sono risolti in epica D.
+    **NB misura (costato un'indagine):** durante il ciclo il gate è andato rosso su V*/N* per la
+    tabella **`synonym_concepts` ASSENTE** (query-expansion Debt §2 → `expand_query` solleva →
+    rami visivo/narrativo degradati a vuoto; code query BM25 illesi). NON era né RAM né C2.b
+    (visivo ⊥ righe_listino). Fix: `scripts/seed_synonyms.py` (idempotente) → gate verde. La
+    sparizione della tabella **non è riproducibile dal codice** (nessun DROP di `public.synonym_concepts`
+    nel repo; i DROP dei test colpiscono schemi temp) → causa esterna/una-tantum indeterminata.
+    **Azione di robustezza consigliata: preflight nel golden_gate** che asserisce l'esistenza di
+    `synonym_concepts` (fail-fast) così "infra mancante" ≠ "regressione di qualità" silenziosa.
 - **C3 — Riconciliazione prezzi↔pagine** ripensata (11 linked / 2320 orfani).
 - **C4 — Dashboard scarti** per risoluzione umana (i `tracked_files.status='failed'`
   con `error_log` di C1.a sono il primo alimentatore).
@@ -180,6 +203,16 @@ una causa minoritaria (B1.b: ≥62% del degrado codici è dato povero/estrazione
 normalizzazione) e presuppone comunque C1.a.
 
 ### D — Correttezza e stabilità della risposta
+- **D1 — Guardia estrazione a livello-riga (sblocca C2.b).** La guardia anti-jumbling C2.c è
+  per-pagina e cieca al garbage a "valori-corti/cross-ref" dei parts-list senza prezzo (es.
+  Mamoli/kohler pag 95: `GM41013→"7.1"`, `GM41014→"344519 359653…"`). Serve un segnale a livello
+  riga (o una guardia complementare) che rifiuti la singola riga-rumore, non solo la pagina-soup.
+- **D2 — Fallback del ramo STRUCTURED su valore assente (sblocca C2.b).** Oggi una riga in
+  `righe_listino` con prezzo NULL cortocircuita il fallback a retrieval: `sql_node` sale ad ALTA
+  (riga presente), `render_node` fallisce il price-grounding e restituisce "non lo so" **terminale**,
+  invece di tornare al retrieval dove il codice è ALTA in Qdrant (regressione C003 in C2.b-2). Fix:
+  in `sql_node`/`sql_tool` trattare "riga senza valore utile sul campo" come 0-righe → fallback.
+  (Coerente col finding C1: molti MISS nascono nel percorso `answer()`, non nel retrieval-depth.)
 - Ramo STRUCTURED deterministico: l'LLM **formatta, non genera** (come da visione) —
   mai più "IEC 34-7" quando l'evidenza dice "EN60034-7".
 - Stabilità ×N nel golden gate; audit del confidence (il caso "margine 1.00 → alta"
