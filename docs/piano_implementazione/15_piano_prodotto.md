@@ -125,6 +125,17 @@ Il lavoro vero vive su `feature/fase1-model-multiplexer`; main è 60+ commit ind
     OPPURE un token ripetuto ≥3 volte**. % spillover per doc: ivm 13%, geesink 16%, Mamoli 22%
     (buoni) vs **bgr 79% (jumbled)** → soglia pagina ~40%. Doppia utilità: (1) sblocca la
     re-estrazione C2.b in sicurezza; (2) bonifica delle ~116 righe jumbled residue.
+    **C2.c-fix FATTO e APPROVATO (20/07, verificato reviewer)**: floor min-4→min-2 (le pagine
+    jumbled low-row di bgr sfuggivano); verdetti per-pagina corretti (Mamoli p8/bgr p5 jumbled;
+    Mamoli p230/ivm p270 pulite; le nuove-flaggate Mamoli p11-13 sono header-junk genuino);
+    TDD rosso-prima genuino. NB metodo: 9 fallimenti suite risultati AMBIENTALI (modello BM25
+    fastembed evitto dalla temp macOS, ripopolato) — l'esecutore aveva lanciato solo il proprio
+    file di test: **da qui pretendere `pytest tests` INTERO nel report**.
+    **FINDING STRATEGICO (da affrontare prima della bonifica/C2.b):** la guardia flagga
+    **103/142 pagine Mamoli** (73%) come jumbled → **C2.a stesso ha prodotto molto garbage**
+    (gate verde solo perché le sue query non toccano quelle pagine). Domanda aperta: il recupero
+    borderless è net-positivo DOPO la guardia, o il fix borderless va ristretto/ripensato? La
+    bonifica e la riapertura C2.b dipendono da questa risposta.
 - **C3 — Riconciliazione prezzi↔pagine** ripensata (11 linked / 2320 orfani).
 - **C4 — Dashboard scarti** per risoluzione umana (i `tracked_files.status='failed'`
   con `error_log` di C1.a sono il primo alimentatore).
