@@ -53,13 +53,38 @@ def test_is_jumbled_page():
     # 3 spillover su 5 = 60% > 40%
     assert is_jumbled_page(jumbled)
     
-    # Meno di 4 righe in totale (non si applica il jumbled check)
-    poche_righe = [
+    buona_2_righe = [
+        make_riga("Rosone/Wall plate 2817 Stylos"),
+        make_riga("32x40 NR"),
+    ]
+    assert not is_jumbled_page(buona_2_righe)
+
+    # Pagina jumbled (>= 4 righe)
+    jumbled = [
         make_riga("GR1 GR1 GR2 GR2 GR4 GR7 GR1"),
         make_riga('ST-0286-4M-F 25.5000 25-1/2" 13.7500 13-'),
         make_riga("Altro pezzo jumbled 10 20 30 40 50"),
+        make_riga("Buona riga 123"),
+        make_riga("Altra riga buona 456"),
     ]
-    assert not is_jumbled_page(poche_righe)
+    # 3 spillover su 5 = 60% > 40%
+    assert is_jumbled_page(jumbled)
+    
+    # Pagina jumbled con 3 righe (tutte spillover, stile bgr/nsk)
+    # Deve restituire True
+    poche_righe_jumbled = [
+        make_riga("GR1 GR1 GR2 GR2 GR4 GR7 GR1"),
+        make_riga('ST-0286-4M-F 25.5000 25-1/2" 13.7500 13-'),
+        make_riga("Pos. 1A 1A 1A 1A 1A 1A 1A"),
+    ]
+    assert is_jumbled_page(poche_righe_jumbled)
+
+    # Singola riga: passa sempre (troppo poco segnale, <2 righe)
+    singola_riga = [
+        make_riga("GR1 GR1 GR2 GR2 GR4 GR7 GR1"),
+    ]
+    assert not is_jumbled_page(singola_riga)
+
 
 
 from unittest.mock import MagicMock, patch
