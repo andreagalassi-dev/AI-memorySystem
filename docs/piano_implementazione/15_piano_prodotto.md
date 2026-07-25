@@ -136,6 +136,14 @@ Il lavoro vero vive su `feature/fase1-model-multiplexer`; main è 60+ commit ind
     (gate verde solo perché le sue query non toccano quelle pagine). Domanda aperta: il recupero
     borderless è net-positivo DOPO la guardia, o il fix borderless va ristretto/ripensato? La
     bonifica e la riapertura C2.b dipendono da questa risposta.
+    **RISPOSTA (misura reviewer 20/07): net-positivo, C2.a ha valore reale.** Row-weighted
+    (non page-weighted): Mamoli clean=1423 vs baseline 280 = **+1143**; ivm clean 1674, bgr 174,
+    geesink 205. **BONIFICA ESEGUITA e VERIFICATA**: rimosse 747 righe garbage (pagine jumbled)
+    da Mamoli(→1423)/ivm(→1674)/bgr(→174)/geesink(→205); righe_listino 5943→5196; **golden gate
+    exit 0** (C003/C_DE_01/C_EN_01 ALTA, N003 PASS, 0 WRONG_ALTA). NB ambiente: i gate rossi
+    intermedi erano un FALSO ALLARME (ollama di altro utente macOS sulla 11434 senza gemma4 →
+    generazione fallita; verificato via ollama dedicata 11435). C2.b ora sbloccabile (guardia
+    integrata pre-persist + snapshot DB prima).
 - **C3 — Riconciliazione prezzi↔pagine** ripensata (11 linked / 2320 orfani).
 - **C4 — Dashboard scarti** per risoluzione umana (i `tracked_files.status='failed'`
   con `error_log` di C1.a sono il primo alimentatore).
