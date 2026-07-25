@@ -189,12 +189,12 @@
       "page": 44,
       "code": "102036200PF"
     },
-    "final_level": "BASSA",
-    "hit": false,
-    "status": "MISS",
-    "citation_ok": false,
+    "final_level": "ALTA",
+    "hit": true,
+    "status": "PASS_ALTA",
+    "citation_ok": true,
     "stable": "N/A",
-    "matched_expected_page": false
+    "matched_expected_page": true
   },
   "C015": {
     "intent": "code",

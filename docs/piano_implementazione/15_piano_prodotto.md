@@ -207,7 +207,13 @@ normalizzazione) e presuppone comunque C1.a.
   per-pagina e cieca al garbage a "valori-corti/cross-ref" dei parts-list senza prezzo (es.
   Mamoli/kohler pag 95: `GM41013→"7.1"`, `GM41014→"344519 359653…"`). Serve un segnale a livello
   riga (o una guardia complementare) che rifiuti la singola riga-rumore, non solo la pagina-soup.
-- **D2 — Fallback del ramo STRUCTURED su valore assente (sblocca C2.b).** Oggi una riga in
+- **D2 — Fallback del ramo STRUCTURED su valore assente (sblocca C2.b).** ✅ **FATTO e APPROVATO
+  (25/07, verificato reviewer coi tool: rosso-prima genuino via checkout, suite 768/2, gate exit 0,
+  0 WRONG_ALTA, 0 regressioni).** Fix in `sql_node` (`pipeline.py:205`): filtra le righe per valore
+  utile sul campo → se vuoto, ramo `not rows` → fallback retrieval. **Bonus: C014 (102036200PF,
+  senza prezzo) MISS→PASS_ALTA** (true positive verificato index-aware); baseline aggiornata a
+  20 PASS_ALTA/13 PASS/8 MISS. Commit `36c4a94`(test)/`c41ee9b`(impl)/`110bcbc`(report). Diagnosi
+  originale: una riga in
   `righe_listino` con prezzo NULL cortocircuita il fallback a retrieval: `sql_node` sale ad ALTA
   (riga presente), `render_node` fallisce il price-grounding e restituisce "non lo so" **terminale**,
   invece di tornare al retrieval dove il codice è ALTA in Qdrant (regressione C003 in C2.b-2). Fix:
