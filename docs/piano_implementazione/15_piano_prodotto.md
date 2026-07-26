@@ -203,10 +203,21 @@ una causa minoritaria (B1.b: ≥62% del degrado codici è dato povero/estrazione
 normalizzazione) e presuppone comunque C1.a.
 
 ### D — Correttezza e stabilità della risposta
-- **D1 — Guardia estrazione a livello-riga (sblocca C2.b).** La guardia anti-jumbling C2.c è
-  per-pagina e cieca al garbage a "valori-corti/cross-ref" dei parts-list senza prezzo (es.
-  Mamoli/kohler pag 95: `GM41013→"7.1"`, `GM41014→"344519 359653…"`). Serve un segnale a livello
-  riga (o una guardia complementare) che rifiuti la singola riga-rumore, non solo la pagina-soup.
+- **D1 — Guardia estrazione a livello-riga: ❌ RESPINTA (26/07, 2 validazioni reviewer su dati
+  reali).** Nessun segnale di CONTENUTO per-riga separa il garbage dai dati validi: il garbage ha
+  3 modalità che tirano in direzioni opposte — (A) contentless (`GM41013→"7.1"`, no prezzo/no
+  parola: catturabile); (B) **prezzo mis-parsato nella descrizione** (`22330VEC4→"4934.26"`,
+  **773 righe nsk valide e recuperabili** → un segnale che le scarta = perdita dati); (C) **soup
+  multi-parte con parole** (`GM88990→"Gasket… Screw… Screw…"`, **57 righe kohler** → un segnale
+  "no-parola" le manca). **Radice vera**: `TextTableExtractor` ha un'euristica di colonna
+  "volutamente semplice" (confini da x0 dei codici, `text_table.py`) → inaffidabile sui
+  multi-colonna (kohler: righe fuse) e sul mapping-prezzo di nsk (2-colonne ma instabile). C2.c
+  per-pagina e D1 per-riga sono cerotti su un routing/estrattore sbagliato. **Decisione utente
+  (26/07): Opzione B — estrattore migliore per tabelle complesse** (structure-aware:
+  GLM-OCR VLM via `glm_ocr.py`+`enforce.py`, oggi non servito, e/o Docling TableFormer; + fix
+  mapping-prezzo nsk), da fare **spike-prima** (validare un candidato sulle pagine dure
+  kohler p95/nsk in schema temp, misurato vs TextTableExtractor, prima di integrare). C2.a
+  borderless resta net-positivo SOLO sui listini semplici e ben parsati (Mamoli/ivm/bgr/geesink).
 - **D2 — Fallback del ramo STRUCTURED su valore assente (sblocca C2.b).** ✅ **FATTO e APPROVATO
   (25/07, verificato reviewer coi tool: rosso-prima genuino via checkout, suite 768/2, gate exit 0,
   0 WRONG_ALTA, 0 regressioni).** Fix in `sql_node` (`pipeline.py:205`): filtra le righe per valore
