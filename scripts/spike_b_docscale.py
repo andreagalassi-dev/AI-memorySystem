@@ -18,7 +18,7 @@ from src.ingestion.extraction.schema import RigaGrezza, RigaListino
 from src.ingestion.extraction.load import init_schema, upsert_righe
 from src.backend.clients.postgres_client import conninfo
 
-def extract_docling_rows(pdf_path, page_no):
+def extract_docling_rows(converter, pdf_path, page_no):
     temp_pdf = f"output/spike_b/docscale/temp_page_{page_no}.pdf"
     os.makedirs("output/spike_b/docscale", exist_ok=True)
     
@@ -32,14 +32,6 @@ def extract_docling_rows(pdf_path, page_no):
     import logging
     logging.getLogger("docling").setLevel(logging.ERROR)
     
-    pipeline_options = PdfPipelineOptions(do_ocr=False, do_table_structure=True)
-    pipeline_options.table_structure_options.mode = "accurate"
-    
-    converter = DocumentConverter(
-        format_options={
-            InputFormat.PDF: PdfFormatOption(pipeline_options=pipeline_options)
-        }
-    )
     res = converter.convert(temp_pdf)
     doc = res.document
     
@@ -188,6 +180,14 @@ def main():
     
     mapper = Mapper()
     
+    pipeline_options = PdfPipelineOptions(do_ocr=False, do_table_structure=True)
+    pipeline_options.table_structure_options.mode = "accurate"
+    converter = DocumentConverter(
+        format_options={
+            InputFormat.PDF: PdfFormatOption(pipeline_options=pipeline_options)
+        }
+    )
+    
     for pdf_path in target_docs:
         doc_stem = os.path.basename(pdf_path).replace(".pdf", "")
         print(f"Processing {doc_stem}...")
@@ -200,7 +200,7 @@ def main():
         
         for page_no in range(1, total_pages + 1):
             print(f"  Page {page_no}/{total_pages}", end="\r")
-            grid = extract_docling_rows(pdf_path, page_no)
+            grid = extract_docling_rows(converter, pdf_path, page_no)
             
             for row_cells in grid:
                 mapped_list = mapper.map_cells(row_cells)

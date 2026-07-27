@@ -7,8 +7,20 @@ from scripts.spike_b_docscale import Mapper, extract_docling_rows
 def test_mapper_mamoli_p229():
     pdf_path = "corpus/original_dataset/Mamoli_Catalogo_Ricambi_2021_IT_EN.pdf"
     
+    from docling.document_converter import DocumentConverter, PdfFormatOption
+    from docling.datamodel.base_models import InputFormat
+    from docling.datamodel.pipeline_options import PdfPipelineOptions
+    
+    pipeline_options = PdfPipelineOptions(do_ocr=False, do_table_structure=True)
+    pipeline_options.table_structure_options.mode = "accurate"
+    converter = DocumentConverter(
+        format_options={
+            InputFormat.PDF: PdfFormatOption(pipeline_options=pipeline_options)
+        }
+    )
+    
     # Extract grid for page 229
-    grid = extract_docling_rows(pdf_path, 229)
+    grid = extract_docling_rows(converter, pdf_path, 229)
     
     mapper = Mapper()
     mapped_count = 0
