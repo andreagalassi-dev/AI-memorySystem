@@ -1,0 +1,425 @@
+[
+  [
+    "CODICE/CODE",
+    "PZ X PCS DESCRIZIONE/DESCRIPTION pz x pcs",
+    "CONF ./ PER PACK conf ./ per pack",
+    "\u20ac",
+    "CODICE/CODE",
+    "PZ X PCS PER DESCRIZIONE/DESCRIPTION",
+    "CONF ./ PACK \u20ac"
+  ],
+  [
+    "V0 91568 00007",
+    "a CCeSSori FiSSaGGio d eviatore /d iverter F ixinG aCCeSSorieS",
+    "1581 1",
+    "15,00",
+    "V0 91933 00C07",
+    "P erni CartUCCia /C artridGe P inS P iCo 21S<05",
+    "5 18,00"
+  ],
+  [
+    "V0 91569 00001",
+    "d eviatore /d iverter 1814 S tyloS - C roMo /C HroMe",
+    "1",
+    "46,50",
+    "V0 91948 00007",
+    "a CCeSSori FiSSaGGio /F ixinG aCCeSSorieS P iCo H500",
+    "1 43,00"
+  ],
+  [
+    "V0 91570 00007",
+    "r aCCordo attaCCo BoCCa /t aP ConneCtion",
+    "1",
+    "23,50",
+    "V0 91960 00001",
+    "C aPPUCCio e Calotta /C aP and Cover CaP P iCo - C roMo /C HroMe",
+    "1 36,00"
+  ],
+  [
+    "V0 91571 00001",
+    "d eviatore /d iverter 2817 S tyloS - C roMo /C HroMe",
+    "1",
+    "44,00",
+    "V0 91960 00008",
+    "C aPPUCCio e Calotta /C aP and Cover CaP P iCo - S atinato /S atined",
+    "1 50,50"
+  ],
+  [
+    "V0 91655 00001",
+    "l eva /l ever viP C40 v1>2018",
+    "1",
+    "15,00",
+    "V0 91961 00007",
+    "G Hiera CartUCCia /C artridGe loCKinG rinG P iCo",
+    "1 20,50"
+  ],
+  [
+    "V0 91692 00007",
+    "a CCeSSori FiSSaGGio /F ixinG aCCeSSorieS",
+    "1",
+    "7,50",
+    "V0 91976 00001",
+    "l eva /l ever P iCo 0929-39 - C roMo /C HroMe",
+    "1 147,00"
+  ],
+  [
+    "V0 91694 00001",
+    "r oSone /w all Plate S tellina - C roMo /C HroMe",
+    "1",
+    "25,50",
+    "V0 91976 00008",
+    "l eva /l ever P iCo 0929-39 - S atinato /S atined",
+    "1 190,50"
+  ],
+  [
+    "V0 91697 00C01",
+    "P laCCHette /B adGe S tellina - C roMo /C HroMe",
+    "2",
+    "20,00",
+    "V0 91993 00001",
+    "S oFFione / SHowerHead P iCo - C roMo /C HroMe",
+    "1 112,50"
+  ],
+  [
+    "V0 91698 00001",
+    "G Hiera CartUCCia /C artridGe loCKinG rinG S tellina",
+    "1",
+    "25,00",
+    "V0 92020 00C01",
+    "F leSSiBile /F lexiBle HoSe 12P1 x G.3/8' l.740 MM",
+    "1 43,00"
+  ],
+  [
+    "V0 91707 00001",
+    "a Sta e PoMolo /r od and KnoB - C roMo /C HroMe",
+    "1",
+    "16,00",
+    "V0 92021 00C01",
+    "F leSSiBile /F lexiBle HoSe 10P1 x G.3/8' l.940 MM",
+    "1 48,50"
+  ],
+  [
+    "V0 91708 00001",
+    "B oCCa Bidet /S PoUt S tellina - C roMo /C HroMe",
+    "1",
+    "129,00",
+    "V0 92023 00001",
+    "S UPPorto doCCia /H andSHower BraCKet P iCo",
+    "1 66,00"
+  ],
+  [
+    "V0 91709 00001",
+    "a Sta e PoMolo /r od and KnoB C ity -P iCo -x SMall - C roMo /C HroMe",
+    "1",
+    "19,00",
+    "V0 92041 00001",
+    "G Hiera CartUCCia /l oCKinG n Ut P iCo - C roMo /C HroMe",
+    "1 28,50"
+  ],
+  [
+    "V0 91709 00008",
+    "a Sta e PoMolo /r od and KnoB C ity -P iCo - S atin /S atined",
+    "1",
+    "26,50",
+    "P V0 92042 00001",
+    "orta leva /l ever Holder P iCo - C roMo /C HroMe",
+    "1 19,00"
+  ],
+  [
+    "V0 91724 00001",
+    "B oCCa /S PoUt 1565-1561 S tellina - C roMo /C HroMe",
+    "1",
+    "121,00",
+    "V0 92042 00008",
+    "P orta leva /l ever Holder P iCo - S atinato /S atined",
+    "1 25,00"
+  ],
+  [
+    "V0 91729 00001",
+    "B oCCa /S PoUt 4160-4265 - C roMo /C HroMe",
+    "1",
+    "121,00",
+    "V0 92043 00001",
+    "r oSone /w all Plate P iCo - C roMo /C HroMe",
+    "1 32,00"
+  ],
+  [
+    "V0 91729 00008",
+    "B oCCa /S PoUt 4160-4265 - S atinato /S atined",
+    "1",
+    "163,00",
+    "V0 92043 00008",
+    "r oSone /w all Plate P iCo - S atinato /S atined",
+    "1 40,50"
+  ],
+  [
+    "V0 91735 00001",
+    "S et FiSS . ManiGlia /S et Handle FixinG S tellina - C roMo /C HroMe",
+    "1",
+    "61,50",
+    "V0 92045 00001",
+    "P orta leva /l ever Holder P iCo l iGHt - C roMo /C HroMe",
+    "1 93,00"
+  ],
+  [
+    "V0 91737 00001",
+    "a CCeSSori FiSS . BoCCa /S PoUt FixinG aCCeSSorieS",
+    "1",
+    "15,00",
+    "V0 92152 00001",
+    "ManiGlia a PertUra /o Pen Handle - t erMoStatiCo q35 - C roMo",
+    "1 53,00"
+  ],
+  [
+    "V0 91738 00001",
+    "a CCeSSori FiSS . BoCCa /S PoUt FixinG aCCeSSorieS",
+    "1",
+    "18,50",
+    "V0 92155 00001",
+    "ManiGlia teMP ./H andle teMP . Control - t erMoStatiCo q35 - C roMo",
+    "1 77,00"
+  ],
+  [
+    "V0 91740 00001",
+    "r oSone /w all Plate S tellina 3160-4163 - C roMo /C HroMe",
+    "1",
+    "32,00",
+    "V0 92156 00001",
+    "ManiGlia teMP ./H andle teMP . Control - t erMoStatiCo d43 - C roMo",
+    "1 66,00"
+  ],
+  [
+    "V0 91740 00008",
+    "r oSone /w all Plate S tellina 3160-4163 - S atinato /S atined",
+    "1",
+    "43,00",
+    "V0 92157 00001",
+    "ManiGlia a PertUra /o Pen Handle - t erMoStatiCo d43 - C roMo",
+    "1 44,00"
+  ],
+  [
+    "V0 91743 00001",
+    "B aSe /B aSe S tellina -P iCo - C roMo /C HroMe",
+    "1",
+    "20,00",
+    "B V0 92566 00001",
+    "aSe /B aSe B ordo vaSCa /d eCK MoUnted B-C UBe - C roMo /C Hr",
+    "1 47,00"
+  ],
+  [
+    "V0 91747 00001",
+    "B aSe /B aSe B ordo vaSCa /d eCK MoUnted - C roMo /C HroMe",
+    "1",
+    "71,00",
+    "V0 92567 00001",
+    "P oMolo e BaSe /K noB and BaSe B ordo vaSCa /d eCK MoUnted - C roMo",
+    "1 71,00"
+  ],
+  [
+    "V0 91780 00001",
+    "ManiGlia /H andle C roSS > 2/2014 - C roMo /C HroMe",
+    "1",
+    "59,00",
+    "B aSe MonoFori V0 92702 00001",
+    "/B aSe C HelSea , B elGravia , nH ill - C roMo /C HroMe 1",
+    "21,00"
+  ],
+  [
+    "V0 91780 00C01",
+    "ManiGlia /H andle C roSS > 2/2014 - C roMo /C HroMe",
+    "2",
+    "108,00",
+    "a Sta V0 92706 00007",
+    "ProlUnGo e vite /e xtenSion rod and SCrew 2242-2243",
+    "1 24,00"
+  ],
+  [
+    "V0 91812 00007",
+    "n iPPlo /n iPPle G.1/2' x 15P1",
+    "1",
+    "21,50",
+    "V0 92718 00001",
+    "r oSone /w all Plate 2229 - C roMo /C HroMe",
+    "1 88,00"
+  ],
+  [
+    "V0 91831 00001",
+    "B oCCa /S PoUt 5540 e PoCa - C roMo /C HroMe",
+    "1",
+    "72,50",
+    "ManiGlia V0 92747 00001",
+    "deviatore /d iverter Handle 2242-43 B elGravia - C roMo /C Hr 1",
+    "88,00"
+  ],
+  [
+    "V0 91831 00005",
+    "B oCCa /S PoUt 5540 e PoCa - B ronzo /B ronze",
+    "1",
+    "94,00",
+    "V0 92748 00001",
+    "ManiGlia deviatore /d iverter Handle 2242-43 C HelSea - C roMo /C Hr",
+    "1 100,00"
+  ],
+  [
+    "V0 91832 00001",
+    "B oCCa /S PoUt 5540 a-B-o - C roMo /C HroMe",
+    "1",
+    "V0 92750 68,00",
+    "00001",
+    "ManiGlia /H andle n ottinG H ill Hot - C roMo /C HroMe",
+    "1 88,00"
+  ],
+  [
+    "V0 91836 00007",
+    "r aCCordo /t aP ConneCtion 7450-4450 e PoCa",
+    "1",
+    "13,00",
+    "V0 92751 00001",
+    "ManiGlia /H andle n ottinG H ill Cold - C roMo /C HroMe",
+    "1 88,00"
+  ],
+  [
+    "V0 91858 00007",
+    "a CCeSSori FiSSaGGio MonoFori /F ixinG aCCeSSorieS r a",
+    "1",
+    "10,50",
+    "V0 92753 00001",
+    "ManiGlia /H andle B elGravia Hot - C roMo /C HroMe",
+    "1 88,00"
+  ],
+  [
+    "V0 91859 00001",
+    "a Sta e PoMolo /r od and KnoB ra - C roMo /C HroMe",
+    "1",
+    "16,50",
+    "V0 92754 00001",
+    "ManiGlia /H andle B elGravia Cold - C roMo /C HroMe",
+    "1 88,00"
+  ],
+  [
+    "V0 91862 00007",
+    "a CCeSSori FiSSaGGio /F ixinG aCCeSSorieS 4256-58 r a",
+    "1",
+    "14,00",
+    "V0 92755 00001",
+    "ManiGlia /H andle C HelSea Hot - C roMo /C HroMe",
+    "1 100,00"
+  ],
+  [
+    "V0 91872 00001",
+    "ManiGlia /H andle t erMoStatiCi 3058-3068 - C roMo /C HroMe",
+    "1",
+    "53,00",
+    "V0 92756 00001",
+    "ManiGlia /H andle C HelSea Cold - C roMo /C HroMe",
+    "1 100,00"
+  ],
+  [
+    "V0 91876 00007",
+    "a CCeSSori FiSSaGGio /F ixinG aCCeSSorieS 4186-96",
+    "1",
+    "19,00",
+    "V0 92757 00001",
+    "ManiGlia deviatore /d iverter Handle B elGravia - C roMo /C HroMe",
+    "1 88,00"
+  ],
+  [
+    "V0 91887 00007",
+    "a CCeSSori FiSSaGGio /F ixinG aCCeSSorieS PiCo",
+    "1",
+    "15,00",
+    "V0 92758 00001",
+    "ManiGlia deviatore /d iverter Handle C HelSea - C roMo /C HroMe",
+    "1 100,00"
+  ],
+  [
+    "V0 91888 00C01",
+    "F leSSiBile /F lexiBle HoSe dn8 10P1 x G.3/8' - C roMo /C HroMe",
+    "2",
+    "28,50",
+    "B oCCa /S V0 92769 00001",
+    "PoUt 1262-64 S tellina - C roMo /C HroMe",
+    "1 121,00"
+  ],
+  [
+    "V0 91888 00C03",
+    "F leSSiBile /F lexiBle HoSe dn8 10P1 x G.3/8' - o ro /G old",
+    "2",
+    "75,50",
+    "V0 92779 00001",
+    "P laCCHetta neUtra /B adGe - C roMo /C HroMe",
+    "1 20,00"
+  ],
+  [
+    "V0 91898 00001",
+    "B oCCa /S PoUt 4450 e PoCa - C roMo /C HroMe",
+    "1",
+    "64,00",
+    "V0 92803 00001",
+    "C Urva Colonnetta /P illar ConneCtion 1041 - C roMo /C HroMe",
+    "1 132,00"
+  ],
+  [
+    "V0 91898 00002",
+    "B oCCa /S PoUt 4450 e PoCa - C roMo -o ro /C HroMe -G old",
+    "1",
+    "75,00",
+    "V0 92809 00001",
+    "ManiGlia aSta /H andle Fe18 - C roMo /C HroMe",
+    "1 88,00"
+  ],
+  [
+    "V0 91898 00003",
+    "B oCCa /S PoUt 4450 e PoCa - o ro /G old",
+    "1",
+    "116,00",
+    "V0 93380 00001",
+    "l eva /l ever x CartUCCia \u00f8 35 S Mile - C roMo /C HroMe",
+    "1 16,50"
+  ],
+  [
+    "V0 91898 00004",
+    "B oCCa /S PoUt 4450 e PoCa - o ttone /B raSS",
+    "1",
+    "106,50",
+    "V0 93390 00001",
+    "l eva /l ever x CartUCCia \u00f8 25 S Mile - C roMo /C HroMe",
+    "1 16,50"
+  ],
+  [
+    "V0 91912 00001",
+    "P iantana /S idevalve C ity dx 4267-5267",
+    "1",
+    "50,00",
+    "S V0 94090 00000",
+    "Catola e lettroniCa /P ower SUPPly Box 4091 230v",
+    "1 120,00"
+  ],
+  [
+    "V0 91913 00001",
+    "P iantana /S idevalve C ity Sx 4267-5268",
+    "1",
+    "V0 50,00",
+    "P reMiSCelatore 94091 00007",
+    "/t eMPeratUre PrereGUlator 4091-4092-4093",
+    "1 30,00"
+  ],
+  [
+    "V0 91919 00001",
+    "ManiGlia /H andle 3 F ori C ity - C roMo /C HroMe",
+    "1",
+    "62,00",
+    "S V0 94092 00000",
+    "Catola e lettroniCa /P ower SUPPly Box 4092 6v",
+    "1 130,00"
+  ],
+  [
+    "V0 91920 00001 V0 91925 00001",
+    "ManiGlia /H andle C ity - C roMo /C HroMe ManiGlia e CaPPUCCio /H andle and CaP 2263 City - C roMo /C",
+    "Hr 1 1",
+    "V0 62,00 82,00",
+    "S Catola e V0 94093 00000 94094 00000",
+    "S Catola e lettroniCa /P ower SUPPly Box 4093 230v lettroniCa /P ower SUPPly Box 4092 6v",
+    "1 1 120,00 130,00"
+  ]
+]

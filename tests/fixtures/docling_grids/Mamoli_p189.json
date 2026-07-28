@@ -1,0 +1,478 @@
+[
+  [
+    "RICAMBI/SPARE PARTS P",
+    "RICAMBI/SPARE PARTS P",
+    "D ESCRIZIONE /D ESCRIPTION",
+    "P Z X CONF ./ P CS PER PACK",
+    "Euro"
+  ],
+  [
+    "1",
+    "C ODICE /C ODE OS . 90655",
+    "Leva/Lever",
+    "1",
+    "23,00"
+  ],
+  [
+    "1A",
+    "9340",
+    "Tappo copriforo leva/Plug lever cover",
+    "",
+    ""
+  ],
+  [
+    "1B",
+    "",
+    "",
+    "10",
+    "13,50"
+  ],
+  [
+    "",
+    "9002",
+    "Grano fissaggio leva/Screw fixing lever",
+    "10",
+    "8,00"
+  ],
+  [
+    "2",
+    "9347",
+    "Calotta/Cover cap",
+    "10",
+    "7,00"
+  ],
+  [
+    "3",
+    "90547",
+    "Ghiera cartuccia/Cartridge locking nut",
+    "1",
+    "12,00"
+  ],
+  [
+    "4",
+    "19V",
+    "Cartuccia/Cartridge",
+    "1",
+    "41,00"
+  ],
+  [
+    "5",
+    "0100",
+    "Raccordi distanziali/Pair of S-coupling",
+    "2",
+    "12,00"
+  ],
+  [
+    "RICAMBI/SPARE PARTS P OS",
+    "ODICE /C ODE",
+    "D ESCRIZIONE /D ESCRIPTION",
+    "P Z X CONF ./ P CS PER PACK",
+    "Euro"
+  ],
+  [
+    "1",
+    "90655",
+    "Leva/Lever",
+    "1",
+    "23,00"
+  ],
+  [
+    "1A",
+    "9340",
+    "Tappo copriforo leva/Plug lever cover",
+    "10",
+    "13,50"
+  ],
+  [
+    "1B",
+    "9002",
+    "Grano fissaggio leva/Screw fixing lever",
+    "10",
+    "8,00"
+  ],
+  [
+    "2",
+    "9347",
+    "Calotta/Cover cap",
+    "10",
+    "7,00"
+  ],
+  [
+    "3",
+    "90547",
+    "Ghiera cartuccia/Cartridge locking nut",
+    "1",
+    "12,00"
+  ],
+  [
+    "4",
+    "19V",
+    "Cartuccia/Cartridge",
+    "1",
+    "41,00"
+  ],
+  [
+    "5",
+    "90667",
+    "Bocca/Spout",
+    "1",
+    "60,00"
+  ],
+  [
+    "5A",
+    "0448",
+    "Aeratore 1B-24x1/24x1-1B aerator",
+    "4",
+    "4,50"
+  ],
+  [
+    "6",
+    "0100",
+    "Coppia raccordi distanziali/Pair of S-coupling",
+    "2",
+    "12,00"
+  ],
+  [
+    "RICAMBI/SPARE PARTS",
+    "RICAMBI/SPARE PARTS",
+    "D ESCRIZIONE /D ESCRIPTION",
+    "P Z X CONF ./ P CS PER PACK",
+    "Euro"
+  ],
+  [
+    "C ODICE /C P OS .",
+    "ODE",
+    "",
+    "1",
+    "23,00"
+  ],
+  [
+    "1",
+    "90655",
+    "Leva/Lever",
+    "",
+    ""
+  ],
+  [
+    "1A",
+    "9340",
+    "Tappo copriforo leva/Plug lever cover",
+    "10",
+    "13,50"
+  ],
+  [
+    "1B",
+    "9002",
+    "Grano fissaggio leva/Screw fixing lever",
+    "10",
+    "8,00"
+  ],
+  [
+    "2",
+    "9347",
+    "Calotta/Cover cap",
+    "10",
+    "7,00"
+  ],
+  [
+    "3",
+    "90547",
+    "Ghiera cartuccia/Cartridge locking nut",
+    "1",
+    "12,00"
+  ],
+  [
+    "4",
+    "19V",
+    "Cartuccia/Cartridge",
+    "1",
+    "41,00"
+  ],
+  [
+    "5",
+    "0741",
+    "Bocca/Spout",
+    "1",
+    "21,00"
+  ],
+  [
+    "5A",
+    "0749C",
+    "Aeratore 1B-22x1/22x1-1B aerator",
+    "4",
+    "20,00"
+  ],
+  [
+    "6",
+    "0100",
+    "Coppia raccordi distanziali/Pair of S-coupling",
+    "2",
+    "12,00"
+  ],
+  [
+    "RICAMBI/SPARE PARTS C /C P OS . D",
+    "ODICE ODE",
+    "ESCRIZIONE /D ESCRIPTION",
+    "P Z X CONF ./ P CS PER PACK",
+    "Euro"
+  ],
+  [
+    "1",
+    "90690",
+    "Leva/Lever",
+    "1",
+    "23,00"
+  ],
+  [
+    "1A",
+    "9340",
+    "Tappo copriforo leva/Plug lever cover",
+    "10",
+    "13,50"
+  ],
+  [
+    "1B",
+    "9002",
+    "Grano fissaggio leva/Screw fixing lever",
+    "10",
+    "8,00"
+  ],
+  [
+    "2",
+    "9347",
+    "Calotta/Cover cap",
+    "1",
+    "7,00"
+  ],
+  [
+    "3",
+    "90547",
+    "Ghiera cartuccia/Cartridge locking nut",
+    "1",
+    "12,00"
+  ],
+  [
+    "4",
+    "19V",
+    "Cartuccia/Cartridge",
+    "1",
+    "41,00"
+  ],
+  [
+    "5",
+    "0744",
+    "Bocca/Spout",
+    "1",
+    "21,00"
+  ],
+  [
+    "6",
+    "0749",
+    "Aeratore 22x1/Aerator 22x1",
+    "4",
+    "20,00"
+  ],
+  [
+    "6",
+    "90716C",
+    "Tubo di alimentazione flessibile/Flexible hose",
+    "2",
+    "23,50"
+  ],
+  [
+    "7",
+    "90415C",
+    "Tubo di aliment. \u00d8 10 mm./\u00d8 10 mm. copper pipe",
+    "2",
+    "16,50"
+  ],
+  [
+    "7",
+    "90770",
+    "Organi di fissaggio/Fixing accessories",
+    "1",
+    "9,50"
+  ],
+  [
+    "RICAMBI/SPARE PARTS C ODICE /C ODE P OS . D ESCRIZIONE",
+    "RICAMBI/SPARE PARTS C ODICE /C ODE P OS . D ESCRIZIONE",
+    "/D ESCRIPTION",
+    "P Z X CONF ./ P CS PER PACK",
+    "Euro"
+  ],
+  [
+    "1",
+    "90655",
+    "Leva/Lever",
+    "1",
+    "23,00"
+  ],
+  [
+    "1A",
+    "9340",
+    "Tappo copriforo leva/Plug lever cover",
+    "10",
+    "13,50"
+  ],
+  [
+    "1B",
+    "9002",
+    "Grano fissaggio leva/Screw fixing lever",
+    "10",
+    "8,00"
+  ],
+  [
+    "2",
+    "9347",
+    "Calotta/Cover cap",
+    "1",
+    "7,00"
+  ],
+  [
+    "3",
+    "90547",
+    "Ghiera cartuccia/Cartridge locking nut",
+    "1",
+    "12,00"
+  ],
+  [
+    "4",
+    "19V",
+    "Cartuccia/Cartridge",
+    "1",
+    "41,00"
+  ],
+  [
+    "5",
+    "90456",
+    "Guarnizioni e anelli per bocca (prodotto fino al 2013)/ Gasket and ring for spout (produced up to 2013)",
+    "1",
+    "9,00"
+  ],
+  [
+    "5",
+    "90455",
+    "Guarnizioni e anelli per bocca (prodotto dal 2014) / Gasket and ring for spout (produced since 2014)",
+    "1",
+    "10,00"
+  ],
+  [
+    "6",
+    "90402",
+    "Tubo di alimentazione flessibile/Flexible hose",
+    "2",
+    "23,50"
+  ],
+  [
+    "6",
+    "90415",
+    "Tubo di aliment. rame \u00d810 mm./\u00d810 mm. copper pipe",
+    "2",
+    "16,50"
+  ],
+  [
+    "7A",
+    "0448",
+    "Aeratore 1B-24x1/24x1-1B aerator",
+    "1",
+    "4,50"
+  ],
+  [
+    "8",
+    "90647",
+    "Organi di fissaggio/Fixing accessories",
+    "1",
+    "9,00"
+  ],
+  [
+    "RICAMBI/SPARE PARTS P OS",
+    "RICAMBI/SPARE PARTS P OS",
+    "D ESCRIZIONE /D ESCRIPTION",
+    "P Z X CONF ./ P CS PER PACK",
+    "Euro"
+  ],
+  [
+    "1",
+    "C ODICE /C ODE .",
+    "",
+    "1",
+    ""
+  ],
+  [
+    "",
+    "90655",
+    "Leva/Lever",
+    "",
+    "23,00"
+  ],
+  [
+    "1A",
+    "9340",
+    "Tappo copriforo leva/Plug lever cover",
+    "10",
+    "13,50"
+  ],
+  [
+    "1B",
+    "9002",
+    "Grano fissaggio leva/Screw fixing lever",
+    "10",
+    "8,00"
+  ],
+  [
+    "2",
+    "9347",
+    "Calotta/Cover cap",
+    "1",
+    "7,00"
+  ],
+  [
+    "3",
+    "90547",
+    "Ghiera cartuccia/Cartridge locking nut",
+    "1",
+    "12,00"
+  ],
+  [
+    "4",
+    "19V",
+    "Cartuccia/Cartridge",
+    "1",
+    "41,00"
+  ],
+  [
+    "5",
+    "0377",
+    "Doccia a due getti/Double jet shower",
+    "1",
+    "56,50"
+  ],
+  [
+    "6",
+    "F329",
+    "Flessibile G. 1/2'x15p1/G. 1/2'x15p1 flexible",
+    "1",
+    "20,00"
+  ],
+  [
+    "7",
+    "90716C",
+    "Tubo alimentazione flessibile/Flexible connecting",
+    "2",
+    "23,50"
+  ],
+  [
+    "8",
+    "14427",
+    "pipe Set di fissaggio/Fixing set",
+    "1",
+    "12,00"
+  ],
+  [
+    "9",
+    "90717",
+    "Tubo di collegamento/Flexible connecting pipe",
+    "1",
+    "26,00"
+  ]
+]

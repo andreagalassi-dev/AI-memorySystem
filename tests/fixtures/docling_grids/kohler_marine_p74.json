@@ -1,0 +1,34 @@
+[
+  [
+    "Item",
+    "Part No.",
+    "Description",
+    "Qty.",
+    "Kit",
+    "Included in Kit"
+  ],
+  [
+    "1",
+    "ED0097304550-S",
+    "Screw M8x25",
+    "3",
+    "",
+    ""
+  ],
+  [
+    "2",
+    "ED0026500670-S",
+    "Machined 3PTO Cover",
+    "1",
+    "(A)",
+    ""
+  ],
+  [
+    "3",
+    "ED0045802550-S",
+    "3rd PTP Gasket",
+    "1",
+    "",
+    ""
+  ]
+]
