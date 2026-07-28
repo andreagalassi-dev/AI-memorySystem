@@ -111,6 +111,17 @@ class TestShortNumericCodes:
         for expected in ["6080", "60184", "60161", "60167", "91060", "10011"]:
             assert expected in codes, f"Short numeric code {expected} should now be recognized"
 
+    def test_kohler_p33_callout_1234_not_emitted(self):
+        """1234 is a callout number on kohler_marine_p33, NOT a code.
+        It has no description and no price, so it must be rejected.
+        """
+        grid = load_grid("kohler_marine", 33)
+        mapper = DoclingMapper()
+        mapped = mapper.map_page(grid, doc_stem="kohler_marine", page=33)
+        
+        codes = {r.codice_originale for r in mapped}
+        assert "1234" not in codes, "1234 should NOT be emitted as a code (it's a callout without desc/price)"
+
     def test_mamoli_p8_stats_short_code_accepted(self):
         """Stats must track accepted short codes."""
         grid = load_grid("Mamoli", 8)

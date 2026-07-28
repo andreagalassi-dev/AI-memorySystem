@@ -218,6 +218,13 @@ class DoclingMapper:
                 desc = base_cleanup(desc) if desc else None
                 
                 key = (doc_stem, page, code_str)
+                
+                # Regola di precisione: uno short-code numerico (3-5 cifre) va scartato
+                # se il record risultante ha descrizione NULL E prezzo NULL.
+                if re.match(r"^[0-9]{3,5}$", code_str):
+                    if desc is None and prezzo is None:
+                        continue
+                
                 try:
                     riga = RigaGrezza(codice_originale=code_str, descrizione=desc, prezzo=prezzo)
                     out.append(riga)
