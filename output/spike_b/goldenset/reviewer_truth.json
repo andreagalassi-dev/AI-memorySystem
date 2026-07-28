@@ -1,0 +1,47 @@
+{
+  "_meta": {
+    "autore": "reviewer",
+    "metodo": "adjudica visiva dei crop del golden set (verita = PDF renderizzato)",
+    "scopo": "fixture di accettazione per D-B.1 (mapper Docling production-grade)",
+    "note": "prezzi in EUR; source='crop' = adjudicato a vista; source='agreement' = b_tmp e produzione concordano (alta confidenza, non aperto il crop). desc = testo essenziale atteso.",
+    "esiti_estrattore": "ok | wrong | miss(riga assente o prezzo null)"
+  },
+  "items": [
+    {"doc": "Mamoli", "page": 131, "code": "90402C", "true_prezzo": 23.50, "true_desc": "Tubo di alimentazione flessibile/Flexible hose", "docling": "ok", "prod": "miss", "source": "crop"},
+    {"doc": "Mamoli", "page": 138, "code": "90416C", "true_prezzo": 22.50, "true_desc": "Tubo di alimentazione flessibile/Flexible hose", "docling": "ok", "prod": "wrong(202.50, fuso con 60163)", "source": "crop"},
+    {"doc": "Mamoli", "page": 229, "code": "V08711900001", "true_prezzo": 19.00, "true_desc": "Rosone/Wall plate Logos 3720-3981>15", "docling": "ok", "prod": "miss", "source": "crop"},
+    {"doc": "Mamoli", "page": 92, "code": "11188C", "true_prezzo": 9.50, "true_desc": "Aeratore 24x1/24x1 aerator", "docling": "ok", "prod": "miss", "source": "crop"},
+    {"doc": "Mamoli", "page": 225, "code": "00000029D007", "true_prezzo": 43.00, "true_desc": "Cartuccia deviatore/Diverter cartridge - 3 Ways", "docling": "miss(prezzo null)", "prod": "wrong(78, shift da 29K007)", "source": "crop"},
+    {"doc": "Mamoli", "page": 224, "code": "00000013B007", "true_prezzo": 43.00, "true_desc": "Movimento flussometro/Flushvalve cartridge", "docling": "ok", "prod": "ok", "source": "crop"},
+    {"doc": "Mamoli", "page": 189, "code": "90415C", "true_prezzo": 16.50, "true_desc": "Tubo di aliment. rame O10 mm./copper pipe", "docling": "ok", "prod": "miss", "source": "crop"},
+    {"doc": "Mamoli", "page": 225, "code": "00000022V007", "true_prezzo": 44.00, "true_desc": "Movimento ceramico/Ceramic discs valve", "docling": "ok", "prod": "wrong(73, shift da 23E001)", "source": "crop"},
+    {"doc": "Mamoli", "page": 225, "code": "00000029T007", "true_prezzo": 58.00, "true_desc": "Movimento deviatore/Diverter headvalve", "docling": "wrong(85, prezzo da altro blocco)", "prod": "wrong(93.5, shift da 29U007)", "source": "crop"},
+    {"doc": "Mamoli", "page": 231, "code": "V09183200001", "true_prezzo": 68.00, "true_desc": "Bocca/Spout 5540 A-B-O - Cromo/Chrome", "docling": "miss(prezzo null)", "prod": "ok", "source": "crop"},
+
+    {"doc": "nsk", "page": 27, "code": "6208DDUNR", "true_prezzo": 58.90, "true_desc": null, "docling": "ok", "prod": "miss", "source": "crop"},
+    {"doc": "nsk", "page": 63, "code": "2311KJ", "true_prezzo": 273.52, "true_desc": null, "docling": "ok", "prod": "miss", "source": "crop"},
+    {"doc": "nsk", "page": 39, "code": "6906VV", "true_prezzo": 51.80, "true_desc": null, "docling": "ok", "prod": "miss", "source": "crop"},
+    {"doc": "nsk", "page": 33, "code": "6310ZZNR", "true_prezzo": 141.98, "true_desc": null, "docling": "ok", "prod": "miss", "source": "crop"},
+    {"doc": "nsk", "page": 135, "code": "32210J", "true_prezzo": 72.37, "true_desc": null, "docling": "ok", "prod": "miss", "source": "crop"},
+    {"doc": "nsk", "page": 228, "code": "RNFTL2510A2.5S", "true_prezzo": 306.68, "true_desc": null, "docling": "wrong(codice troncato a RNFTL2510A2; prezzo ok)", "prod": "miss", "source": "crop"},
+
+    {"doc": "kohler_marine", "page": 95, "code": "GM94380", "true_prezzo": null, "true_desc": "Block, sender", "docling": "ok", "prod": "miss(desc vuota)", "source": "crop"},
+    {"doc": "kohler_marine", "page": 37, "code": "ED0012571810-S", "true_prezzo": null, "true_desc": "Intermed. Gear Shoulder Ring", "docling": "ok", "prod": "miss(desc vuota)", "source": "crop"},
+    {"doc": "kohler_marine", "page": 33, "code": "ED0022000020-S", "true_prezzo": null, "true_desc": "Key", "docling": "ok", "prod": "miss(desc vuota)", "source": "crop"},
+    {"doc": "kohler_marine", "page": 74, "code": "ED0045802550-S", "true_prezzo": null, "true_desc": "3rd PTP Gasket", "docling": "ok", "prod": "miss", "source": "crop"},
+
+    {"doc": "ivm", "page": 85, "code": "AX4384", "true_prezzo": 19.85, "true_desc": null, "docling": "miss", "prod": "ok", "source": "crop"},
+    {"doc": "ivm", "page": 218, "code": "1040MAP", "true_prezzo": 2.65, "true_desc": null, "docling": "miss", "prod": "wrong(1.48, soup pagina multi-tabella)", "source": "crop"},
+    {"doc": "ivm", "page": 172, "code": "VPA20103006B", "true_prezzo": 18.35, "true_desc": "antracite 45x45", "docling": "ok", "prod": "ok", "source": "agreement"},
+    {"doc": "ivm", "page": 168, "code": "GP60200010B", "true_prezzo": 343.50, "true_desc": null, "docling": "ok", "prod": "ok", "source": "agreement"},
+
+    {"_section": "short-code POSITIVI (codici numerici corti reali — devono essere estratti; oggi il regex li SCARTA)"},
+    {"doc": "Mamoli", "page": 8, "code": "8524", "true_prezzo": 14.00, "true_desc": "Cappuccio/Cap", "kind": "positive", "docling": "miss(regex scarta codice corto)", "prod": "miss", "source": "docling-grid+pdf-token"},
+    {"doc": "Mamoli", "page": 8, "code": "10023", "true_prezzo": 16.00, "true_desc": "Asta e pomolo/Rod and knob", "kind": "positive", "docling": "miss(regex scarta codice corto)", "prod": "miss", "source": "docling-grid+pdf-token"},
+    {"doc": "Mamoli", "page": 8, "code": "14557", "true_prezzo": 13.50, "true_desc": "Organi fissaggio piantana/Sidevalve fixing kit", "kind": "positive", "docling": "miss(regex scarta codice corto)", "prod": "miss", "source": "docling-grid+pdf-token"},
+
+    {"_section": "short-code NEGATIVI (numeri di dimensione/quantita — NON devono diventare codici)"},
+    {"doc": "nsk", "page": 138, "code": "180", "kind": "negative", "must_be_absent": true, "note": "dimensione cuscinetto (OD 180mm), non un codice; il fix non deve emetterla come codice", "source": "crop-33220J"},
+    {"doc": "kohler_marine", "page": 33, "code": "1234", "kind": "negative", "must_be_absent": true, "note": "numero di callout del disegno esploso (no desc, no prezzo); NON e' un codice-ricambio (i codici kohler sono GM.../ED...). Regola: uno short-code con desc NULL E prezzo NULL va scartato", "source": "b_tmp2-audit"}
+  ]
+}
