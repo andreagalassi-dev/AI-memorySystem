@@ -230,6 +230,23 @@ normalizzazione) e presuppone comunque C1.a.
   invece di tornare al retrieval dove il codice è ALTA in Qdrant (regressione C003 in C2.b-2). Fix:
   in `sql_node`/`sql_tool` trattare "riga senza valore utile sul campo" come 0-righe → fallback.
   (Coerente col finding C1: molti MISS nascono nel percorso `answer()`, non nel retrieval-depth.)
+- **D-B — Estrattore tabellare = Docling+DoclingMapper (sostituisce TextTableExtractor).**
+  Decisione utente confermata a scala. Arco (28/07, tutto verificato reviewer coi tool, PRODUZIONE
+  MAI toccata — lavoro in schema temp `b_tmp2`):
+  - **D-B.1** ✅ `DoclingMapper` column-aware in `src/ingestion/extraction/docling_mapper.py`
+    (blocchi, prezzo per-blocco, codici spaziati/`.`); acceptance 22/24 sul golden set.
+  - **D-B.2** ✅ `DoclingTableExtractor` (`docling_extractor.py`) implementa il Port `TableExtractor`
+    (do_ocr=False, accurate, PDF monopagina); isinstance True + smoke live (Mamoli p225 151 righe).
+  - **D-B.3** ✅ (dopo 1 respinta per metodologia rotta) estrazione a corpus PIENO dei 4 doc → `b_tmp2`;
+    recall grande vs produzione (Mamoli p8 0→risolto, nsk +~4490, kohler +~1569, ivm +~1847).
+  - **D-B.1b** ✅ fix codici numerici CORTI via contesto-colonna (Mamoli +2255 reali; il collasso
+    storico di Mamoli p8 finalmente risolto). **D-B.1c** ✅ regola di precisione (scarta short-code con
+    desc+prezzo NULL) → 28 falsi positivi callout/dimensione (26 kohler) azzerati.
+  - **Golden set reviewer** `output/spike_b/goldenset/reviewer_truth.json` (29 item mano-adjudicati) =
+    test di accettazione. Baseline `estrazione` è corrotto su pagine dense → si misura vs VERITÀ PDF (crop).
+  - **RESTA**: D-B.2-wiring (cablare l'adapter nel runner) e **D-B.4** = re-estrazione di PRODUZIONE con
+    snapshot `pg_dump -Fc` + golden gate + ricollaudo demo (OK esplicito utente obbligatorio). Recall gap
+    residuo: pagine ivm multi-tabella affiancate (TableFormer non le vede).
 - Ramo STRUCTURED deterministico: l'LLM **formatta, non genera** (come da visione) —
   mai più "IEC 34-7" quando l'evidenza dice "EN60034-7".
 - Stabilità ×N nel golden gate; audit del confidence (il caso "margine 1.00 → alta"
