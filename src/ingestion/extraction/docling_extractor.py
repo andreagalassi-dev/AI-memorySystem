@@ -28,7 +28,7 @@ class DoclingTableExtractor:
         else:
             self.converter = converter
             
-    def extract(self, ref: PageRef) -> list[RigaGrezza]:
+    def extract(self, ref: PageRef, stats: dict = None) -> list[RigaGrezza]:
         self.rejects.clear()
         
         # 1. Isolate the page in a temp PDF
@@ -82,7 +82,7 @@ class DoclingTableExtractor:
                         self.rejects.append(grid_row)
                 
                 # Pass grid to mapper
-                mapped_rows = self.mapper.map_page(grid, doc_stem=ref.doc_stem, page=ref.page)
+                mapped_rows = self.mapper.map_page(grid, doc_stem=ref.doc_stem, page=ref.page, stats=stats)
                 out_rows.extend(mapped_rows)
                 
             # 4. Dedup across the page by (doc, page, codice) keeping the last occurrence
