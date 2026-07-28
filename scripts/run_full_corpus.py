@@ -32,7 +32,7 @@ from src.ingestion.extraction.extractor import FakeExtractor  # noqa: E402
 from src.ingestion.extraction.load import init_schema  # noqa: E402
 from src.ingestion.extraction.text_table import TextTableExtractor  # noqa: E402
 from src.ingestion.ocr_fallback import VisionOcr  # noqa: E402
-from src.ingestion.run_massive_extraction import MassiveDocumentOutcome, run_document_massive  # noqa: E402
+from src.ingestion.run_massive_extraction import MassiveDocumentOutcome, run_document_massive, get_text_extractor_factory  # noqa: E402
 from src.serving.multiplexer import FakeModelRuntime, ModelMultiplexer  # noqa: E402
 
 logging.basicConfig(
@@ -96,7 +96,7 @@ def main() -> int:
                 model_name="glm-ocr",
                 schema=SCHEMA,
                 ocr=ocr,
-                text_extractor_factory=TextTableExtractor,
+                text_extractor_factory=get_text_extractor_factory(),
             )
             results.append(result)
             total_fast += result.fast_pages

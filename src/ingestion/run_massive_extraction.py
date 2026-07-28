@@ -50,6 +50,16 @@ from src.serving.multiplexer import ModelMultiplexer
 
 logger = logging.getLogger(__name__)
 
+def get_text_extractor_factory() -> Callable[[fitz.Document], TableExtractor]:
+    """Factory configurabile per il text path: default = TextTableExtractor, opt-in = docling."""
+    import os
+    if os.environ.get("AIKE_TABLE_EXTRACTOR") == "docling":
+        from src.ingestion.extraction.docling_extractor import DoclingTableExtractor
+        return DoclingTableExtractor
+    from src.ingestion.extraction.text_table import TextTableExtractor
+    return TextTableExtractor
+
+
 # SQL per le scritture transazionali (senza commit interno: gestito dal runner).
 # Riutilizza lo stesso schema di load.py ma senza i commit espliciti, cosi' il
 # runner puo' avvolgere l'intero documento in una singola transazione atomica.
