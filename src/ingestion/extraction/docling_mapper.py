@@ -5,6 +5,8 @@ from src.ingestion.extraction.schema import RigaGrezza
 from src.ingestion.codes import base_cleanup
 from src.ingestion.extraction.text_table import _to_decimal
 
+SHORT_CODE_RE = re.compile(r"^[0-9]{3,}[A-Z0-9]*$")
+
 DOCLING_CODE_RE = re.compile(
     r"^(?:"
     r"(?=.*[A-Z])(?=(?:.*\d){4,})[A-Z0-9][A-Z0-9.\-]{4,}[A-Z0-9S]"
@@ -14,8 +16,8 @@ DOCLING_CODE_RE = re.compile(
 )
 
 class DoclingMapper:
-    def map_page(self, grid: list[list[str]], *, doc_stem: str, page: int) -> list[RigaGrezza]:
-        """Maps a docling grid to a list of RigaGrezza. Column-aware."""
+    def map_page(self, grid: list[list[str]], doc_stem: str, page: int, stats: dict = None) -> list[RigaGrezza]:
+        """Esegue il chunking orizzontale e decodifica i blocchi."""
         out = []
         seen = set()
         
@@ -27,18 +29,23 @@ class DoclingMapper:
                 t_nospace = t.replace(" ", "")
                 if not t:
                     continue
+                matched_docling = False
                 if DOCLING_CODE_RE.match(t) or DOCLING_CODE_RE.match(t_nospace):
                     code_indices.append(i)
+                    matched_docling = True
                 else:
-                    # Try prefix logic: maybe the code is fused with the price (e.g. "V0 92750 68,00")
-                    # We split by space and check if the first parts form a code
                     tokens = t.split()
                     for j in range(1, len(tokens)):
                         prefix_t = " ".join(tokens[:j])
                         prefix_nospace = prefix_t.replace(" ", "")
                         if DOCLING_CODE_RE.match(prefix_t) or DOCLING_CODE_RE.match(prefix_nospace):
                             code_indices.append(i)
+                            matched_docling = True
                             break
+                            
+                if not matched_docling and stats is not None:
+                    if SHORT_CODE_RE.match(t) or SHORT_CODE_RE.match(t_nospace):
+                        stats.setdefault("short_code", []).append((t, doc_stem, page, str(row)))
                             
             if not code_indices:
                 continue
@@ -84,6 +91,8 @@ class DoclingMapper:
                         p = _to_decimal(t)
                         if p is not None:
                             prezzo = p
+                            if stats is not None:
+                                stats.setdefault("lookahead", []).append((code_str, str(p), str(block_cells), page))
                             break
                             
                 for cell in block_cells[1:]:
@@ -118,6 +127,8 @@ class DoclingMapper:
                             code_str += all_words[-1]
                             all_words.pop()
                             desc_tokens = [" ".join(all_words)]
+                            if stats is not None:
+                                stats.setdefault("suffix", []).append((code_str, str(prezzo), str(block_cells), page))
                             
                 dedup_desc = []
                 for d in desc_tokens:
