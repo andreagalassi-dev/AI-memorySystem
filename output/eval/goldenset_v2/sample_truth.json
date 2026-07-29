@@ -1,0 +1,4 @@
+{"items":[
+  {"id":"S1","query":"codice PD21H100S-F-BL","lang":"it","branch":"structured","role":"tecnico","doc":"pi_pulley_listino_pulegge_2025","page":1,"expected":"78.83","kind":"positive","must_say_nonso":false,"source":"crop"},
+  {"id":"NEG1","query":"codice ZZINESISTENTE999","lang":"it","branch":"structured","role":"tecnico","doc":null,"page":null,"expected":null,"kind":"negative","must_say_nonso":true,"source":"crop"}
+]}
