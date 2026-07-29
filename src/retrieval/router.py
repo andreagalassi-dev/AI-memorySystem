@@ -31,10 +31,11 @@ def _family_patterns() -> list[re.Pattern]:
 
     return all_token_patterns()
 
-# Parole-segnale che promuovono il token successivo a codice (IT/EN/ES).
+# Parole-segnale che promuovono il token successivo a codice (IT/EN/ES/DE).
 MARKERS = {"codice", "cod", "cod.", "code", "art", "art.", "articolo",
            "part", "pn", "p/n", "ricambio", "referencia", "código", "codigo",
-           "number", "numero", "n.", "nr", "nr."}
+           "number", "numero", "n.", "nr", "nr.",
+           "artikel", "artikelnummer", "teilenummer", "bestellnummer"}
 
 # Marker di intento VISIVO (P2.7): la query chiede un esploso/schema/disegno
 # -> collection visiva aike_pages_visual. Multi-lingua IT/EN/DE/ES.

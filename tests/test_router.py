@@ -45,6 +45,15 @@ class TestTierBMarker:
     def test_marker_es(self):
         assert route("referencia 0USBX1") == ("code", "0USBX1")
 
+    def test_marker_de(self):
+        assert route("Artikel 611720BI") == ("code", "611720BI")
+        assert route("Artikel 18004-BC") == ("code", "18004-BC")
+        assert route("Artikelnummer 33220J") == ("code", "33220J")
+
+    def test_marker_de_negativo_senza_cifre(self):
+        # Nessuna cifra -> non-codey -> resta natural: NON deve diventare "code".
+        assert route("Artikel KEIN-ECHTER-CODE")[0] == "natural"
+
     def test_token_singolo_con_cifre(self):
         assert route("11282") == ("code", "11282")
         assert route("0USBX4") == ("code", "0USBX4")
