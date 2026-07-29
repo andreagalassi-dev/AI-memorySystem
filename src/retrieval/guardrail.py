@@ -41,6 +41,15 @@ _UNIT = re.compile(
 _DIM = re.compile(r"\d\s?[xX×]\s?\d")
 # Forma data: 12/05/2024, 12-05-24, ISO 2024-05-12.
 _DATE = re.compile(r"^\d{1,2}[/.\-]\d{1,2}[/.\-]\d{2,4}$|^\d{4}-\d{2}-\d{2}$")
+# Numero decimale "nudo" (prezzo/quantita' senza unita'): 273.52, 141,98,
+# 3.475,78, 3,475.78. Coda di 1-2 cifre decimali dopo l'ultimo separatore.
+# NB: e' PROPRIO la forma che canonical() collassa in \d{5,}, facendo scambiare
+# un prezzo per un codice (bug eval ampio B: prezzi >=100 -> falso BLOCK). Un
+# codice puro-cifre o a gruppi ha coda \d{3,} e non matcha (nessun falso taglio).
+_DECIMAL = re.compile(
+    r"^\d{1,3}(?:[.,]\d{3})+[.,]\d{1,2}$"  # con separatore delle migliaia
+    r"|^\d+[.,]\d{1,2}$"                    # forma piana: 273.52 / 141,98
+)
 
 Verdict = Literal["EXISTS", "AMBIGUOUS", "MISS_RETRIEVAL", "ABSENT"]
 Gate = Literal["PASS", "VERIFY", "BLOCK"]
@@ -81,9 +90,10 @@ def _is_codey(token: str) -> bool:
 
 
 def is_measurement(token: str) -> bool:
-    """True per misure/date ad alta confidenza (unita', dimensioni, date)."""
+    """True per misure/date/prezzi ad alta confidenza (unita', dimensioni, date,
+    numeri decimali nudi come i prezzi)."""
     t = token.strip()
-    return bool(_UNIT.match(t) or _DIM.search(t) or _DATE.match(t))
+    return bool(_UNIT.match(t) or _DIM.search(t) or _DATE.match(t) or _DECIMAL.match(t))
 
 
 def _family_spans(text: str) -> list[tuple[int, int, str]]:

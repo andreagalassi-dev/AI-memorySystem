@@ -153,6 +153,16 @@ class TestNonEstrareMisure:
     def test_data(self):  # #25
         assert extract_candidates("revisione del 12/05/2024") == []
 
+    def test_prezzo_alto_non_e_codice(self):  # #27 — bug prezzo>=100 (eval ampio B)
+        # Il prezzo 273.52 (canonical->27352, 5 cifre) non deve essere estratto
+        # come codice accanto al codice reale citato dall'LLM.
+        assert extract_candidates(
+            "Il codice 2311KJ ha un prezzo di 273.52 EUR") == ["2311KJ"]
+
+    def test_prezzo_nudo_non_estratto(self):  # #27 bis — vari formati prezzo
+        for s in ["prezzo 3475.78 EUR", "costa 141,98 euro", "totale 1234.50"]:
+            assert extract_candidates(s) == [], s
+
 
 class TestIsMeasurement:
     def test_unita(self):
@@ -165,6 +175,15 @@ class TestIsMeasurement:
 
     def test_codici_non_sono_misure(self):
         for t in [REAL_V0, REAL_0US, REAL_NUM9, "0USBXV", "M616"]:
+            assert not is_measurement(t), t
+
+    def test_prezzi_decimali_sono_misure(self):  # bug prezzo>=100
+        for t in ["273.52", "3475.78", "141,98", "18.35", "1.42", "9.5"]:
+            assert is_measurement(t), t
+
+    def test_codici_puri_cifre_non_sono_misure(self):  # regressione: no falso-positivo
+        # Un codice puro-cifre o a gruppi NON deve diventare una "misura".
+        for t in ["27352", "10023", "340006734", "00000013"]:
             assert not is_measurement(t), t
 
 
@@ -203,4 +222,10 @@ class TestGateAggregazione:
     def test_misure_non_bloccano(self):  # #21-25 a livello gate
         r = check_answer("alimentazione 12-24V, vite M6x16, del 12/05/2024",
                          ev(REAL_V0), cat())
+        assert r.gate == "PASS"
+
+    def test_prezzo_alto_non_blocca(self):  # bug prezzo>=100 a livello gate
+        # Codice reale in evidenza + prezzo >=100: deve PASSARE, non BLOCK.
+        r = check_answer("Il codice 2311KJ ha un prezzo di 273.52 EUR",
+                         ev("2311KJ"), cat())
         assert r.gate == "PASS"
