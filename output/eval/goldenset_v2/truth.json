@@ -1,0 +1,56 @@
+{
+  "_meta": {
+    "autore": "reviewer",
+    "data": "2026-07-29",
+    "metodo": "ibrido: item 'crop' = adjudicati a vista dal reviewer (backbone da reviewer_truth.json); 'agreement' = code/page/prezzo reali dalla produzione su doc Docling validati (testano plumbing+copertura, NON la correttezza di estrazione). lang = lingua della query.",
+    "note": "prezzi EUR. expected = essenza attesa nella risposta (prezzo o sottostringa descrizione). Fase 1: prima tranche, il set cresce."
+  },
+  "items": [
+    {"_section": "STRUTTURATO — Mamoli (IT/EN), verita crop da reviewer_truth"},
+    {"id":"S-MAM-01","query":"codice 90402C","lang":"it","branch":"structured","role":"tecnico","doc":"Mamoli_Catalogo_Ricambi_2021_IT_EN","page":131,"expected":"23.5","kind":"positive","must_say_nonso":false,"source":"crop"},
+    {"id":"S-MAM-02","query":"codice 90416C","lang":"it","branch":"structured","role":"tecnico","doc":"Mamoli_Catalogo_Ricambi_2021_IT_EN","page":138,"expected":"22.5","kind":"positive","must_say_nonso":false,"source":"crop"},
+    {"id":"S-MAM-03","query":"codice V08711900001","lang":"it","branch":"structured","role":"tecnico","doc":"Mamoli_Catalogo_Ricambi_2021_IT_EN","page":229,"expected":"19","kind":"positive","must_say_nonso":false,"source":"crop"},
+    {"id":"S-MAM-04","query":"codice 11188C","lang":"it","branch":"structured","role":"tecnico","doc":"Mamoli_Catalogo_Ricambi_2021_IT_EN","page":92,"expected":"9.5","kind":"positive","must_say_nonso":false,"source":"crop"},
+    {"id":"S-MAM-05","query":"codice 00000013B007","lang":"it","branch":"structured","role":"tecnico","doc":"Mamoli_Catalogo_Ricambi_2021_IT_EN","page":224,"expected":"43","kind":"positive","must_say_nonso":false,"source":"crop"},
+    {"id":"S-MAM-06","query":"codice 90415C","lang":"it","branch":"structured","role":"tecnico","doc":"Mamoli_Catalogo_Ricambi_2021_IT_EN","page":189,"expected":"16.5","kind":"positive","must_say_nonso":false,"source":"crop"},
+
+    {"_section": "STRUTTURATO short-code Mamoli p8 (il fix D-B.1b) — verita crop"},
+    {"id":"S-MAM-SC1","query":"codice 8524","lang":"it","branch":"structured","role":"tecnico","doc":"Mamoli_Catalogo_Ricambi_2021_IT_EN","page":8,"expected":"14","kind":"positive","must_say_nonso":false,"source":"crop"},
+    {"id":"S-MAM-SC2","query":"codice 10023","lang":"it","branch":"structured","role":"tecnico","doc":"Mamoli_Catalogo_Ricambi_2021_IT_EN","page":8,"expected":"16","kind":"positive","must_say_nonso":false,"source":"crop"},
+
+    {"_section": "STRUTTURATO — nsk (EN), verita crop"},
+    {"id":"S-NSK-01","query":"code 6208DDUNR","lang":"en","branch":"structured","role":"tecnico","doc":"nsk_cuscinetti_listino_2025","page":27,"expected":"58.9","kind":"positive","must_say_nonso":false,"source":"crop"},
+    {"id":"S-NSK-02","query":"code 2311KJ","lang":"en","branch":"structured","role":"tecnico","doc":"nsk_cuscinetti_listino_2025","page":63,"expected":"273.52","kind":"positive","must_say_nonso":false,"source":"crop"},
+    {"id":"S-NSK-03","query":"code 6310ZZNR","lang":"en","branch":"structured","role":"tecnico","doc":"nsk_cuscinetti_listino_2025","page":33,"expected":"141.98","kind":"positive","must_say_nonso":false,"source":"crop"},
+    {"id":"S-NSK-04","query":"code 32210J","lang":"en","branch":"structured","role":"tecnico","doc":"nsk_cuscinetti_listino_2025","page":135,"expected":"72.37","kind":"positive","must_say_nonso":false,"source":"crop"},
+
+    {"_section": "STRUTTURATO — ivm, verita crop"},
+    {"id":"S-IVM-01","query":"codice VPA20103006B","lang":"it","branch":"structured","role":"tecnico","doc":"ivm_edilizia_catalistino_2026","page":172,"expected":"18.35","kind":"positive","must_say_nonso":false,"source":"crop"},
+    {"id":"S-IVM-02","query":"codice GP60200010B","lang":"it","branch":"structured","role":"tecnico","doc":"ivm_edilizia_catalistino_2026","page":168,"expected":"343.5","kind":"positive","must_say_nonso":false,"source":"crop"},
+
+    {"_section": "STRUTTURATO — doc diversi Docling (copertura), source=agreement (prod+pipeline concordano)"},
+    {"id":"S-PIP-01","query":"codice PD70XL037S-N-BL","lang":"it","branch":"structured","role":"tecnico","doc":"pi_pulley_listino_pulegge_2025","page":14,"expected":"77.69","kind":"positive","must_say_nonso":false,"source":"agreement"},
+    {"id":"S-KRA-01","query":"code KS-3260","lang":"en","branch":"structured","role":"tecnico","doc":"krais_tube_pipe_tools_2026","page":36,"expected":"1.42","kind":"positive","must_say_nonso":false,"source":"agreement"},
+    {"id":"S-BJC-01","query":"code 18004-BC","lang":"en","branch":"structured","role":"tecnico","doc":"bjc_electrical_pricelist_2026","page":5,"expected":"33.31","kind":"positive","must_say_nonso":false,"source":"agreement"},
+    {"id":"S-AVE-01","query":"codice 441096DM","lang":"it","branch":"structured","role":"tecnico","doc":"ave_listino_materiale_elettrico_2023","page":1,"expected":"28.85","kind":"positive","must_say_nonso":false,"source":"agreement"},
+    {"id":"S-SPL-01","query":"Artikel 611720BI","lang":"de","branch":"structured","role":"tecnico","doc":"splight_illuminazione_listino_2026","page":6,"expected":"3475.78","kind":"positive","must_say_nonso":false,"source":"agreement"},
+    {"id":"S-BJC-DE","query":"Artikel 18004-BC","lang":"de","branch":"structured","role":"tecnico","doc":"bjc_electrical_pricelist_2026","page":5,"expected":"33.31","kind":"positive","must_say_nonso":false,"source":"agreement"},
+
+    {"_section": "NARRATIVO/descrizione — verita crop (true_desc)"},
+    {"id":"N-MAM-01","query":"descrizione codice 90402C","lang":"it","branch":"narrative","role":"tecnico","doc":"Mamoli_Catalogo_Ricambi_2021_IT_EN","page":131,"expected":"Tubo di alimentazione","kind":"positive","must_say_nonso":false,"source":"crop"},
+    {"id":"N-MAM-02","query":"descrizione codice 11188C","lang":"it","branch":"narrative","role":"tecnico","doc":"Mamoli_Catalogo_Ricambi_2021_IT_EN","page":92,"expected":"Aeratore","kind":"positive","must_say_nonso":false,"source":"crop"},
+    {"id":"N-KOH-01","query":"description code GM94380","lang":"en","branch":"narrative","role":"tecnico","doc":"kohler_marine_tp6954","page":95,"expected":"Block","kind":"positive","must_say_nonso":false,"source":"crop"},
+    {"id":"N-KOH-02","query":"description code ED0022000020-S","lang":"en","branch":"narrative","role":"tecnico","doc":"kohler_marine_tp6954","page":33,"expected":"Key","kind":"positive","must_say_nonso":false,"source":"crop"},
+
+    {"_section": "VISIVO/esploso — verita crop (pagina esploso attesa)"},
+    {"id":"V-MAM-01","query":"mostra l'esploso del codice 00000013B007","lang":"it","branch":"visual","role":"tecnico","doc":"Mamoli_Catalogo_Ricambi_2021_IT_EN","page":224,"expected":null,"kind":"positive","must_say_nonso":false,"source":"crop"},
+    {"id":"V-NSK-01","query":"mostra la tavola del cuscinetto 6310ZZNR","lang":"it","branch":"visual","role":"tecnico","doc":"nsk_cuscinetti_listino_2025","page":33,"expected":null,"kind":"positive","must_say_nonso":false,"source":"crop"},
+
+    {"_section": "NEGATIVI — devono dire 'non lo so' (codici inesistenti / esche)"},
+    {"id":"NEG-01","query":"codice ZZINESISTENTE999","lang":"it","branch":"structured","role":"tecnico","doc":null,"page":null,"expected":null,"kind":"negative","must_say_nonso":true,"source":"crop"},
+    {"id":"NEG-02","query":"codice XYZ-00000-FAKE","lang":"it","branch":"structured","role":"tecnico","doc":null,"page":null,"expected":null,"kind":"negative","must_say_nonso":true,"source":"crop"},
+    {"id":"NEG-03","query":"code 999999999INVALID","lang":"en","branch":"structured","role":"tecnico","doc":null,"page":null,"expected":null,"kind":"negative","must_say_nonso":true,"source":"crop"},
+    {"id":"NEG-04","query":"codice 90402C-INESISTENTE-VARIANTE","lang":"it","branch":"structured","role":"tecnico","doc":null,"page":null,"expected":null,"kind":"negative","must_say_nonso":true,"source":"crop"},
+    {"id":"NEG-05","query":"Artikel KEIN-ECHTER-CODE","lang":"de","branch":"structured","role":"tecnico","doc":null,"page":null,"expected":null,"kind":"negative","must_say_nonso":true,"source":"crop"}
+  ]
+}
