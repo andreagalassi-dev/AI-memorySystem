@@ -3,7 +3,8 @@
     "autore": "reviewer",
     "data": "2026-07-29",
     "metodo": "ibrido: item 'crop' = adjudicati a vista dal reviewer (backbone da reviewer_truth.json); 'agreement' = code/page/prezzo reali dalla produzione su doc Docling validati (testano plumbing+copertura, NON la correttezza di estrazione). lang = lingua della query.",
-    "note": "prezzi EUR. expected = essenza attesa nella risposta (prezzo o sottostringa descrizione). Fase 1: prima tranche, il set cresce."
+    "note": "prezzi EUR. expected = essenza attesa nella risposta (prezzo o sottostringa descrizione). Fase 1: prima tranche, il set cresce.",
+    "rev_30_07": "Rifinitura reviewer (adjudicata con answer() RAW): (1) i 4 item 'descrizione codice X' erano mislabel branch=narrative → RIETICHETTATI structured: il motore li serve dal ramo code/strutturato con campo=descrizione (route=code, ALTA), NON dal RAG narrativo. (2) CONSEGUENZA: il ramo narrativo (RAG free-text in prosa) resta NON misurato — nessuna vera domanda in prosa nel set (residuo da seminare con adjudicazione crop prosa). (3) FINDING router: 'Artikel <code>' (DE) → route=natural, code_token=None, BASSA; identico codice come 'code <X>' o nudo → route=code, ALTA. È il MOTORE (router senza trigger di estrazione-codice tedesco), non un phrasing illegittimo: gli item DE 'Artikel' restano come sonde del gap. (4) FINDING guardrail: i prezzi ≥€100 renderizzati con 2 decimali (es. 273.52→canonical 27352, 5 cifre) vengono scambiati per codici e bloccano la risposta (verdetto ABSENT). Gli item ≥€100 mostrano correct=false BLOCK: è il metro che riflette un bug reale, NON un errore del truth set."
   },
   "items": [
     {"_section": "STRUTTURATO — Mamoli (IT/EN), verita crop da reviewer_truth"},
@@ -13,6 +14,8 @@
     {"id":"S-MAM-04","query":"codice 11188C","lang":"it","branch":"structured","role":"tecnico","doc":"Mamoli_Catalogo_Ricambi_2021_IT_EN","page":92,"expected":"9.5","kind":"positive","must_say_nonso":false,"source":"crop"},
     {"id":"S-MAM-05","query":"codice 00000013B007","lang":"it","branch":"structured","role":"tecnico","doc":"Mamoli_Catalogo_Ricambi_2021_IT_EN","page":224,"expected":"43","kind":"positive","must_say_nonso":false,"source":"crop"},
     {"id":"S-MAM-06","query":"codice 90415C","lang":"it","branch":"structured","role":"tecnico","doc":"Mamoli_Catalogo_Ricambi_2021_IT_EN","page":189,"expected":"16.5","kind":"positive","must_say_nonso":false,"source":"crop"},
+    {"id":"S-MAM-07","query":"codice 00000022V007","lang":"it","branch":"structured","role":"tecnico","doc":"Mamoli_Catalogo_Ricambi_2021_IT_EN","page":225,"expected":"44.00","kind":"positive","must_say_nonso":false,"source":"crop"},
+    {"id":"S-MAM-08","query":"codice V09183200001","lang":"it","branch":"structured","role":"tecnico","doc":"Mamoli_Catalogo_Ricambi_2021_IT_EN","page":231,"expected":"68.00","kind":"positive","must_say_nonso":false,"source":"crop"},
 
     {"_section": "STRUTTURATO short-code Mamoli p8 (il fix D-B.1b) — verita crop"},
     {"id":"S-MAM-SC1","query":"codice 8524","lang":"it","branch":"structured","role":"tecnico","doc":"Mamoli_Catalogo_Ricambi_2021_IT_EN","page":8,"expected":"14","kind":"positive","must_say_nonso":false,"source":"crop"},
@@ -23,6 +26,7 @@
     {"id":"S-NSK-02","query":"code 2311KJ","lang":"en","branch":"structured","role":"tecnico","doc":"nsk_cuscinetti_listino_2025","page":63,"expected":"273.52","kind":"positive","must_say_nonso":false,"source":"crop"},
     {"id":"S-NSK-03","query":"code 6310ZZNR","lang":"en","branch":"structured","role":"tecnico","doc":"nsk_cuscinetti_listino_2025","page":33,"expected":"141.98","kind":"positive","must_say_nonso":false,"source":"crop"},
     {"id":"S-NSK-04","query":"code 32210J","lang":"en","branch":"structured","role":"tecnico","doc":"nsk_cuscinetti_listino_2025","page":135,"expected":"72.37","kind":"positive","must_say_nonso":false,"source":"crop"},
+    {"id":"S-NSK-05","query":"code 6906VV","lang":"en","branch":"structured","role":"tecnico","doc":"nsk_cuscinetti_listino_2025","page":39,"expected":"51.80","kind":"positive","must_say_nonso":false,"source":"crop"},
 
     {"_section": "STRUTTURATO — ivm, verita crop"},
     {"id":"S-IVM-01","query":"codice VPA20103006B","lang":"it","branch":"structured","role":"tecnico","doc":"ivm_edilizia_catalistino_2026","page":172,"expected":"18.35","kind":"positive","must_say_nonso":false,"source":"crop"},
@@ -33,14 +37,15 @@
     {"id":"S-KRA-01","query":"code KS-3260","lang":"en","branch":"structured","role":"tecnico","doc":"krais_tube_pipe_tools_2026","page":36,"expected":"1.42","kind":"positive","must_say_nonso":false,"source":"agreement"},
     {"id":"S-BJC-01","query":"code 18004-BC","lang":"en","branch":"structured","role":"tecnico","doc":"bjc_electrical_pricelist_2026","page":5,"expected":"33.31","kind":"positive","must_say_nonso":false,"source":"agreement"},
     {"id":"S-AVE-01","query":"codice 441096DM","lang":"it","branch":"structured","role":"tecnico","doc":"ave_listino_materiale_elettrico_2023","page":1,"expected":"28.85","kind":"positive","must_say_nonso":false,"source":"agreement"},
-    {"id":"S-SPL-01","query":"Artikel 611720BI","lang":"de","branch":"structured","role":"tecnico","doc":"splight_illuminazione_listino_2026","page":6,"expected":"3475.78","kind":"positive","must_say_nonso":false,"source":"agreement"},
-    {"id":"S-BJC-DE","query":"Artikel 18004-BC","lang":"de","branch":"structured","role":"tecnico","doc":"bjc_electrical_pricelist_2026","page":5,"expected":"33.31","kind":"positive","must_say_nonso":false,"source":"agreement"},
+    {"id":"S-SPL-01","query":"Artikel 611720BI","lang":"de","branch":"structured","role":"tecnico","doc":"splight_illuminazione_listino_2026","page":6,"expected":"3475.78","kind":"positive","must_say_nonso":false,"source":"agreement","note":"sonda gap-router DE: 'Artikel' non estrae il codice → route=natural, BASSA. Il codice nudo passerebbe. (NB: 3475.78 ≥€100 → colpito anche dal bug guardrail-prezzo)"},
+    {"id":"S-BJC-DE","query":"Artikel 18004-BC","lang":"de","branch":"structured","role":"tecnico","doc":"bjc_electrical_pricelist_2026","page":5,"expected":"33.31","kind":"positive","must_say_nonso":false,"source":"agreement","note":"sonda gap-router DE: identico a S-BJC-01 (EN 'code') che passa ALTA; qui 'Artikel' → route=natural, BASSA"},
 
-    {"_section": "NARRATIVO/descrizione — verita crop (true_desc)"},
-    {"id":"N-MAM-01","query":"descrizione codice 90402C","lang":"it","branch":"narrative","role":"tecnico","doc":"Mamoli_Catalogo_Ricambi_2021_IT_EN","page":131,"expected":"Tubo di alimentazione","kind":"positive","must_say_nonso":false,"source":"crop"},
-    {"id":"N-MAM-02","query":"descrizione codice 11188C","lang":"it","branch":"narrative","role":"tecnico","doc":"Mamoli_Catalogo_Ricambi_2021_IT_EN","page":92,"expected":"Aeratore","kind":"positive","must_say_nonso":false,"source":"crop"},
-    {"id":"N-KOH-01","query":"description code GM94380","lang":"en","branch":"narrative","role":"tecnico","doc":"kohler_marine_tp6954","page":95,"expected":"Block","kind":"positive","must_say_nonso":false,"source":"crop"},
-    {"id":"N-KOH-02","query":"description code ED0022000020-S","lang":"en","branch":"narrative","role":"tecnico","doc":"kohler_marine_tp6954","page":33,"expected":"Key","kind":"positive","must_say_nonso":false,"source":"crop"},
+    {"_section": "DESCRIZIONE codice X — ramo STRUTTURATO campo=descrizione (RIETICHETTATI da narrative→structured il 30/07, verificato con answer(): route=code, campo=descrizione, ALTA). NON è il RAG narrativo."},
+    {"id":"N-MAM-01","query":"descrizione codice 90402C","lang":"it","branch":"structured","role":"tecnico","doc":"Mamoli_Catalogo_Ricambi_2021_IT_EN","page":131,"expected":"Tubo di alimentazione","kind":"positive","must_say_nonso":false,"source":"crop","note":"campo=descrizione"},
+    {"id":"N-MAM-02","query":"descrizione codice 11188C","lang":"it","branch":"structured","role":"tecnico","doc":"Mamoli_Catalogo_Ricambi_2021_IT_EN","page":92,"expected":"Aeratore","kind":"positive","must_say_nonso":false,"source":"crop","note":"campo=descrizione"},
+    {"id":"N-KOH-01","query":"description code GM94380","lang":"en","branch":"structured","role":"tecnico","doc":"kohler_marine_tp6954","page":95,"expected":"Block","kind":"positive","must_say_nonso":false,"source":"crop","note":"campo=descrizione"},
+    {"id":"N-KOH-02","query":"description code ED0022000020-S","lang":"en","branch":"structured","role":"tecnico","doc":"kohler_marine_tp6954","page":33,"expected":"Key","kind":"positive","must_say_nonso":false,"source":"crop","note":"campo=descrizione"},
+    {"id":"N-KOH-03","query":"description code ED0012571810-S","lang":"en","branch":"structured","role":"tecnico","doc":"kohler_marine_tp6954","page":37,"expected":"Gear Shoulder Ring","kind":"positive","must_say_nonso":false,"source":"crop","note":"campo=descrizione (prezzo null a listino)"},
 
     {"_section": "VISIVO/esploso — verita crop (pagina esploso attesa)"},
     {"id":"V-MAM-01","query":"mostra l'esploso del codice 00000013B007","lang":"it","branch":"visual","role":"tecnico","doc":"Mamoli_Catalogo_Ricambi_2021_IT_EN","page":224,"expected":null,"kind":"positive","must_say_nonso":false,"source":"crop"},
