@@ -69,18 +69,19 @@ def embed_query(text: str) -> list[float]:
 VISUAL_COLLECTION = "aike_pages_visual"
 
 
-def ensure_visual_collection(client, recreate: bool = False) -> None:
+def ensure_visual_collection(client, recreate: bool = False,
+                             collection: str = VISUAL_COLLECTION) -> None:
     """Crea (o ricrea) la collection visiva single-vector su Qdrant.
 
     Un punto = un TILE. HNSW attivo, distance COSINE, size EMBED_DIM (1024).
     """
     from qdrant_client import models
 
-    if recreate and client.collection_exists(VISUAL_COLLECTION):
-        client.delete_collection(VISUAL_COLLECTION)
-    if not client.collection_exists(VISUAL_COLLECTION):
+    if recreate and client.collection_exists(collection):
+        client.delete_collection(collection)
+    if not client.collection_exists(collection):
         client.create_collection(
-            collection_name=VISUAL_COLLECTION,
+            collection_name=collection,
             vectors_config=models.VectorParams(
                 size=EMBED_DIM,
                 distance=models.Distance.COSINE,
@@ -88,7 +89,7 @@ def ensure_visual_collection(client, recreate: bool = False) -> None:
         )
         for f in ("doc", "cat", "page", "tile"):
             client.create_payload_index(
-                VISUAL_COLLECTION, field_name=f,
+                collection, field_name=f,
                 field_schema=models.PayloadSchemaType.INTEGER if f in ("page", "tile")
                 else models.PayloadSchemaType.KEYWORD)
 

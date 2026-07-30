@@ -17,6 +17,7 @@ from src.ingestion.run_massive_extraction import run_document_massive, get_text_
 from src.ingestion import ingest_one
 from src.retrieval.pixelrag.ingest import ingest_document as ingest_document_visual
 from src.retrieval.pixelrag.index import QdrantVisualIndex
+from src.retrieval.qwen3vl import ensure_visual_collection
 
 BranchFn = Callable[[], int]
 
@@ -88,6 +89,7 @@ def build_branches(
     def visual() -> int:
         doc = fitz.open(pdf_path)
         try:
+            ensure_visual_collection(qdrant_client, collection=visual_collection)
             index = QdrantVisualIndex(qdrant_client, collection=visual_collection)
             res = ingest_document_visual(
                 doc,
