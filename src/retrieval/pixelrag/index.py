@@ -141,6 +141,11 @@ class FakeVisualIndex:
 
 DEFAULT_VISUAL_COLLECTION = "aike_pages_visual"
 
+# Punti visivi = multivettore per pagina (pesanti). Un unico upsert di ~1000
+# pagine supera il timeout Qdrant (osservato su era_macchine_rotanti, 998 pag).
+# Upsert a blocchi cosi' ogni chiamata resta piccola e sotto timeout.
+VISUAL_UPSERT_BATCH = 64
+
 
 class QdrantVisualIndex:
     """Adapter reale `VisualIndex` su Qdrant (Fase 1.3, ramo VISUAL).
@@ -174,8 +179,12 @@ class QdrantVisualIndex:
         from qdrant_client import models
         structs = [models.PointStruct(id=p.point_id, vector=p.vector, payload=p.payload)
                    for p in points]
-        if structs:
-            self._client.upsert(self._collection, points=structs)
+        # Upsert a BLOCCHI (VISUAL_UPSERT_BATCH): un unico upsert di ~1000 pagine
+        # multivettore supera il timeout Qdrant. Semantica invariata (idempotente).
+        for start in range(0, len(structs), VISUAL_UPSERT_BATCH):
+            self._client.upsert(
+                self._collection, points=structs[start:start + VISUAL_UPSERT_BATCH]
+            )
         return len(structs)
 
     def search(self, query_vector: Sequence[float], k: int,

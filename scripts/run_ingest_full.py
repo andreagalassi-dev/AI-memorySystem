@@ -44,6 +44,33 @@ def pending(candidates: list[str], covered: set[str]) -> list[str]:
     return [c for c in candidates if c not in covered]
 
 
+def filter_by_coverage(
+    candidates: list[str], covered: set[str], *, force: bool
+) -> list[str]:
+    """Applica (o no) il filtro di copertura.
+
+    force=False -> comportamento storico: scarta i coperti (pending()).
+    force=True  -> ritorna i candidates COSI' COME SONO (uno stem gia'
+    coperto passa comunque: serve per completare rami mancanti di un doc
+    gia' parzialmente ingerito)."""
+    if force:
+        return list(candidates)
+    return pending(candidates, covered)
+
+
+def select_branches(branches: dict, selected: set[str]) -> dict:
+    """Ritorna una copia di `branches` in cui i rami NON in `selected`
+    sono sostituiti da un no-op `lambda: 0`.
+
+    I rami esclusi non vengono quindi mai eseguiti: es. `selected =
+    {narrative, visual}` rende lo strutturato un no-op (non chiama
+    run_document_massive, ~3h risparmiate). Le chiavi sono preservate."""
+    return {
+        name: (fn if name in selected else (lambda: 0))
+        for name, fn in branches.items()
+    }
+
+
 def doc_pages(census: dict[str, int], stem: str) -> int:
     """Numero pagine di uno stem dal census; 0 se non censito."""
     return int(census.get(stem, 0))
@@ -162,6 +189,7 @@ def run_batch(
     visual_collection: str,
     progress_path: str,
     role: str = "tecnico",
+    branches_selected: set[str] | None = None,
 ) -> None:
     """Per ogni doc: build_branches + ingest_document_full; APPENDE una riga
     JSON a progress_path e stampa una riga tabella (flush). Un errore fatale
@@ -200,6 +228,8 @@ def run_batch(
                     chunks_collection=chunks_collection,
                     visual_collection=visual_collection,
                 )
+                if branches_selected is not None:
+                    branches = select_branches(branches, branches_selected)
                 report = ingest_document_full(stem, **branches)
             secs = round(time.perf_counter() - t0, 2)
             row = {
@@ -252,6 +282,12 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--limit", type=int, default=0, help="Processa al massimo N documenti (0 = tutti).")
     ap.add_argument("--stems", type=str, default="",
                     help="Sottoinsieme esplicito, stem separati da virgola.")
+    ap.add_argument("--force", action="store_true",
+                    help="NON filtrare i candidates per copertura: processa anche i doc "
+                         "gia' coperti (per completare rami mancanti).")
+    ap.add_argument("--branches", type=str, default="structured,narrative,visual",
+                    help="Rami da eseguire (CSV: structured,narrative,visual). I rami "
+                         "esclusi diventano no-op. Default: tutti e tre.")
     ap.add_argument("--dry-run", action="store_true",
                     help="Stampa i pending che processerebbe ed ESCE senza scrivere nulla.")
     ap.add_argument("--progress", type=str, default=DEFAULT_PROGRESS,
@@ -276,7 +312,16 @@ def main(argv: list[str] | None = None) -> int:
     with psycopg.connect(conninfo()) as conn:
         covered = covered_stems(conn, qc)
 
-    todo = pending(candidates, covered)
+    todo = filter_by_coverage(candidates, covered, force=args.force)
+
+    # rami selezionati (--branches)
+    valid_branches = {"structured", "narrative", "visual"}
+    branches_selected = {b.strip() for b in args.branches.split(",") if b.strip()}
+    unknown = branches_selected - valid_branches
+    if unknown:
+        print(f"ERRORE: rami sconosciuti in --branches: {sorted(unknown)} "
+              f"(validi: {sorted(valid_branches)})", file=sys.stderr)
+        return 2
 
     # partizione giganti/normali
     census = load_census()
@@ -294,7 +339,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.dry_run:
         kind = "GIGANTI" if args.only_giants else "NORMALI"
         print(f"[dry-run] candidates={len(candidates)} coperti={len(covered)} "
-              f"pending={len(todo)} normali={len(normali)} giganti={len(giganti)}")
+              f"force={args.force} todo={len(todo)} normali={len(normali)} giganti={len(giganti)}")
+        print(f"[dry-run] rami={sorted(branches_selected)}")
         print(f"[dry-run] processerebbe {len(selected)} documenti ({kind}):")
         for s in selected:
             print(f"  {s}  ({doc_pages(census, s)} pag)")
@@ -314,6 +360,7 @@ def main(argv: list[str] | None = None) -> int:
         chunks_collection=args.chunks_collection,
         visual_collection=args.visual_collection,
         progress_path=args.progress,
+        branches_selected=branches_selected,
     )
     return 0
 
