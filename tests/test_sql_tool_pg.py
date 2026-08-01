@@ -59,6 +59,7 @@ def ro_env():
             f"THEN CREATE ROLE {RO_USER} LOGIN PASSWORD '{RO_PWD}'; END IF; END $$;")
         adm.execute(f"GRANT USAGE ON SCHEMA {PG_SCHEMA} TO {RO_USER}")
         adm.execute(f"GRANT SELECT ON {PG_SCHEMA}.righe_listino TO {RO_USER}")
+        adm.execute(f"GRANT SELECT ON public.document_versions TO {RO_USER}")
         adm.commit()
 
         ro = psycopg.connect(_ro_conninfo())
@@ -99,7 +100,10 @@ class TestRuoloReadOnly:
     def test_select_funziona_col_ruolo_readonly(self, ro_env):
         _adm, _ro, schema = ro_env
         rows = lookup(PgSqlExecutor(_ro_conninfo(), schema=schema), CODE, "quanto costa")
-        assert rows == [LookupRow(valore=Decimal("12.50"), doc_stem="listino_x", page=1)]
+        assert len(rows) == 1
+        assert rows[0].valore == Decimal("12.50")
+        assert rows[0].doc_stem == "listino_x"
+        assert rows[0].page == 1
 
     def test_insert_rifiutato_dal_db(self, ro_env):
         _adm, ro, schema = ro_env

@@ -39,3 +39,4 @@
 {"qa_id": "C_EN_02", "query": "code 22112", "lang": "EN", "intent": "code", "role": "tecnico", "expected": {"doc": "crusader_marine_L510008", "page": 55, "code": "22112"}, "notes": "EN code"}
 {"qa_id": "C_EN_03", "query": "code 874300", "lang": "EN", "intent": "code", "role": "tecnico", "expected": {"doc": "rotax_912_914_IPC", "page": 84, "code": "874300"}, "notes": "EN code"}
 {"qa_id": "RBAC002", "query": "codice AF02110000E4", "lang": "IT", "intent": "rbac_negative", "role": "commerciale", "expected": {"doc": "branson_4520R_parts", "page": 14, "code": "AF02110000E4"}, "expected_behavior": "refusal", "notes": "doc tecnico-only interrogato come commerciale -> il grafo deve rifiutare"}
+{"qa_id":"S-MAM-09","query":"quanto costa il codice 10011?","lang":"IT","intent":"code","role":"tecnico","expected":{"doc":"Mamoli_Catalogo_Ricambi_2021_IT_EN","page":null,"code":"10011"},"expected_level_demo_era":"ALTA","notes":"prezzi variante mamoli 10011"}

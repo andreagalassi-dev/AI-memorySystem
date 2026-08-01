@@ -25,6 +25,7 @@ from src.retrieval.pixelrag.index import PageHit
 from src.retrieval.confidence import (Signals, Thresholds, compute_margin,
                                       confidence_level, group_scores)
 from src.retrieval.guardrail import check_answer
+from src.retrieval.price_variants import aggregate_price_variants, PriceAnswer
 from src.retrieval.router import classify_query, derive_intent
 from src.retrieval.synthesis import REFUSAL, extract_citations, strip_citations
 
@@ -221,19 +222,47 @@ def render_node(state: GraphState, deps: Deps) -> dict:
     righe (provenienza), non dal testo dell'LLM. Il guardrail codici resta a valle."""
     params: SqlParams = state["sql_params"]
     rows: list[LookupRow] = state["sql_rows"]
+    
+    price_answer: PriceAnswer | None = None
+    if params.campo == "prezzo":
+        price_answer = aggregate_price_variants(rows)
+        # Se c'è un solo prezzo, price_answer.varianti è vuota.
+    
     try:
         out = deps.llm.generate(
             SYSTEM_RENDER,
-            build_render_prompt(state["query"], state.get("code_token"), params.campo, rows))
+            build_render_prompt(state["query"], state.get("code_token"), params.campo, rows, price_answer))
     except Exception as exc:  # fail-closed: modello giu'/timeout
         return {"system_error": True, "level": "BASSA",
                 "audit": _audit(state, f"Sistema non disponibile (render): {exc}")}
-    if params.campo == "prezzo" and not verify_price_grounding(out, [r.valore for r in rows]):
-        return {"level": "BASSA",
-                "audit": _audit(state, "render: prezzo non ancorato ai dati DB -> non lo so")}
+                
+    if params.campo == "prezzo":
+        if not verify_price_grounding(out, [r.valore for r in rows], price_answer):
+            if price_answer and len(price_answer.varianti) > 0:
+                # LLM ha omesso una variante. FALLBACK DETERMINISTICO
+                code_text = state.get("code_token")
+                p = price_answer.principale
+                lines = [f"Il codice {code_text} costa {p.prezzo} EUR (pag. {','.join(map(str, p.pagine))})."]
+                if p.superseded:
+                    lines[0] = f"ATTENZIONE: VECCHIA VERSIONE. " + lines[0]
+                for v in price_answer.varianti:
+                    v_line = f"- Variante: {v.prezzo} EUR (pag. {','.join(map(str, v.pagine))})"
+                    if v.superseded:
+                        v_line += " [VECCHIA VERSIONE]"
+                    lines.append(v_line)
+                out = "\n".join(lines)
+                state_audit = _audit(state, "render: fallback deterministico perche' LLM ha omesso varianti")
+            else:
+                return {"level": "BASSA",
+                        "audit": _audit(state, "render: prezzo non ancorato ai dati DB -> non lo so")}
+        else:
+            state_audit = _audit(state, "render: risposta formattata dai dati DB")
+    else:
+        state_audit = _audit(state, "render: risposta formattata dai dati DB")
+
     citations = [(r.doc_stem, r.page) for r in rows]
     return {"answer": out, "citations": citations,
-            "audit": _audit(state, "render: risposta formattata dai dati DB")}
+            "audit": state_audit}
 
 
 def visual_node(state: GraphState, deps: Deps) -> dict:

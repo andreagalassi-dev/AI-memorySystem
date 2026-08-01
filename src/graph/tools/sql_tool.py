@@ -62,8 +62,10 @@ _DESC_KEYWORDS = (
 # Template parametrizzato: `col` e `schema` sono Identifier whitelisted; il codice e'
 # l'unico dato utente e passa come `%s`. Mai concatenazione.
 _SELECT = sql.SQL(
-    "SELECT {col}, doc_stem, page FROM {schema}.righe_listino "
-    "WHERE codice_normalizzato = %s"
+    "SELECT {col}, r.doc_stem, r.page, v.version_status, v.ingested_at "
+    "FROM {schema}.righe_listino r "
+    "LEFT JOIN public.document_versions v ON v.doc_stem = r.doc_stem "
+    "WHERE r.codice_normalizzato = %s"
 )
 
 
@@ -82,6 +84,8 @@ class LookupRow:
     valore: Any
     doc_stem: str
     page: int
+    version_status: str | None = None
+    ingested_at: Any | None = None
 
 
 def extract_params(code_token: str, query: str) -> SqlParams:
@@ -146,7 +150,13 @@ class FakeSqlExecutor:
         rec = self.records.get(params.codice_normalizzato)
         if rec is None:
             return []
-        return [LookupRow(valore=rec[params.campo], doc_stem=rec["doc_stem"], page=rec["page"])]
+        return [LookupRow(
+            valore=rec[params.campo],
+            doc_stem=rec["doc_stem"],
+            page=rec["page"],
+            version_status=rec.get("version_status"),
+            ingested_at=rec.get("ingested_at")
+        )]
 
 
 @dataclass
@@ -165,7 +175,13 @@ class PgSqlExecutor:
         with psycopg.connect(self.conninfo) as conn:
             with conn.cursor() as cur:
                 cur.execute(q, (params.codice_normalizzato,))
-                return [LookupRow(valore=r[0], doc_stem=r[1], page=r[2]) for r in cur.fetchall()]
+                return [LookupRow(
+                    valore=r[0],
+                    doc_stem=r[1],
+                    page=r[2],
+                    version_status=r[3],
+                    ingested_at=r[4]
+                ) for r in cur.fetchall()]
 
 
 def lookup(executor: SqlExecutor, code_token: str, query: str) -> list[LookupRow]:

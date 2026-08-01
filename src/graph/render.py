@@ -24,6 +24,7 @@ from decimal import Decimal, InvalidOperation
 from xml.sax.saxutils import escape, quoteattr
 
 from src.graph.tools.sql_tool import LookupRow
+from src.retrieval.price_variants import PriceAnswer
 from src.retrieval.synthesis import REFUSAL, strip_citations
 
 SYSTEM_RENDER = f"""\
@@ -42,19 +43,44 @@ codici o descrizioni; NON aggiungere dati non presenti.
 
 
 def build_render_prompt(query: str, code_token: str, campo: str,
-                        rows: Iterable[LookupRow]) -> str:
+                        rows: Iterable[LookupRow], price_answer: PriceAnswer | None = None) -> str:
     """Prompt utente: dati verificati in XML (grounding confinato) + domanda.
 
     Serializza SOLO i valori letti dal DB; nessuna traccia di SQL. `code_token` e
     `campo` sono attributi noti (non provengono dal modello)."""
     righe = []
-    for r in rows:
+    
+    if price_answer is not None:
+        # Prezzo con varianti (blocco PriceAnswer)
+        p = price_answer.principale
         attrs = (f"codice={quoteattr(str(code_token))} "
                  f"campo={quoteattr(str(campo))} "
-                 f"valore={quoteattr('' if r.valore is None else str(r.valore))} "
-                 f"doc={quoteattr(str(r.doc_stem))} "
-                 f"pag={quoteattr(str(r.page))}")
+                 f"tipo={quoteattr('principale')} "
+                 f"valore={quoteattr('' if p.prezzo is None else str(p.prezzo))} "
+                 f"pagine={quoteattr(','.join(map(str, p.pagine)))} "
+                 f"docs={quoteattr(','.join(p.doc_stems))} "
+                 f"obsoleto={quoteattr('si' if p.superseded else 'no')}")
         righe.append(f"  <riga {attrs}/>")
+        
+        for v in price_answer.varianti:
+            attrs = (f"codice={quoteattr(str(code_token))} "
+                     f"campo={quoteattr(str(campo))} "
+                     f"tipo={quoteattr('variante')} "
+                     f"valore={quoteattr('' if v.prezzo is None else str(v.prezzo))} "
+                     f"pagine={quoteattr(','.join(map(str, v.pagine)))} "
+                     f"docs={quoteattr(','.join(v.doc_stems))} "
+                     f"obsoleto={quoteattr('si' if v.superseded else 'no')}")
+            righe.append(f"  <riga {attrs}/>")
+    else:
+        # Formato standard piatto (per descrizione o fallback/single price prima)
+        for r in rows:
+            attrs = (f"codice={quoteattr(str(code_token))} "
+                     f"campo={quoteattr(str(campo))} "
+                     f"valore={quoteattr('' if r.valore is None else str(r.valore))} "
+                     f"doc={quoteattr(str(r.doc_stem))} "
+                     f"pag={quoteattr(str(r.page))}")
+            righe.append(f"  <riga {attrs}/>")
+            
     dati = f"<dati>\n{chr(10).join(righe)}\n</dati>" if righe else "<dati></dati>"
     return f"{dati}\n<domanda>{escape(query)}</domanda>"
 
@@ -108,15 +134,30 @@ def _price_candidates(text: str) -> list[Decimal]:
     return out
 
 
-def verify_price_grounding(answer: str, db_values: Iterable) -> bool:
+def verify_price_grounding(answer: str, db_values: Iterable, price_answer: PriceAnswer | None = None) -> bool:
     """True se i prezzi enunciati nella risposta sono ANCORATI ai valori del DB.
 
     Fail-closed: nessun valore numerico a DB, oppure nessun prezzo enunciato, oppure
-    un prezzo enunciato che non compare tra i valori del DB -> False (-> REFUSAL)."""
+    un prezzo enunciato che non compare tra i valori del DB -> False (-> REFUSAL).
+    
+    Se price_answer e' fornito, richiede che TUTTI i prezzi distinti in price_answer
+    siano stati citati (principale + tutte le varianti)."""
     db = {Decimal(v) for v in db_values if v is not None}
     if not db:
         return False
     stated = set(_price_candidates(strip_citations(answer)))
     if not stated:
         return False
-    return stated <= db
+        
+    if not (stated <= db):
+        return False
+        
+    if price_answer is not None:
+        required_prices = {Decimal(price_answer.principale.prezzo)}
+        for v in price_answer.varianti:
+            required_prices.add(Decimal(v.prezzo))
+            
+        if not (required_prices <= stated):
+            return False
+            
+    return True

@@ -20,6 +20,7 @@ from src.graph.render import (
     verify_price_grounding,
 )
 from src.graph.tools.sql_tool import LookupRow
+from src.retrieval.price_variants import PriceAnswer, PriceVariant
 
 
 def _rows(*vals, doc="listino_x", page=3):
@@ -108,3 +109,20 @@ class TestPriceGroundingFailClosed:
     def test_db_senza_valore_numerico_blocca(self):
         # codice trovato ma prezzo NULL a DB -> niente da confermare -> fail-closed
         assert verify_price_grounding("Prezzo 12,50 €.", [None]) is False
+
+class TestPriceGroundingWithVariants:
+    def test_varianti_omissione_blocca(self):
+        p = PriceVariant(prezzo=Decimal("19.50"), pagine=[1], doc_stems=["x"], superseded=False, freq=1)
+        v = PriceVariant(prezzo=Decimal("18.20"), pagine=[2], doc_stems=["x"], superseded=False, freq=1)
+        ans = PriceAnswer(principale=p, varianti=[v])
+        
+        # LLM cita solo 19.50 (manca 18.20)
+        assert verify_price_grounding("Il prezzo è 19,50 €.", [Decimal("19.50"), Decimal("18.20")], ans) is False
+        
+    def test_varianti_tutte_citate_passa(self):
+        p = PriceVariant(prezzo=Decimal("19.50"), pagine=[1], doc_stems=["x"], superseded=False, freq=1)
+        v = PriceVariant(prezzo=Decimal("18.20"), pagine=[2], doc_stems=["x"], superseded=False, freq=1)
+        ans = PriceAnswer(principale=p, varianti=[v])
+        
+        # LLM cita entrambi
+        assert verify_price_grounding("Il prezzo è 19,50 € e variante 18,20 €.", [Decimal("19.50"), Decimal("18.20")], ans) is True
