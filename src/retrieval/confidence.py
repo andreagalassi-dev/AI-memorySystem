@@ -48,6 +48,8 @@ class Signals:
     agreement: str | None = None  # "agree" | "disagree" | None (P3.3)
     hop2_warning: str | None = None
     is_generic_code: bool = False
+    singleton: bool = False
+    is_code: bool = False
 
 
 @dataclass
@@ -122,7 +124,7 @@ def confidence_level(signals: Signals, thresholds: Thresholds) -> ConfidenceRepo
                                 "codice derivante da profilo generico -> verifica consigliata")
 
     # Soft score (gate PASS, evidenza presente, evidenza affidabile)
-    if s.margin >= t.tau_hi and s.agreement != "disagree":
+    if s.margin >= t.tau_hi and not (s.singleton and not s.is_code) and s.agreement != "disagree":
         return ConfidenceReport(Level.ALTA, s,
                                 f"margine {s.margin:.2f} >= tau_hi {t.tau_hi} e "
                                 "nessun disaccordo visivo -> alta")
@@ -134,6 +136,8 @@ def confidence_level(signals: Signals, thresholds: Thresholds) -> ConfidenceRepo
     if s.margin >= t.tau_lo or s.agreement == "agree":
         why = (f"margine {s.margin:.2f} >= tau_lo {t.tau_lo}"
                if s.margin >= t.tau_lo else "accordo testo-visione")
+        if s.margin >= t.tau_hi and s.singleton and not s.is_code:
+            why = "evidenza singola non corroborata"
         return ConfidenceReport(Level.MEDIA, s, f"{why} -> verifica consigliata")
     return ConfidenceReport(Level.BASSA, s,
                             f"margine {s.margin:.2f} < tau_lo {t.tau_lo} senza "
@@ -148,6 +152,7 @@ def extract_signals(unified: dict, guardrail_report) -> Signals:
     # debito §3: margine sui gruppi-codice, come confidence_node
     keyed = [((getattr(h, "payload", None) or {}).get("code"), h.score)
              for h in hits]
+    grouped = group_scores(keyed)
     top = hits[0] if hits else None
 
     if is_code:
@@ -169,9 +174,11 @@ def extract_signals(unified: dict, guardrail_report) -> Signals:
     return Signals(
         gate=guardrail_report.gate,
         has_evidence=has_evidence,
-        margin=compute_margin(group_scores(keyed)),
+        margin=compute_margin(grouped),
         unreliable=unreliable,
         agreement=None,
         hop2_warning=unified.get("hop2_warning"),
         is_generic_code=is_generic,
+        singleton=(len(grouped) <= 1),
+        is_code=is_code,
     )

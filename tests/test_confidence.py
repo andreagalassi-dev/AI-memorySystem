@@ -23,10 +23,10 @@ T = Thresholds(tau_hi=0.5, tau_lo=0.2)
 
 
 def sig(gate="PASS", has_evidence=True, margin=0.9, unreliable=False,
-        agreement=None, is_generic_code=False):
+        agreement=None, is_generic_code=False, singleton=False, is_code=False):
     return Signals(gate=gate, has_evidence=has_evidence, margin=margin,
                    unreliable=unreliable, agreement=agreement,
-                   is_generic_code=is_generic_code)
+                   is_generic_code=is_generic_code, singleton=singleton, is_code=is_code)
 
 
 def level(**kw):
@@ -120,6 +120,18 @@ class TestMatriceSoftScore:
 
     def test_alta_declassata_da_disagree(self):  # riga 6
         assert level(margin=0.6, agreement="disagree") == Level.MEDIA
+
+    def test_lone_hit_narrative_media(self):
+        # lone-hit narrativo (singleton=True, is_code=False, margin 1.0) -> MEDIA
+        assert level(margin=1.0, singleton=True, is_code=False) == Level.MEDIA
+
+    def test_lone_hit_code_alta(self):
+        # lone-hit CODE (singleton=True, is_code=True) -> resta ALTA (se margine alto)
+        assert level(margin=1.0, singleton=True, is_code=True) == Level.ALTA
+        
+    def test_multi_hit_narrative_alta(self):
+        # multi-hit con separazione (margin>=tau_hi, singleton=False) -> ALTA invariato
+        assert level(margin=1.0, singleton=False, is_code=False) == Level.ALTA
 
     def test_margine_medio(self):  # riga 7
         assert level(margin=0.3) == Level.MEDIA
