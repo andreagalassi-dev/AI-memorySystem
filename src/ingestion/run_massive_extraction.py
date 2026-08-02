@@ -39,7 +39,7 @@ from psycopg.types.json import Jsonb as _Jsonb
 
 from src.ingestion.extraction.extractor import PageRef, TableExtractor
 from src.ingestion.extraction.grounding import partition
-from src.ingestion.extraction.load import DEFAULT_SCHEMA
+from src.ingestion.extraction.load import DEFAULT_SCHEMA, warn_intra_page_collisions
 from src.ingestion.extraction.schema import RigaListino, Scarto
 from src.ingestion.extraction.quality_guard import is_jumbled_page
 from src.ingestion.extraction.table_detect import is_table_page
@@ -69,10 +69,9 @@ _UPSERT_RIGHE_TX = pgsql.SQL(
     INSERT INTO {schema}.righe_listino
         (doc_stem, page, codice_normalizzato, codice_originale, descrizione, prezzo, updated_at)
     VALUES (%s, %s, %s, %s, %s, %s, now())
-    ON CONFLICT (doc_stem, page, codice_normalizzato) DO UPDATE SET
+    ON CONFLICT (doc_stem, page, codice_normalizzato, (COALESCE(prezzo, -1))) DO UPDATE SET
         codice_originale = EXCLUDED.codice_originale,
         descrizione      = EXCLUDED.descrizione,
-        prezzo           = EXCLUDED.prezzo,
         updated_at       = now()
     """
 )
@@ -101,6 +100,7 @@ def _persist_tx(
     """
     n_valide = 0
     if valide:
+        warn_intra_page_collisions(valide)  # osservabilita': mai una collisione muta
         q = _UPSERT_RIGHE_TX.format(schema=pgsql.Identifier(schema))
         params = [
             (r.doc_stem, r.page, r.codice_normalizzato, r.codice_originale, r.descrizione, r.prezzo)

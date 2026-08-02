@@ -41,8 +41,7 @@ _DDL_RIGHE = sql.SQL(
         codice_originale    text        NOT NULL,
         descrizione         text,
         prezzo              numeric,
-        updated_at          timestamptz NOT NULL DEFAULT now(),
-        PRIMARY KEY (doc_stem, page, codice_normalizzato)
+        updated_at          timestamptz NOT NULL DEFAULT now()
     )
     """
 )
@@ -67,10 +66,9 @@ _UPSERT_RIGHE = sql.SQL(
     INSERT INTO {schema}.righe_listino
         (doc_stem, page, codice_normalizzato, codice_originale, descrizione, prezzo, updated_at)
     VALUES (%s, %s, %s, %s, %s, %s, now())
-    ON CONFLICT (doc_stem, page, codice_normalizzato) DO UPDATE SET
+    ON CONFLICT (doc_stem, page, codice_normalizzato, (COALESCE(prezzo, -1))) DO UPDATE SET
         codice_originale = EXCLUDED.codice_originale,
         descrizione      = EXCLUDED.descrizione,
-        prezzo           = EXCLUDED.prezzo,
         updated_at       = now()
     """
 )
@@ -90,6 +88,9 @@ def init_schema(conn: psycopg.Connection, *, schema: str = DEFAULT_SCHEMA) -> No
     conn.execute(_DDL_SCHEMA.format(schema=ident))
     conn.execute(_DDL_RIGHE.format(schema=ident))
     conn.execute(_DDL_SCARTI.format(schema=ident))
+    
+    conn.execute(sql.SQL("ALTER TABLE {schema}.righe_listino DROP CONSTRAINT IF EXISTS righe_listino_pkey;").format(schema=ident))
+    conn.execute(sql.SQL("CREATE UNIQUE INDEX IF NOT EXISTS righe_listino_uq ON {schema}.righe_listino (doc_stem, page, codice_normalizzato, (COALESCE(prezzo, -1)));").format(schema=ident))
     conn.commit()
 
 
@@ -124,6 +125,27 @@ def insert_scarti(conn: psycopg.Connection, scarti: list[Scarto], *,
         cur.executemany(q, params)
     conn.commit()
     return len(scarti)
+
+
+def warn_intra_page_collisions(valide: list[RigaListino]) -> int:
+    """Osservabilita': logga (WARNING) i codici che compaiono piu' volte sulla STESSA
+    pagina con prezzo DIVERSO. Dall'indice unico su (doc,page,code,COALESCE(prezzo,-1))
+    queste righe ora vengono PRESERVATE (non piu' sovrascritte in silenzio), ma vanno
+    rese visibili: mai una collisione muta. Puro rispetto al DB; ritorna il numero di
+    collisioni rilevate. Va chiamato PRIMA dell'upsert, su entrambi i binari di persist.
+    """
+    seen: dict[tuple, set] = {}
+    for r in valide:
+        seen.setdefault((r.doc_stem, r.page, r.codice_normalizzato), set()).add(r.prezzo)
+    n = 0
+    for (doc_stem, page, code), prices in seen.items():
+        if len(prices) > 1:
+            n += 1
+            logger.warning(
+                "Collisione intra-pagina preservata: doc=%s pagina=%d codice=%s prezzi=%s",
+                doc_stem, page, code, sorted(str(p) for p in prices),
+            )
+    return n
 
 
 def persist(conn: psycopg.Connection, valide: list[RigaListino], scarti: list[Scarto],

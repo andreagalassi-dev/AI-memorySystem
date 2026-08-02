@@ -31,7 +31,12 @@ import psycopg
 
 from src.ingestion.extraction.extractor import PageRef, TableExtractor
 from src.ingestion.extraction.grounding import partition
-from src.ingestion.extraction.load import DEFAULT_SCHEMA, init_schema, persist
+from src.ingestion.extraction.load import (
+    DEFAULT_SCHEMA,
+    init_schema,
+    persist,
+    warn_intra_page_collisions,
+)
 from src.ingestion.extraction.schema import RigaListino
 from src.ingestion.extraction.table_detect import is_table_page
 
@@ -88,6 +93,10 @@ def run_document(conn: psycopg.Connection, doc, *, doc_stem: str,
         grezze = extractor.extract(PageRef(doc_stem, i))
         righe = [RigaListino.from_grezza(g, doc_stem=doc_stem, page=i) for g in grezze]
         valide, scarti = partition(righe, page.get_text("text"))
+
+        # GUARD/osservabilita': collisioni intra-pagina PRIMA dell'upsert (mai mute)
+        warn_intra_page_collisions(valide)
+
         summary = persist(conn, valide, scarti, schema=schema)
 
         tot_valide += summary["righe_upsert"]

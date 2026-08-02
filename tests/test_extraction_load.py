@@ -83,13 +83,15 @@ class TestUpsertRighe:
         upsert_righe(pgconn, [r], schema=SCHEMA)  # stessa chiave
         assert _count(pgconn, "righe_listino") == 1
 
-    def test_upsert_aggiorna_prezzo_su_conflitto(self, pgconn):
+    def test_upsert_aggiunge_nuovo_prezzo_se_diverso(self, pgconn):
         upsert_righe(pgconn, [_riga("V0-123", prezzo="12.50")], schema=SCHEMA)
         upsert_righe(pgconn, [_riga("V0-123", prezzo="9.90")], schema=SCHEMA)
-        prezzo = pgconn.execute(sql.SQL(
-            "SELECT prezzo FROM {}.righe_listino"
-        ).format(sql.Identifier(SCHEMA))).fetchone()[0]
-        assert prezzo == Decimal("9.90")
+        prezzi = pgconn.execute(sql.SQL(
+            "SELECT prezzo FROM {}.righe_listino ORDER BY prezzo"
+        ).format(sql.Identifier(SCHEMA))).fetchall()
+        assert len(prezzi) == 2
+        assert prezzi[0][0] == Decimal("9.90")
+        assert prezzi[1][0] == Decimal("12.50")
 
     def test_lista_vuota_no_op(self, pgconn):
         assert upsert_righe(pgconn, [], schema=SCHEMA) == 0
