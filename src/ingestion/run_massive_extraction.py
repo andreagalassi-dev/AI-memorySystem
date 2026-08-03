@@ -39,7 +39,7 @@ from psycopg.types.json import Jsonb as _Jsonb
 
 from src.ingestion.extraction.extractor import PageRef, TableExtractor
 from src.ingestion.extraction.grounding import partition
-from src.ingestion.extraction.load import DEFAULT_SCHEMA, warn_intra_page_collisions
+from src.ingestion.extraction.load import DEFAULT_SCHEMA, init_schema, warn_intra_page_collisions
 from src.ingestion.extraction.schema import RigaListino, Scarto
 from src.ingestion.extraction.quality_guard import is_jumbled_page
 from src.ingestion.extraction.table_detect import is_table_page
@@ -217,6 +217,12 @@ def run_document_massive(
     doc_stem = pdf_path.stem
 
     logger.info("runner: START doc_stem=%s filepath=%s", doc_stem, filepath)
+
+    # 0. Schema/migrazione idempotente: garantisce tabelle + indice unico
+    #    (doc,page,code,COALESCE(prezzo,-1)). Il path di PRODUZIONE passa di qui, quindi
+    #    e' QUI che la migrazione del punto 3 (PK -> indice unico) va applicata: senza,
+    #    l'ON CONFLICT di _persist_tx non trova il vincolo (InvalidColumnReference).
+    init_schema(conn, schema=schema)
 
     # 1. Fast-Dispatch: classifica ogni pagina (born-digital solo-testo vs HEAVY).
     dispatch = dispatch_pdf(filepath, extract_text=False)

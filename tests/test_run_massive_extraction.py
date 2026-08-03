@@ -117,6 +117,54 @@ def test_extractor_crasha_db_senza_sporcia(pgconn, tmp_path):
     assert _count_righe(pgconn) == 0, "il DB contiene righe parziali: non atomica!"
 
 
+def test_runner_migra_schema_con_vecchia_pk(tmp_path):
+    """Regressione: il runner di PRODUZIONE deve MIGRARE uno schema con la VECCHIA PK
+    (doc,page,code) all'indice unico del punto 3. Senza init_schema nel runner, l'ON
+    CONFLICT di _persist_tx solleva InvalidColumnReference (bug scoperto ri-ingestando
+    Mamoli: la prod non era mai stata migrata). Verifica anche che la collisione intra-
+    pagina venga PRESERVATA (entrambi i prezzi), non persa in silenzio."""
+    schema = "test_runner_vecchia_pk"
+    ident = sql.Identifier(schema)
+    with psycopg.connect(conninfo()) as c:
+        c.execute(sql.SQL("DROP SCHEMA IF EXISTS {} CASCADE").format(ident))
+        c.execute(sql.SQL("CREATE SCHEMA {}").format(ident))
+        # tabella con la VECCHIA PRIMARY KEY (stato storico della produzione, pre-punto-3)
+        c.execute(sql.SQL(
+            "CREATE TABLE {}.righe_listino ("
+            "doc_stem text NOT NULL, page int NOT NULL, codice_normalizzato text NOT NULL, "
+            "codice_originale text NOT NULL, descrizione text, prezzo numeric, "
+            "updated_at timestamptz NOT NULL DEFAULT now(), "
+            "PRIMARY KEY (doc_stem, page, codice_normalizzato))").format(ident))
+        c.commit()
+
+        pdf = tmp_path / "tab.pdf"
+        _make_table_pdf(str(pdf), n_table_pages=1)
+
+        class CollisionExtractor:  # stesso codice, DUE prezzi sulla stessa pagina
+            def extract(self, ref: PageRef) -> list[RigaGrezza]:
+                return [
+                    RigaGrezza(codice_originale="AB-1234", descrizione="Valvola A", prezzo="12.50"),
+                    RigaGrezza(codice_originale="AB-1234", descrizione="Valvola A", prezzo="9.90"),
+                ]
+
+        mux = ModelMultiplexer(FakeModelRuntime(), max_resident=1, ctx_cap=16000)
+        # NON deve sollevare InvalidColumnReference: il runner auto-migra.
+        run_document_massive(str(pdf), conn=c, extractor=CollisionExtractor(),
+                             multiplexer=mux, model_name="glm-ocr", schema=schema)
+
+        idx = [r[0] for r in c.execute(
+            "SELECT indexname FROM pg_indexes WHERE schemaname=%s AND tablename='righe_listino'",
+            (schema,)).fetchall()]
+        prezzi = [str(r[0]) for r in c.execute(sql.SQL(
+            "SELECT prezzo FROM {}.righe_listino WHERE codice_normalizzato=%s "
+            "ORDER BY prezzo").format(ident), ("AB1234",)).fetchall()]
+        c.execute(sql.SQL("DROP SCHEMA IF EXISTS {} CASCADE").format(ident))
+        c.commit()
+
+    assert "righe_listino_uq" in idx, f"migrazione non applicata: {idx}"
+    assert set(prezzi) == {"9.90", "12.50"}, f"collisione non preservata: {prezzi}"
+
+
 def test_fast_heavy_conteggi_loggati(pgconn, tmp_path, caplog):
     """Invariante 2: il runner logga pagine FAST_TEXT vs HEAVY."""
     pdf = tmp_path / "mixed.pdf"
