@@ -14,6 +14,8 @@ from __future__ import annotations
 import json
 import sys
 import os
+import argparse
+import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -33,14 +35,21 @@ EVAL = Path(os.environ.get("EVAL_FILE", ROOT / "data" / "eval" / "eval_visual_v0
 OUT = ROOT / "output/eval/p27_visual_results.json"
 KS = (1, 3, 5)
 
-# Setup per pixelrag: usiamo FakeModelRuntime in eval visivo poiche' i test girano isolati.
-# Impostiamo max_resident=2 affinche' embedder e reranker coesistano in RAM senza evincersi
-# a vicenda a ogni query (causando thrashing dei pesi HF).
-mux = ModelMultiplexer(runtime=FakeModelRuntime(), max_resident=2)
-visual_embedder = Qwen3VLEmbedder(multiplexer=mux)
-visual_reranker = Qwen3VLReranker(multiplexer=mux)
-
 def main() -> int:
+    parser = argparse.ArgumentParser(description="Eval del retrieval visivo.")
+    parser.add_argument("--rerank", action="store_true", help="Abilita il reranker")
+    args = parser.parse_args()
+
+    start_time = time.time()
+
+    # Setup per pixelrag: usiamo Qwen3VLEmbedder DIRETTO per rimanere residente
+    visual_embedder = Qwen3VLEmbedder()
+    
+    if args.rerank:
+        mux = ModelMultiplexer(runtime=FakeModelRuntime(), max_resident=2)
+        visual_reranker = Qwen3VLReranker(multiplexer=mux)
+    else:
+        visual_reranker = None
     client = get_qdrant_client()
     visual_index = QdrantVisualIndex(client)
     
@@ -72,25 +81,26 @@ def main() -> int:
     for pair in pairs:
         expected = {(c["doc"], p) for c in pair["expected"] for p in c["pages"]}
         
-        # Prima del reranker (60 candidate pages da 300 tile)
+        # Path di ricerca
+        k_val = 60 if args.rerank else 10
         hits_before = visual_search(
             pair["query"],
             embedder=visual_embedder,
             index=visual_index,
             role=Role.TECNICO,
-            k=60,
+            k=k_val,
             tile_k=300,
             reranker=None
         )
         
-        # Dopo il reranker (top 10)
-        hits_after = visual_reranker.rerank(pair["query"], hits_before, top_k=10)
-        
         rank_before = next((i for i, h in enumerate(hits_before, 1) if (h.doc, h.page) in expected), None)
-        rank_after = next((i for i, h in enumerate(hits_after, 1) if (h.doc, h.page) in expected), None)
-        
         rows_before.append(rank_before)
-        rows_after.append(rank_after)
+        
+        if args.rerank:
+            hits_after = visual_reranker.rerank(pair["query"], hits_before, top_k=10)
+            rank_after = next((i for i, h in enumerate(hits_after, 1) if (h.doc, h.page) in expected), None)
+            rows_after.append(rank_after)
+            
         langs.append(pair["lang"])
 
     def calc_metrics(rows):
@@ -101,24 +111,43 @@ def main() -> int:
         m["mrr"] = sum(1/r for r in rows if r) / n
         return m
 
-    print("\n--- RISULTATI PRIMA DEL RERANKER ---")
-    m_before = calc_metrics(rows_before)
-    for k, v in m_before.items():
-        print(f"  {k}: {v:.3f}")
-        
-    print("\n--- RISULTATI DOPO IL RERANKER ---")
-    m_after = calc_metrics(rows_after)
-    for k, v in m_after.items():
-        print(f"  {k}: {v:.3f}")
-        
-    print("\n--- DETTAGLIO PER LINGUA (DOPO RERANKER) ---")
-    lang_set = sorted(list(set(langs)))
-    for lang in lang_set:
-        lang_rows = [r for r, lang_ in zip(rows_after, langs) if lang_ == lang]
-        lm = calc_metrics(lang_rows)
-        print(f"[{lang.upper()}] (n={len(lang_rows)}) R@5={lm.get('recall@5',0):.3f} MRR={lm.get('mrr',0):.3f}")
+    final_rows = rows_after if args.rerank else rows_before
 
-    if m_after.get("recall@5", 0) < 0.85:
+    if args.rerank:
+        print("\n--- RISULTATI PRIMA DEL RERANKER ---")
+        m_before = calc_metrics(rows_before)
+        for k, v in m_before.items():
+            print(f"  {k}: {v:.3f}")
+            
+        print("\n--- RISULTATI DOPO IL RERANKER ---")
+    else:
+        print("\n--- RISULTATI TOTALI (SENZA RERANKER) ---")
+
+    m_final = calc_metrics(final_rows)
+    for k, v in m_final.items():
+        print(f"  {k}: {v:.3f}")
+        
+    print("\n--- DETTAGLIO PER LINGUA ---")
+    lang_set = sorted(list(set(langs)))
+    lang_metrics = {}
+    for lang in lang_set:
+        lang_rows = [r for r, lang_ in zip(final_rows, langs) if lang_ == lang]
+        lm = calc_metrics(lang_rows)
+        lang_metrics[lang] = lm
+        print(f"[{lang.upper()}] (n={len(lang_rows)}) R@1={lm.get('recall@1',0):.3f} R@3={lm.get('recall@3',0):.3f} R@5={lm.get('recall@5',0):.3f} MRR={lm.get('mrr',0):.3f}")
+
+    OUT.parent.mkdir(parents=True, exist_ok=True)
+    with OUT.open("w", encoding="utf-8") as f:
+        json.dump({
+            "metrics": m_final,
+            "by_lang": lang_metrics,
+            "config": {"rerank": args.rerank}
+        }, f, indent=2)
+
+    total_time = time.time() - start_time
+    print(f"\nTempo totale: {total_time:.1f}s")
+
+    if m_final.get("recall@5", 0) < 0.85:
         print("\nSOGLIA NON RAGGIUNTA: recall@5 < 0.85. Mi fermo.")
         sys.exit(1)
         
