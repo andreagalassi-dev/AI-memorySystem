@@ -84,3 +84,25 @@ def test_aggregate_price_variants_null_status():
     ]
     ans = aggregate_price_variants(rows)
     assert ans.principale.superseded is False
+
+def test_aggregate_price_variants_determinism_deep_tie():
+    # pareggio profondo: 2 prezzi, freq 1, 1 pagina ciascuno, stessa versione, ingested_at uguale/None
+    rows1 = [
+        LookupRow(valore=15.0, doc_stem="doc1", page=1, version_status=None, ingested_at=None),
+        LookupRow(valore=12.0, doc_stem="doc2", page=2, version_status=None, ingested_at=None)
+    ]
+    ans1 = aggregate_price_variants(rows1)
+    ans2 = aggregate_price_variants(list(reversed(rows1)))
+    assert ans1.principale == ans2.principale
+    # since "12.0" < "15.0", 12.0 should be the principale
+    assert ans1.principale.prezzo == 12.0
+
+def test_aggregate_price_variants_crash_safe_mixed_datetime():
+    from datetime import datetime
+    rows = [
+        LookupRow(valore=15.0, doc_stem="doc1", page=1, version_status=None, ingested_at=datetime(2023, 1, 1)),
+        LookupRow(valore=12.0, doc_stem="doc2", page=2, version_status=None, ingested_at=None)
+    ]
+    ans = aggregate_price_variants(rows)
+    # 15.0 wins because datetime > None
+    assert ans.principale.prezzo == 15.0

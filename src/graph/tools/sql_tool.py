@@ -65,7 +65,8 @@ _SELECT = sql.SQL(
     "SELECT {col}, r.doc_stem, r.page, v.version_status, v.ingested_at "
     "FROM {schema}.righe_listino r "
     "LEFT JOIN public.document_versions v ON v.doc_stem = r.doc_stem "
-    "WHERE r.codice_normalizzato = %s"
+    "WHERE r.codice_normalizzato = %s "
+    "ORDER BY r.doc_stem, r.page, {col}"
 )
 
 

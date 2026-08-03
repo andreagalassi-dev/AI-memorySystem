@@ -53,8 +53,8 @@ def aggregate_price_variants(rows: list[LookupRow]) -> PriceAnswer:
             if r.doc_stem and r.doc_stem not in doc_stems:
                 doc_stems.append(r.doc_stem)
 
-        # Fallback for ingested_at comparison (empty string as minimal value)
-        max_ingested_at = max((r.ingested_at for r in group if r.ingested_at is not None), default="")
+        # Fallback for ingested_at comparison (None as minimal value)
+        max_ingested_at = max((r.ingested_at for r in group if r.ingested_at is not None), default=None)
         
         variants.append(PriceVariant(
             prezzo=val,
@@ -68,6 +68,7 @@ def aggregate_price_variants(rows: list[LookupRow]) -> PriceAnswer:
     class SortKey:
         def __init__(self, v):
             self.v = v
+            self.ingested = max_ingested[self.v.prezzo]
         
         def __lt__(self, other):
             if self.v.superseded != other.v.superseded:
@@ -76,10 +77,17 @@ def aggregate_price_variants(rows: list[LookupRow]) -> PriceAnswer:
                 return self.v.freq > other.v.freq # desc
             if len(self.v.pagine) != len(other.v.pagine):
                 return len(self.v.pagine) > len(other.v.pagine) # desc
-            # max_ingested string comparison
-            self_ingested = max_ingested[self.v.prezzo]
-            other_ingested = max_ingested[other.v.prezzo]
-            return self_ingested > other_ingested # desc
+            
+            # max_ingested desc comparison, with None as oldest
+            if self.ingested != other.ingested:
+                if self.ingested is None:
+                    return False
+                if other.ingested is None:
+                    return True
+                return self.ingested > other.ingested # desc
+            
+            # Final tie break: deterministic sort by string representation of price
+            return str(self.v.prezzo) < str(other.v.prezzo)
 
     variants.sort(key=SortKey)
 

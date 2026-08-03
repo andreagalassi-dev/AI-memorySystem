@@ -179,3 +179,27 @@ class TestRuoloReadOnly:
             
         conns_after = count_ro_conns()
         assert (conns_after - conns_before) <= 1
+
+    def test_select_ordine_deterministico(self, ro_env):
+        adm, _ro, schema = ro_env
+        from src.ingestion.extraction.load import upsert_righe
+        # Add another row for the same code, different doc_stem/page/price to check ordering
+        upsert_righe(adm, [
+            _riga(CODE, prezzo="10.00", page=2),
+            _riga(CODE, prezzo="15.00", page=1),
+        ], schema=schema)
+        
+        executor = PgSqlExecutor(_ro_conninfo(), schema=schema)
+        from src.graph.tools.sql_tool import extract_params
+        params = extract_params(CODE, "prezzo")
+        rows = executor.run(params)
+        
+        # Original is doc_stem="listino_x", page=1, prezzo="12.50" (added in fixture)
+        # Order by doc_stem, page, {col}
+        assert len(rows) == 3
+        assert rows[0].page == 1
+        assert rows[0].valore == Decimal("12.50")
+        assert rows[1].page == 1
+        assert rows[1].valore == Decimal("15.00")
+        assert rows[2].page == 2
+        assert rows[2].valore == Decimal("10.00")
