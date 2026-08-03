@@ -60,6 +60,10 @@ def build_branches(
     visual_collection: str = "aike_pages_visual",
     max_pages: int = 0
 ) -> dict[str, BranchFn]:
+    from src.registry.registry import register_document
+    # Idempotent registration of the document
+    register_document(conn, slug=doc_stem, category=None, roles=[parse_role(role)], doc_stem=doc_stem, langs=[])
+
     def structured() -> int:
         os.environ["AIKE_TABLE_EXTRACTOR"] = "docling"
         res = run_document_massive(
