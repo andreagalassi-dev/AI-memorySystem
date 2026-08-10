@@ -24,6 +24,7 @@ from src.retrieval.pixelrag.index import PageHit, VisualIndex, pages_from_tiles
 
 CURRENT = "current"
 OVERFETCH = 5   # tile recuperati per pagina desiderata (i tile collassano su (doc,page))
+RERANK_POOL = 12   # pagine candidate passate al reranker visivo (pool bounded ~latenza)
 
 
 def access_filter(role: Role, version_status: str = CURRENT) -> dict:
@@ -55,10 +56,10 @@ def visual_search(query: str, *, embedder: VisualEmbedder, index: VisualIndex,
     query_vec = embedder.embed_query(query)
     flt = access_filter(role, version_status) if role else None
     
-    # Se c'e' un reranker, la pipeline recupera piu' tile e ne estrae 60 candidati
+    # Se c'e' un reranker, la pipeline recupera piu' tile e ne estrae RERANK_POOL candidati
     if reranker is not None:
         eff_tile_k = 300
-        eff_page_k = 60
+        eff_page_k = RERANK_POOL
     else:
         eff_tile_k = tile_k or k * OVERFETCH
         eff_page_k = k

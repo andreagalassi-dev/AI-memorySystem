@@ -49,13 +49,18 @@ def visual_citations(pages: Sequence[PageHit]) -> list[tuple[str, int]]:
 
 
 def make_visual_search(embedder: VisualEmbedder, index: VisualIndex, *,
-                       k: int = VISUAL_K) -> Callable[[str, Role], list[PageHit]]:
+                       k: int = VISUAL_K,
+                       reranker=None) -> Callable[[str, Role], list[PageHit]]:
     """Binder di produzione: chiude embedder+index su `visual_search`.
 
     Ritorna un callable `(query, role) -> list[PageHit]` (stessa firma usata da
     `hybrid`), da iniettare in `Deps.visual_search`. L'RBAC/versioning resta dentro
-    `visual_search` (fail-closed: `role` obbligatorio, filtro d'indice)."""
+    `visual_search` (fail-closed: `role` obbligatorio, filtro d'indice).
+
+    Se `reranker` e' fornito, viene inoltrato a `visual_search` (rerankizza solo le
+    pagine gia' filtrate dall'RBAC: mai un aggiramento dei filtri ruolo/versione)."""
     def _search(query: str, role: Role) -> list[PageHit]:
-        return visual_search(query, embedder=embedder, index=index, role=role, k=k)
+        return visual_search(query, embedder=embedder, index=index, role=role, k=k,
+                             reranker=reranker)
 
     return _search

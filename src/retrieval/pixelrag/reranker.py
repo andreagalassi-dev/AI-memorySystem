@@ -7,6 +7,7 @@ un'implementazione `Qwen3VLReranker` che nasconde il backend di inferenza
 
 from __future__ import annotations
 
+import os
 from typing import Protocol, runtime_checkable
 from src.retrieval.pixelrag.index import PageHit
 
@@ -60,32 +61,52 @@ class Qwen3VLReranker:
         from pathlib import Path
         from PIL import Image
         import logging
-        
+
         ROOT = Path(__file__).resolve().parent.parent.parent.parent
         RENDERS = ROOT / "output" / "visual" / "renders"
-        
+
         def get_page_image_path(doc: str, page: int) -> Path:
             return RENDERS / doc / f"p{page:04d}.png"
 
-        
+        # Lato massimo per il downscale delle immagini (env-override).
+        # Default 1540 = risoluzione nativa dei render (page_render cap): NESSUN
+        # downscale effettivo. Misurato: a 768px il reranker perde i callout fini
+        # degli esplosi (recall@3 0.74) mentre a 1540px 0.84 — correttezza-first.
+        # Chi ha hardware debole puo' abbassare il valore per barattare velocita'.
+        max_side = int(os.getenv("AIKE_RERANK_IMG_MAXSIDE", "1540"))
+
         pairs = []
         valid_pages = []
         for p in pages:
             img_path = get_page_image_path(p.doc, p.page)
-            if img_path.exists():
-                try:
-                    img = Image.open(img_path).convert("RGB")
-                    # sentence-transformers expects dict for multimodal inputs
-                    pairs.append((query, {"image": img}))
-                    valid_pages.append(p)
-                except Exception as e:
-                    logging.warning(f"Impossibile caricare {img_path}: {e}")
-        
+            if not img_path.exists():
+                # NIENTE DROP SILENZIOSO: prova a generare il render on-demand dal PDF.
+                from src.ui.page_render import ensure_page_render
+                ensure_page_render(p.doc, p.page)
+            if not img_path.exists():
+                # PDF assente: non nascondere la pagina in silenzio, documentala nel log.
+                logging.warning(
+                    "Rerank visivo: render mancante per (%s, pag. %s) — pagina saltata "
+                    "(PNG e PDF assenti).", p.doc, p.page
+                )
+                continue
+            try:
+                img = Image.open(img_path).convert("RGB")
+                # LATENZA: downscale mantenendo le proporzioni (in-place)
+                img.thumbnail((max_side, max_side))
+                # sentence-transformers expects dict for multimodal inputs
+                pairs.append((query, {"image": img}))
+                valid_pages.append(p)
+            except Exception as e:
+                logging.warning(f"Impossibile caricare {img_path}: {e}")
+
         if not pairs:
             return []
-            
+
+        # LATENZA: batch_size da env (default 4)
+        batch_size = int(os.getenv("AIKE_RERANK_BATCH", "4"))
         model = self._get_model()
-        scores = model.predict(pairs, prompt="Retrieve images or text relevant to the user's query.", batch_size=2, show_progress_bar=True)
+        scores = model.predict(pairs, prompt="Retrieve images or text relevant to the user's query.", batch_size=batch_size, show_progress_bar=True)
         
         # Update scores and sort
         reranked = []

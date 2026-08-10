@@ -1,5 +1,6 @@
 """Dependencies for the serving session, providing shared singletons."""
 import logging
+import os
 import concurrent.futures
 import threading
 from dataclasses import replace
@@ -11,8 +12,38 @@ logger = logging.getLogger(__name__)
 # Singletons (lazy initialization)
 _llm = None
 _visual_search = None
+_visual_reranker = None
 _multiplexer = None
 _CACHE: dict[str, Deps] = {}
+
+
+def _visual_rerank_enabled() -> bool:
+    """Gate del reranker visivo: env esplicito, altrimenti soglia RAM.
+
+    - AIKE_VISUAL_RERANK = "1"/"true"  -> SEMPRE attivo
+    - AIKE_VISUAL_RERANK = "0"/"false" -> SEMPRE spento
+    - assente o "auto" -> attivo SOLO se RAM totale >= AIKE_RERANK_MIN_GB (default 96).
+      Se psutil non e' disponibile, gate = OFF (log).
+    """
+    flag = os.getenv("AIKE_VISUAL_RERANK", "auto").strip().lower()
+    if flag in ("1", "true"):
+        return True
+    if flag in ("0", "false"):
+        return False
+    # "auto" (o valore non riconosciuto): decide la RAM
+    try:
+        import psutil
+    except Exception:
+        logger.info("visual reranker: OFF (psutil assente, gate RAM non valutabile)")
+        return False
+    min_gb = float(os.getenv("AIKE_RERANK_MIN_GB", "96"))
+    total_gb = psutil.virtual_memory().total / 1e9
+    on = psutil.virtual_memory().total >= min_gb * 1e9
+    logger.info(
+        "visual reranker: %s, RAM=%.1fGB (soglia %.1fGB)",
+        "ON" if on else "OFF", total_gb, min_gb,
+    )
+    return on
 
 _LLM_EXECUTOR = concurrent.futures.ThreadPoolExecutor(max_workers=1, thread_name_prefix="LLMProxy")
 
@@ -20,7 +51,7 @@ _INIT_LOCK = threading.Lock()
 _INFERENCE_LOCK = threading.Lock()
 
 def _init_shared_singletons():
-    global _llm, _visual_search
+    global _llm, _visual_search, _visual_reranker
     if _llm is not None:
         return
         
@@ -66,10 +97,20 @@ def _init_shared_singletons():
             from src.retrieval.pixelrag.embedder import Qwen3VLEmbedder
             from src.retrieval.pixelrag.index import QdrantVisualIndex
             from src.graph.tools.visual_tool import make_visual_search
-            
+
+            # GATE hardware: istanzia il reranker (residente) SOLO se attivo,
+            # per non sprecare RAM quando spento.
+            if _visual_rerank_enabled():
+                from src.retrieval.pixelrag.reranker import Qwen3VLReranker
+                _visual_reranker = Qwen3VLReranker()
+                logger.info("visual reranker: ON (singleton residente istanziato)")
+            else:
+                _visual_reranker = None
+                logger.info("visual reranker: OFF (reranker=None, nessun modello caricato)")
+
             qc = get_qdrant_client()
             _visual_search = make_visual_search(
-                Qwen3VLEmbedder(), QdrantVisualIndex(qc))
+                Qwen3VLEmbedder(), QdrantVisualIndex(qc), reranker=_visual_reranker)
         except Exception as e:
             logger.warning(
                 "Ramo VISUAL degradato: %s (%s). Fallback a NARRATIVE.",
