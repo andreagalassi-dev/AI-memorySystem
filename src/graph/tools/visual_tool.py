@@ -29,6 +29,16 @@ from src.retrieval.synthesis import REFUSAL
 VISUAL_K = 3   # poche pagine, alta precisione: e' l'occhio umano a scegliere
 VISUAL_INTRO = "Documentazione visiva pertinente (conferma visiva consigliata):"
 
+# Fase 2a — pavimento di sicurezza sullo score del RERANKER visivo. Sotto questa
+# soglia il match e' troppo debole per essere mostrato con confidenza: il ramo
+# visivo degrada a BASSA ('non lo so') invece di puntare a una pagina a caso
+# (principio del progetto: giusto oppure 'non lo so', mai sbagliato in silenzio).
+# Tarata sui dati (reranker Qwen3-VL, truth set pulito 10/08): i match veri stanno
+# >= 0.25, i confident-wrong pericolosi (doc sbagliato, cross-lingua) e il no-image
+# netto stanno <= 0.125. Soglia PROVVISORIA: da riverificare quando il truth set
+# cresce. Applicata SOLO col reranker attivo (gli score sono suoi); vedi session_deps.
+VISUAL_SCORE_FLOOR = 0.20
+
 
 def format_visual_answer(pages: Sequence[PageHit]) -> str:
     """Puntatore deterministico alle pagine, in forma parsabile dal frontend.

@@ -147,10 +147,16 @@ def get_deps(role: str) -> Deps:
     
     deps = build_default_deps(validated, llm=_llm, visual_search=_visual_search)
     
+    # Fase 2a — soglia di sicurezza sul ramo visivo, ATTIVA solo col reranker (i suoi
+    # score sono la scala su cui e' tarata). Reranker spento -> None -> nessun gate.
+    from src.graph.tools.visual_tool import VISUAL_SCORE_FLOOR
+    floor = VISUAL_SCORE_FLOOR if _visual_reranker is not None else None
+
     locked_deps = replace(
         deps,
         llm=LockedLLMProxy(deps.llm) if deps.llm is not None else None,
         visual_search=locked_callable(deps.visual_search),
+        visual_score_floor=floor,
         retrieve=locked_callable(deps.retrieve),
         retrieve_superseded=locked_callable(deps.retrieve_superseded),
         retrieve_deleted=locked_callable(deps.retrieve_deleted)

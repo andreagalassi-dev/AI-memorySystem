@@ -23,13 +23,14 @@ def _pages():
             PageHit(doc="esploso_pompa", page=8, score=0.7, n_tiles=1)]
 
 
-def _deps(*, visual=None, retrieve=None):
+def _deps(*, visual=None, retrieve=None, floor=None):
     return Deps(
         retrieve=retrieve or (lambda q: ([], [])),
         synthesize=lambda q, ev: "n/a",
         catalog_lookup=lambda k: False,
         thresholds=_T,
         visual_search=visual,
+        visual_score_floor=floor,
     )
 
 
@@ -49,6 +50,29 @@ class TestVisualNode:
         out = visual_node({"query": "esploso", "role": "tecnico"},
                           _deps(visual=lambda q, role: []))
         assert out["level"] == "BASSA" and out.get("answer") in (None,)
+
+    def test_score_sotto_soglia_bassa_fail_closed(self):
+        # Fase 2a: reranker attivo (floor=0.20) e match debole -> BASSA, NESSUNA pagina
+        weak = [PageHit(doc="esploso_pompa", page=7, score=0.10, n_tiles=2)]
+        out = visual_node({"query": "esploso", "role": "tecnico"},
+                          _deps(visual=lambda q, role: weak, floor=0.20))
+        assert out["level"] == "BASSA"
+        assert out["visual_pages"] == []          # mai puntare a una pagina a caso
+        assert out.get("answer") in (None,)       # nessuna risposta confident
+
+    def test_score_sopra_soglia_media(self):
+        # Fase 2a: match sopra soglia -> comportamento MEDIA invariato
+        out = visual_node({"query": "esploso", "role": "tecnico"},
+                          _deps(visual=lambda q, role: _pages(), floor=0.20))
+        assert out["level"] == "MEDIA"
+        assert out["visual_pages"] == _pages()
+
+    def test_floor_none_gate_disattivato(self):
+        # reranker spento (floor=None): il gate NON si attiva anche con score basso
+        weak = [PageHit(doc="esploso_pompa", page=7, score=0.10, n_tiles=2)]
+        out = visual_node({"query": "esploso", "role": "tecnico"},
+                          _deps(visual=lambda q, role: weak, floor=None))
+        assert out["level"] == "MEDIA"
 
     def test_eccezione_io_e_system_error(self):
         def boom(q, role):

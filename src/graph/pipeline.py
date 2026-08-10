@@ -114,6 +114,10 @@ class Deps:
     # Fase 1.3 — ramo VISUAL: binder PixelRAG (query, role) -> pagine. Con None il
     # ramo NON e' cablato e l'intent VISUAL degrada al RAG testuale (NARRATIVE).
     visual_search: Callable[[str, Role], list[PageHit]] | None = None
+    # Fase 2a — pavimento di sicurezza sullo score del reranker visivo. None = nessun
+    # gate (reranker spento: gli score sono MaxSim, altra scala). Valorizzato dal
+    # binder di produzione solo col reranker attivo (vedi session_deps).
+    visual_score_floor: float | None = None
 
 
 def _audit(state: GraphState, msg: str) -> list[str]:
@@ -282,6 +286,16 @@ def visual_node(state: GraphState, deps: Deps) -> dict:
     if not pages:
         return {"visual_pages": [], "level": "BASSA",
                 "audit": _audit(state, "visual: 0 pagine (o filtrate da RBAC) -> non lo so")}
+    # Fase 2a — pavimento di sicurezza: se il miglior match del reranker e' sotto
+    # soglia, il match e' troppo debole per essere mostrato con confidenza. Fail-closed:
+    # BASSA ('non lo so'), NON mostriamo pagine (mai puntare a una pagina a caso). Attivo
+    # solo col reranker (deps.visual_score_floor valorizzato); vedi VISUAL_SCORE_FLOOR.
+    floor = deps.visual_score_floor
+    if floor is not None and pages[0].score < floor:
+        return {"visual_pages": [], "level": "BASSA",
+                "audit": _audit(state, f"visual: score top {pages[0].score:.3f} < soglia "
+                                       f"{floor:.2f} -> immagine non chiaramente pertinente "
+                                       f"(non lo so)")}
     return {"visual_pages": pages, "answer": format_visual_answer(pages),
             "citations": visual_citations(pages), "level": "MEDIA",
             "audit": _audit(state, f"visual: {len(pages)} pagina/e -> MEDIA")}
