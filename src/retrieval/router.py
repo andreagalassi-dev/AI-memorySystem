@@ -42,7 +42,21 @@ MARKERS = {"codice", "cod", "cod.", "code", "art", "art.", "articolo",
 VISUAL_MARKERS = {"esploso", "esplosa", "esplosi", "spaccato", "schema",
                   "schemi", "tavola", "disegno", "figura", "mostrami",
                   "exploded", "diagram", "drawing", "wiring", "schematic",
-                  "explosionszeichnung", "zeichnung", "despiece", "diagrama"}
+                  "explosionszeichnung", "zeichnung", "despiece", "diagrama",
+                  # Fase router-fix: marker "duri" mancanti (chiaramente visivi)
+                  "figure", "figures", "diagrammi", "diagramma", "diagramas"}
+
+# Fase router-fix — linguaggio "morbido" pezzo/assieme: NON e' un marker visivo
+# esplicito, ma in un dominio di ricambi una query che DESCRIVE un componente
+# ("air inlet housing assembly", "driving assembly", "valve kit") vuole vedere la
+# pagina/esploso. Instrada a VISUAL solo quando NON e' una query di prezzo (vedi
+# derive_intent): il visivo e' un puntatore deterministico che l'occhio umano
+# valida, quindi over-routing verso il visivo e' il modo di sbagliare piu' sicuro
+# (il narrativo puo' allucinare una pagina errata). Match per TOKEN (non substring,
+# per non catturare "kit" dentro "Kitchen").
+VISUAL_SOFT = {"assembly", "assemblies", "assieme", "assiemi", "housing",
+               "kit", "kits", "parts", "part", "components", "component",
+               "componenti", "componente"}
 
 TOKEN_RE = re.compile(r"[0-9A-Za-zÀ-ÿ][0-9A-Za-zÀ-ÿ./*-]*")
 _HAS_DIGIT = re.compile(r"\d")
@@ -85,13 +99,25 @@ def _wants_structured(query: str) -> bool:
     return any(k in q for k in STRUCTURED_KEYWORDS)
 
 
+def _wants_visual_soft(query: str) -> bool:
+    """Vero se la query contiene linguaggio "pezzo/assieme" (match per token).
+
+    Segnale morbido: promuove a VISUAL una query descrittiva di un componente che
+    NON ha un marker visivo esplicito. Usato in `derive_intent` DOPO structured, e
+    solo se non e' una query di prezzo, per non rubare i lookup di listino."""
+    toks = {t.lower() for t in TOKEN_RE.findall(query or "")}
+    return bool(toks & VISUAL_SOFT)
+
+
 def derive_intent(route: QueryRoute, query: str) -> Intent:
     """Deriva l'intent d'instradamento (deterministico, fail-safe).
 
-    - `visual` -> VISUAL (prevale, come in `classify_query`);
+    Precedenza (deterministica, fail-safe):
+    - marker visivo ESPLICITO -> VISUAL (prevale su tutto, come in `classify_query`);
     - codice presente E (route `code` OPPURE keyword-prezzo) -> STRUCTURED;
-    - tutto il resto -> NARRATIVE (ramo esistente, gia' presidiato da confidence +
-      guardrail): e' anche il default fail-safe su input degeneri/avversariali.
+    - linguaggio "pezzo/assieme" (soft) E non e' una query di prezzo -> VISUAL
+      (Fase router-fix: query che DESCRIVONO un componente senza dire "esploso");
+    - tutto il resto -> NARRATIVE (default fail-safe, presidiato da confidence+guardrail).
 
     Serve un `code_token`: una domanda di prezzo senza codice non ha nulla da cercare
     in `righe_listino`, quindi resta NARRATIVE (caveat Fail-Closed)."""
@@ -99,6 +125,8 @@ def derive_intent(route: QueryRoute, query: str) -> Intent:
         return Intent.VISUAL
     if route.code_token and (route.query_type == "code" or _wants_structured(query)):
         return Intent.STRUCTURED
+    if _wants_visual_soft(query) and not _wants_structured(query):
+        return Intent.VISUAL
     return Intent.NARRATIVE
 
 

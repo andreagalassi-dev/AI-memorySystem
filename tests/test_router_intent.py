@@ -112,3 +112,35 @@ class TestRouterNodeEmetteIntent:
         # ramo access_error invariato: nessun instradamento senza ruolo valido
         out = router_node({"query": "V09156800007", "role": "ospite"}, _deps())
         assert out.get("access_error") is True and "intent" not in out
+
+
+class TestRouterFixLinguaggioPezzo:
+    """Fase router-fix: linguaggio 'pezzo/assieme' senza marker esplicito -> VISUAL,
+    con precedenza che NON ruba i lookup di prezzo/codice."""
+
+    def test_assembly_senza_marker_va_visual(self):
+        # era il bug Lycoming: 'assembly' andava a NARRATIVE con pagina sbagliata
+        assert _intent("air inlet housing assembly of the Lycoming IGO-540 engine") is Intent.VISUAL
+
+    def test_driving_assembly_va_visual(self):
+        assert _intent("driving assembly of the Noblelift PTE20N pallet truck") is Intent.VISUAL
+
+    def test_valve_kit_senza_prezzo_va_visual(self):
+        assert _intent("self-leveling valve kit of the Gehl V270") is Intent.VISUAL
+
+    def test_figure_marker_duro_va_visual(self):
+        assert _intent("spare parts figure for Opacmare doors") is Intent.VISUAL
+
+    def test_diagrammi_it_va_visual(self):
+        assert _intent("diagrammi di portata del catalogo Bell Hydraulics") is Intent.VISUAL
+
+    def test_kit_con_prezzo_NON_va_visual(self):
+        # precedenza: il prezzo vince sul linguaggio-pezzo (resta narrative senza codice)
+        assert _intent("prezzo del kit valvola") is Intent.NARRATIVE
+
+    def test_kit_con_prezzo_e_codice_va_structured(self):
+        # prezzo+codice -> structured, il 'kit' morbido NON lo dirotta
+        assert _intent("prezzo del kit codice V09199300001") is Intent.STRUCTURED
+
+    def test_frase_senza_linguaggio_pezzo_resta_narrative(self):
+        assert _intent("come funziona la valvola di sfiato") is Intent.NARRATIVE
