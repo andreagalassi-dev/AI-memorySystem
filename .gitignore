@@ -43,3 +43,4 @@ htmlcov/
 # --- Docker volumes locali ---
 qdrant_storage/
 .files/
+output/eval/visual_contact_sheet.html
