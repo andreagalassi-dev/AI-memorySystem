@@ -12,7 +12,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import logging
-from typing import Callable, NamedTuple, TypedDict
+from typing import Callable, NamedTuple, TYPE_CHECKING, TypedDict
+
+if TYPE_CHECKING:
+    from src.graph.context import ConversationContext
 
 from langgraph.graph import END, START, StateGraph
 
@@ -566,15 +569,37 @@ def build_graph(deps: Deps):
     return g.compile()
 
 
-def answer(query: str, role: Role | str, deps: Deps | None = None) -> dict:
+def answer(query: str, role: Role | str, deps: Deps | None = None,
+           context: "ConversationContext | None" = None) -> dict:
     """Entry point: esegue il grafo. Con deps=None usa i client reali.
 
     P4.5 — `role` OBBLIGATORIO e tipizzato (SPEC §F.3): TypeError su
     None/non-str, ValueError su ruoli fuori vocabolario. Mai default.
+
+    Epica F.1a — `context` OPZIONALE: se presente e non vuoto (e l'LLM e'
+    cablato), la cronologia riformula il follow-up in una query autonoma
+    (`contextualize_query`, non-fatale e guardata) PRIMA del grafo. Il grafo
+    tri-intent resta INVARIATO: gira sulla query RISOLTA. Con `context=None`
+    (o vuoto, o senza LLM) il comportamento e' IDENTICO a prima: byte-compatibile.
     """
     validated = parse_role(role)
-    return build_graph(deps or _default_deps(validated)).invoke(
-        {"query": query, "role": validated.value})
+    resolved_deps = deps or _default_deps(validated)
+
+    resolved = query
+    audit: list[str] = []
+    if (context is not None and not context.is_empty()
+            and resolved_deps.llm is not None):
+        from src.graph.contextualize import contextualize_query
+        rq = contextualize_query(query, context, resolved_deps.llm)
+        resolved = rq.resolved
+        audit.append(
+            f"contextualize: original={query!r} resolved={rq.resolved!r} "
+            f"changed={rq.changed} reason={rq.reason}")
+
+    init: GraphState = {"query": resolved, "role": validated.value}
+    if audit:
+        init["audit"] = audit
+    return build_graph(resolved_deps).invoke(init)
 
 
 def build_default_deps(role: Role, *, llm=None, visual_search=None) -> Deps:
