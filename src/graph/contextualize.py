@@ -11,9 +11,12 @@ silenzio"): la riformulazione e' un LLM e puo' sbagliare. Due guardie
 DETERMINISTICHE non-LLM la presidiano PRIMA che la query risolta tocchi il grafo:
 
   - M1 (guardia VERBATIM): il rewrite NON puo' introdurre identificatori
-    (codici/part-number) che non compaiono VERBATIM nel dialogo o nella domanda
-    originale. Un codice inventato = allucinazione a monte: si SCARTA il rewrite e
-    si prosegue sulla query originale.
+    (codici/part-number) che non compaiono nel dialogo o nella domanda originale.
+    Il confronto e' per INSIEME di identificatori CANONICALIZZATI (`canonical`
+    del ramo SQL: upper + solo [0-9A-Z]), non per sottostringa: "GM-41013" e
+    "gm41013" sono lo STESSO codice di "GM41013" e passano; "GM4101", "M41013",
+    "4101" sono codici DIVERSI e non passano. Un codice inventato = allucinazione
+    a monte: si SCARTA il rewrite e si prosegue sulla query originale.
   - M4 (guardia LINGUA): il rewrite deve mantenere la lingua della domanda. Vedi
     nota sotto sul perche' oggi e' presidiata dal solo prompt.
 
@@ -29,6 +32,12 @@ from dataclasses import dataclass, field
 
 from src.graph.context import ConversationContext
 from src.graph.llm import LanguageModel
+# SOLA LETTURA dalla normalizzazione codici usata a valle dal ramo STRUCTURED
+# (lookup su `righe_listino`): la guardia M1 deve confrontare gli identificatori
+# CON LA STESSA canonicalizzazione del SQL, altrimenti una grafia che il DB
+# considera uguale (GM-41013 == GM41013) verrebbe letta qui come diversa, e una
+# diversa (GM4101 vs GM41013) potrebbe passare. NON riscrivere/copiare.
+from src.ingestion.codes import canonical
 # SOLA LETTURA dal router deterministico (non-LLM): stesso concetto di
 # "identificatore" (token con cifre) usato per riconoscere i codici. NON lo
 # modifichiamo — riusiamo il suo regex per coerenza tra router e guardia M1.
@@ -102,11 +111,24 @@ def contextualize_query(query: str, context: ConversationContext,
     resolved = (resolved or "").strip()
 
     # 3. GUARDIA VERBATIM (M1): nessun identificatore nuovo. Deterministica.
+    #    Il confronto e' fra INSIEMI DI IDENTIFICATORI CANONICALIZZATI, NON fra
+    #    sottostringhe di un blob di testo. La differenza non e' cosmetica: con
+    #    la ricerca a sottostringa, un dialogo che contiene "GM41013" lasciava
+    #    passare i rewrite con "GM4101" (prefisso), "M41013" (suffisso) o "4101"
+    #    (frammento) — codici DIVERSI, che a valle possono esistere davvero a
+    #    catalogo e produrre una risposta ALTA ma SBAGLIATA (silent-wrong).
+    #    La canonicalizzazione e' quella del ramo SQL (`canonical`: upper +
+    #    rimozione di tutto cio' che non e' [0-9A-Z]), quindi:
+    #      - "GM-41013" e "gm41013" SONO lo stesso identificatore di "GM41013"
+    #        (grafia/case diversi, stesso codice per il lookup a valle):
+    #        accettati, non sono invenzioni. Coerenza voluta col DB, non un buco.
+    #      - "GM4101", "M41013", "4101", "ABC124" NON sono "GM41013": invenzioni,
+    #        il rewrite si scarta e si prosegue sulla query originale.
     #    allowed_text = tutti i content dei turni + la query originale.
     allowed_text = " ".join(t.content for t in context.turns) + " " + query
-    allowed_lc = allowed_text.lower()
+    allowed_ids = {canonical(t) for t in _identifiers(allowed_text)}
     invented = [tok for tok in _identifiers(resolved)
-                if tok.lower() not in allowed_lc]
+                if canonical(tok) not in allowed_ids]
     if invented:
         toks = ",".join(invented)
         logger.warning(
