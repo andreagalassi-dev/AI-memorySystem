@@ -10,7 +10,8 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
 from src.graph.pipeline import answer  # noqa: E402
-from src.common.roles import Role  # noqa: E402
+from src.common.roles import Role, parse_role  # noqa: E402
+from src.graph.context import ContextAssembler  # noqa: E402
 from src.serving.session_deps import get_deps  # noqa: E402
 from src.ui.page_render import ensure_page_render  # noqa: E402
 from src.ui.feedback_handler import save_feedback_ui  # noqa: E402
@@ -57,6 +58,10 @@ def auth_callback(username: str, password: str) -> User | None:
                     continue
                 return User(identifier=username, metadata={"role": r})
     return None
+@cl.on_chat_start
+async def on_chat_start():
+    # Inizializza la cronologia conversazionale per il contesto (F.1b)
+    cl.user_session.set("conv_turns", [])
 @cl.on_chat_resume
 async def on_chat_resume(thread: dict):
     # Ripristina la sessione dell'utente dal thread
@@ -64,9 +69,11 @@ async def on_chat_resume(thread: dict):
     user = cl.user_session.get("user")
     if not user:
         return
-    
+
     # Inizializza interactions a vuoto
     cl.user_session.set("interactions", {})
+    # Una sessione ripresa riparte senza contesto ereditato (semplice e sicuro per ora)
+    cl.user_session.set("conv_turns", [])
 @cl.on_message
 async def on_message(msg: cl.Message):
     user = cl.user_session.get("user")
@@ -76,9 +83,18 @@ async def on_message(msg: cl.Message):
 
     role = user.metadata.get("role")
     
+    # Costruisci il contesto conversazionale (fail-safe: mai rompere la risposta)
+    ctx = None
+    try:
+        raw = cl.user_session.get("conv_turns", [])
+        ctx = ContextAssembler().build(raw, role=parse_role(role), window=6)
+    except Exception as ctx_err:
+        print(f"[conv-context] costruzione contesto fallita, degrado a None: {ctx_err}")
+        ctx = None
+
     try:
         # Chiama graph pipeline in thread separato
-        res = await asyncio.to_thread(answer, msg.content, role, deps=get_deps(role))
+        res = await asyncio.to_thread(answer, msg.content, role, deps=get_deps(role), context=ctx)
         
         final_answer = res.get("final_answer", "")
         final_level = res.get("final_level", "")
@@ -174,7 +190,19 @@ async def on_message(msg: cl.Message):
         interactions = cl.user_session.get("interactions", {})
         interactions[final_msg.id] = interaction_state
         cl.user_session.set("interactions", interactions)
-        
+
+        # Aggiorna la cronologia conversazionale (F.1b): utente + assistente
+        conv_turns = cl.user_session.get("conv_turns", [])
+        conv_turns.append({"role": "user", "content": msg.content})
+        conv_turns.append({
+            "role": "assistant",
+            "content": res.get("final_answer", ""),
+            "evidence_ids": [tuple(c) for c in res.get("citations", [])],
+        })
+        # CAP: mantieni solo gli ultimi 20 turni per non far crescere la sessione all'infinito
+        conv_turns = conv_turns[-20:]
+        cl.user_session.set("conv_turns", conv_turns)
+
     except Exception as e:
         await cl.Message(content=f"Errore durante l'elaborazione: {e}", parent_id=None).send()
 
