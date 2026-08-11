@@ -5,11 +5,18 @@ grounded. Il contesto conversazionale NON entra nel grafo: serve SOLO a
 riformulare un follow-up ellittico in una query autonoma (query
 contextualization, vedi `contextualize.py`). Il grafo a valle resta INVARIATO.
 
-Questo modulo definisce i TIPI del contesto. Oggi il contesto e' costruito dal
-solo dialogo short-term (gli ultimi turni). Domani questa stessa classe sara' il
-punto d'innesto — SENZA cambio di firma — per la memoria long-term e il profilo
-utente (Epica F successiva): i campi/placeholder futuri sono documentati ma NON
-implementati ora.
+Questo modulo definisce i TIPI del contesto. Il contesto e' costruito dal SOLO
+dialogo short-term (gli ultimi turni): e' l'unica fonte che alimenta la
+riformulazione della query.
+
+NOTA DI PROGETTO — la memoria long-term NON e' un campo di questa classe, e non
+lo diventera'. Un campo qui significherebbe una fonte che raggiunge
+`contextualize.py`, cioe' la memoria che rientra sul percorso della query: e'
+stato provato sperimentalmente che basta una pertinenza euristica perche' il
+codice di un pezzo DIVERSO finisca nella query riscritta e produca una risposta
+ALTA e sbagliata (vedi la nota estesa in `contextualize.py`). La memoria vive
+come SUGGERIMENTO mostrato all'utente accanto alla risposta, fuori di qui.
+Resta futuro il profilo utente (preferenze/default).
 
 PRECEDENZA dei conflitti di contesto (regola deterministica per il futuro, quando
 piu' fonti potranno contribuire un'entita' o un vincolo):
@@ -21,7 +28,9 @@ Cioe': cio' che l'evidenza recuperata dimostra batte quanto l'utente dice adesso
 quello che l'utente dice adesso batte la storia; la storia batte la memoria di
 lungo periodo; e il profilo utente e' l'ultima risorsa. Oggi esiste solo la
 storia short-term, ma la regola e' fissata perche' le fonti future si innestino
-in modo prevedibile e auditabile.
+in modo prevedibile e auditabile. Nota che la memoria long-term sta SOTTO la
+storia short-term proprio perche' e' la piu' debole delle fonti: un binding
+vecchio non sa nulla di cio' che l'utente sta chiedendo adesso.
 """
 
 from __future__ import annotations
@@ -52,13 +61,18 @@ class ConversationContext:
     """Il contesto conversazionale, immutabile.
 
     `turns`: gli ultimi turni del dialogo short-term (finestra scorrevole).
-    `role`: il ruolo RBAC della sessione (per filtrare, domani, la memoria).
+    `role`: il ruolo RBAC della sessione (per filtrare, domani, la memoria
+      quando verra' MOSTRATA all'utente — mai per riformulare la query).
 
-    PLACEHOLDER tipizzati FUTURI (Epica F, NON implementati ora): la memoria
-    long-term (fatti persistenti filtrati per RBAC) e il profilo utente
-    (preferenze/default) si aggiungeranno come CAMPI di questa stessa classe. La
-    classe e' il punto d'innesto: chi consuma il contesto (`contextualize_query`,
-    `answer`) non cambiera' firma quando arriveranno.
+    PLACEHOLDER tipizzato ancora FUTURO: il profilo utente (preferenze/default),
+    ultimo anello della precedenza documentata nel modulo. La memoria long-term
+    NON e' un placeholder di questa classe: vedi la nota di progetto in testa.
+
+    `is_empty()` guarda SOLO i turni, e questa e' una SCELTA, non una svista:
+    senza turni non esiste un follow-up ellittico da risolvere, e la
+    riformulazione e' l'unico consumatore del contesto. Un contesto senza turni
+    e' quindi vuoto qualunque altra cosa si sappia della conversazione, e
+    `pipeline.answer` salta del tutto la contestualizzazione.
     """
 
     turns: tuple[Turn, ...] = ()
@@ -71,11 +85,11 @@ class ConversationContext:
 class ContextAssembler:
     """Assembla un `ConversationContext` dai turni grezzi della sessione.
 
-    Oggi costruisce il contesto dal SOLO dialogo short-term (gli ultimi `window`
-    turni). Domani, con la memoria long-term e il profilo (Epica F), aggiungera'
-    fonti filtrate per RBAC dietro questa STESSA firma: `build(...)` non cambiera'.
-    Il punto in cui piu' fonti si comporranno e' regolato dalla precedenza
-    documentata nel modulo.
+    Costruisce il contesto dal SOLO dialogo short-term (gli ultimi `window`
+    turni). Se un giorno arrivera' il profilo utente, si innestera' dietro
+    questa STESSA firma: `build(...)` non cambiera'. Il punto in cui piu' fonti
+    si comporranno e' regolato dalla precedenza documentata nel modulo. La
+    memoria long-term non passa di qui: non alimenta la riformulazione.
     """
 
     def build(self, raw_turns: list[dict], role: Role | None = None,

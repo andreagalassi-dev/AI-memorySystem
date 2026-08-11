@@ -23,6 +23,26 @@ DETERMINISTICHE non-LLM la presidiano PRIMA che la query risolta tocchi il grafo
 Fail-safe totale: qualunque dubbio (nessun contesto, errore LLM, guardia
 scattata) => si ritorna la query ORIGINALE invariata. Mai un rewrite dubbio entra
 nel grafo.
+
+NOTA DI PROGETTO — la memoria long-term NON entra in questo modulo.
+Questo modulo vede SOLO i turni del dialogo corrente. La memoria long-term (i
+binding confermati in passato) non viene mostrata al riformulatore e NON estende
+in nessun caso l'insieme `allowed_ids` della guardia M1. Non e' una svista ne'
+una funzione "ancora da fare": e' una decisione presa DOPO averla implementata e
+smontata sperimentalmente. Una versione precedente autorizzava un identificatore
+confermato in passato quando lo si giudicava pertinente alla domanda; un test
+avversario ha mostrato che una pertinenza euristica si supera con parole di
+riempimento (domanda sul carburatore + binding sul radiatore, in comune solo
+"nella"/"versione"), che il codice del pezzo SBAGLIATO finiva nella query
+riscritta, che il ramo STRUCTURED trovava quel record davvero a catalogo e che
+il sistema rispondeva con confidenza ALTA il prezzo di un altro pezzo —
+guardrail compreso, perche' il codice esisteva. Esattamente il "sbagliato in
+silenzio" che il progetto vieta.
+Percio' la memoria vive FUORI dal percorso della query: e' un SUGGERIMENTO
+mostrato all'utente accanto alla risposta, dove un errore costa un click e non
+un prezzo. Se in futuro qualcuno vuole ricablarla qui, sappia che sta rifacendo
+un esperimento gia' fatto e gia' fallito: `tests/test_contextualize.py` contiene
+un test di regressione che fallisce al primo tentativo.
 """
 
 from __future__ import annotations
@@ -38,10 +58,11 @@ from src.graph.llm import LanguageModel
 # considera uguale (GM-41013 == GM41013) verrebbe letta qui come diversa, e una
 # diversa (GM4101 vs GM41013) potrebbe passare. NON riscrivere/copiare.
 from src.ingestion.codes import canonical
-# SOLA LETTURA dal router deterministico (non-LLM): stesso concetto di
-# "identificatore" (token con cifre) usato per riconoscere i codici. NON lo
-# modifichiamo — riusiamo il suo regex per coerenza tra router e guardia M1.
-from src.retrieval.router import TOKEN_RE, _HAS_DIGIT
+# Nozione UNICA di "identificatore" (token con cifre), estratta VERBATIM da qui
+# in `src/graph/identifiers.py` perche' serve anche altrove: due copie
+# divergenti sarebbero il buco da cui passa un codice sbagliato. Il nome locale
+# resta `_identifiers`, il comportamento e' invariato.
+from src.graph.identifiers import identifiers as _identifiers
 
 logger = logging.getLogger(__name__)
 
@@ -75,16 +96,6 @@ class ResolvedQuery:
     changed: bool
     reason: str
     influenced: tuple[str, ...] = field(default=())
-
-
-def _identifiers(text: str) -> list[str]:
-    """Gli 'identificatori' di un testo: token con cifre, len>=2, senza virgole
-    (i prezzi hanno la virgola). Stesso criterio del router (`_codey`)."""
-    out = []
-    for t in TOKEN_RE.findall(text or ""):
-        if len(t) >= 2 and bool(_HAS_DIGIT.search(t)) and "," not in t:
-            out.append(t)
-    return out
 
 
 def contextualize_query(query: str, context: ConversationContext,

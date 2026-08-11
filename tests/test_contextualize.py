@@ -3,12 +3,20 @@
 Copre: parita' a vuoto (nessun LLM), risoluzione accettata, guardia VERBATIM
 (codice inventato -> scartato), non-fatale (LLM solleva), no-op (query gia'
 autonoma). L'LLM e' il `FakeLLM` deterministico (handler/response/error).
+
+In coda: la regressione ANTI-RICABLAGGIO che vieta il rientro della memoria
+long-term su questo percorso (system prompt congelato + sorgente senza
+riferimenti alla memoria).
 """
 
 from __future__ import annotations
 
+from pathlib import Path
+
+import src.graph.contextualize as contextualize_mod
 from src.graph.context import ConversationContext, ContextAssembler, Turn
-from src.graph.contextualize import ResolvedQuery, contextualize_query
+from src.graph.contextualize import (SYSTEM_REWRITE, ResolvedQuery,
+                                     contextualize_query)
 from src.graph.llm import FakeLLM
 
 
@@ -197,3 +205,62 @@ def test_assembler_window_keeps_last_n():
     assert ctx.turns[0].content == "t4" and ctx.turns[-1].content == "t9"
     assert all(isinstance(t, Turn) for t in ctx.turns)
     assert ctx.is_empty() is False
+
+
+# =====================================================================
+# REGRESSIONE ANTI-RICABLAGGIO — la memoria NON torna sul percorso query
+# =====================================================================
+#
+# Perche' questo test esiste. Una versione di F.2a-2 (mai rilasciata) faceva
+# entrare la memoria long-term qui: gli hint estendevano `allowed_ids` della
+# guardia M1 e una riga "memoria" entrava nel prompt. Un test avversario ha
+# dimostrato che la pertinenza euristica si supera con parole di riempimento
+# (domanda sul carburatore + binding sul radiatore, in comune "nella" e
+# "versione") e che il codice del pezzo SBAGLIATO finiva nella query risolta:
+# il ramo STRUCTURED lo trovava davvero a catalogo e il sistema rispondeva
+# ALTA con il prezzo di un altro pezzo. Guardrail compreso, perche' il codice
+# esisteva. Il pivot: la memoria diventa un SUGGERIMENTO mostrato all'utente.
+# Questo test e' il segnale d'allarme se qualcuno la ricabla qui: fallisce al
+# primo tentativo, prima che il danno arrivi in produzione.
+
+# La stringa e' incorporata VERBATIM (dal commit e9aceb0, F.1a) e non letta da
+# git a runtime: il test deve valere anche fuori da un checkout.
+SYSTEM_REWRITE_F1 = (
+    'Sei un RIFORMULATORE di domande, NON un assistente: NON rispondi mai'
+    ' alla domanda. Ti vengono dati lo storico di una conversazione e la '
+    'domanda attuale. Riscrivi la domanda attuale come una domanda '
+    "AUTONOMA e COMPLETA, risolvendo pronomi ed ellissi ('quello', 'lo "
+    "stesso', 'e per il nuovo?') usando SOLO entita' GIA' PRESENTI nella "
+    'conversazione, riportate VERBATIM (stessa grafia esatta). NON '
+    'coniare modelli, codici o part-number nuovi: se un identificatore '
+    "non e' gia' nel testo, NON inventarlo. MANTIENI la lingua della "
+    "domanda attuale. Se la domanda e' gia' autonoma, oppure cambia "
+    'argomento rispetto alla conversazione, restituiscila INVARIATA. '
+    'Rispondi SOLO con la domanda riformulata, senza spiegazioni, senza '
+    "virgolette, nient'altro."
+)
+
+
+def test_system_rewrite_unchanged_since_f1():
+    """Il system prompt e' un componente LLM misurato: non deve derivare.
+
+    Qualunque riga aggiunta qui (es. istruzioni su una riga "memoria") cambia
+    il comportamento del riformulatore per il 100% delle chiamate, comprese
+    quelle senza contesto aggiuntivo. Se il cambio e' voluto, va misurato e
+    questa costante va aggiornata CONSAPEVOLMENTE.
+    """
+    assert SYSTEM_REWRITE == SYSTEM_REWRITE_F1
+
+
+def test_contextualize_module_has_no_memory_wiring():
+    """Nessun riferimento alla memoria nel sorgente del modulo.
+
+    Controllo grezzo sul testo (non sui simboli) di proposito: coglie import,
+    parametri, campi, commenti e qualunque riaggancio, anche parziale, prima
+    che diventi comportamento. La NOTA DI PROGETTO del modulo parla di
+    "memoria" in italiano, che e' voluto: qui si vieta l'IDENTIFICATORE.
+    """
+    source = Path(contextualize_mod.__file__).read_text(encoding="utf-8")
+    assert "memory" not in source.lower(), (
+        "src/graph/contextualize.py cita 'memory': la memoria long-term non "
+        "deve tornare sul percorso della query (vedi nota di progetto)")
