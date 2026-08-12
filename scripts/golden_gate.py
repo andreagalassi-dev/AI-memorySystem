@@ -2,12 +2,22 @@ import sys
 import os
 import json
 from datetime import datetime
-import psycopg
-from qdrant_client import QdrantClient
-from qdrant_client.http import models
 
-sys.path.append(str(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-from src.backend.config import settings
+sys.path.insert(0, str(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+
+# Il .env PRIMA di qualunque import che legga l'ambiente (settings di pydantic,
+# os.getenv nei gate hardware). Senza questo il gate girava in una
+# configurazione DIVERSA dalla produzione — reranker visivo spento dal gate
+# "auto" sulla RAM e quindi nessun visual_score_floor — e non lo diceva.
+from src.common.run_config import load_runtime_env  # noqa: E402
+
+load_runtime_env()
+
+import psycopg  # noqa: E402
+from qdrant_client import QdrantClient  # noqa: E402
+from qdrant_client.http import models  # noqa: E402
+
+from src.backend.config import settings  # noqa: E402
 
 def has_citation(citations, expected_doc, expected_page=None):
     for c in citations:
@@ -134,6 +144,24 @@ def evaluate_stability(runs):
             
     return "STABILE"
 
+def build_audit_payload(config, results, dataset_path, elapsed_s):
+    """Payload dell'audit: `config` di PRIMO LIVELLO accanto ai risultati.
+
+    Senza la configurazione, un audit vecchio non e' interpretabile e due run
+    non sono confrontabili: e' il difetto che ha reso invisibile per settimane
+    il fatto che il gate misurasse il sistema senza pavimento visivo."""
+    return {
+        "config": config,
+        "run": {
+            "generated_at": datetime.now().isoformat(timespec="seconds"),
+            "dataset": dataset_path,
+            "n_queries": len(results),
+            "elapsed_s": round(elapsed_s, 1),
+        },
+        "results": results,
+    }
+
+
 def compare_to_baseline(baseline, current):
     # return True if there is a regression, False otherwise
     # and a list of reasons
@@ -168,12 +196,13 @@ import copy
 # Add src to path so we can import
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
+from src.common.run_config import effective_config, format_config_banner
 from src.graph.pipeline import answer
 from src.serving.session_deps import get_deps
 from scripts.golden_gate import (
     evaluate_code, evaluate_visual, evaluate_narrative,
     evaluate_refusal, evaluate_rbac_negative, evaluate_stability,
-    compare_to_baseline, get_level_rank
+    compare_to_baseline, get_level_rank, build_audit_payload
 )
 
 def run_harness(update_baseline=False, limit=None):
@@ -193,9 +222,24 @@ def run_harness(update_baseline=False, limit=None):
                 
     if limit is not None:
         rows = rows[:limit]
-        
+
+    # --- La configurazione va DICHIARATA prima di misurare --------------------
+    # (previsione: prima di costruire le deps non si sa ancora se il reranker
+    # visivo si e' davvero istanziato)
+    print(format_config_banner(effective_config()))
+
+    t_run0 = time.time()
     deps_cache = {}
-    
+
+    # Costruire subito le deps del primo ruolo inizializza i singleton condivisi
+    # (incluso l'eventuale reranker visivo residente): da qui in poi il
+    # visual_score_floor e il ramo visivo sono OSSERVATI, non previsti.
+    warm_role = rows[0]["role"] if rows else "tecnico"
+    deps_cache[warm_role] = get_deps(warm_role)
+    run_config = effective_config(deps=deps_cache[warm_role])
+    print("\n--- CONFIGURAZIONE OSSERVATA (dopo init delle deps) ---")
+    print(format_config_banner(run_config))
+
     # Initialize index clients for answerability checking
     qdrant_url = f"http://{settings.qdrant_host}:{settings.qdrant_port}"
     qdrant = QdrantClient(url=qdrant_url, api_key=settings.qdrant_api_key)
@@ -399,12 +443,16 @@ def run_harness(update_baseline=False, limit=None):
     for l, d in langs.items():
         print(f"Lingua {l}: {d['hits']}/{d['total']} ({(d['hits']/d['total'])*100:.1f}%)")
         
-    # Write audit
+    # Write audit — `config` di PRIMO LIVELLO: un audit vecchio resta
+    # interpretabile solo se porta con se' la configurazione che l'ha prodotto.
+    elapsed = time.time() - t_run0
+    audit_payload = build_audit_payload(run_config, results, dataset_path, elapsed)
     with open(audit_path, "w") as f:
-        json.dump(results, f, indent=2)
-        
+        json.dump(audit_payload, f, indent=2)
+
     print(f"\nAudit scritto in {audit_path}")
-    
+    print(f"Tempo totale run: {elapsed:.1f}s ({elapsed/60:.1f} min) su {len(rows)} query")
+
     # Floors & Regressions Check
     exit_code = 0
     if regressions:

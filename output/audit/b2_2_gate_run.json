@@ -1,1450 +1,1522 @@
 {
-  "C001": {
-    "intent": "code",
-    "lang": "IT",
-    "expected": {
-      "doc": "Mamoli_Catalogo_Ricambi_2021_IT_EN",
-      "page": 100,
-      "code": "14576"
+  "config": {
+    "env_file": "/Users/AndreaGalassi/Documents/AI/AI-memorySystem/.env",
+    "visual_rerank": {
+      "enabled": true,
+      "reason": "env AIKE_VISUAL_RERANK='1' (esplicito)"
     },
-    "runs": [
-      {
-        "latency": 17.525039196014404,
-        "final_level": "ALTA",
-        "hit": true,
-        "status": "PASS_ALTA",
-        "citation_ok": true,
-        "real_citations": [
-          [
-            "Mamoli_Catalogo_Ricambi_2021_IT_EN",
-            100
-          ]
-        ],
-        "matched_expected_page": true
+    "visual_score_floor": 0.2,
+    "visual_score_floor_source": "osservato",
+    "visual_search_available": true,
+    "llm": {
+      "brain_model": "gemma4:26b-mlx",
+      "brain_think": false,
+      "fallback_model": "qwen2.5:14b",
+      "ollama_host": "http://localhost:11434"
+    },
+    "qdrant": {
+      "url": "http://localhost:6333",
+      "collections": {
+        "text": "aike_chunks",
+        "visual": "aike_pages_visual"
       }
-    ],
-    "stable": "N/A",
-    "final_level": "ALTA",
-    "hit": true,
-    "status": "PASS_ALTA",
-    "citation_ok": true,
-    "matched_expected_page": true
-  },
-  "C002": {
-    "intent": "code",
-    "lang": "IT",
-    "expected": {
-      "doc": "gehl_v270_parts",
-      "page": 171,
-      "code": "242788"
     },
-    "runs": [
-      {
-        "latency": 1.53495192527771,
-        "final_level": "ALTA",
-        "hit": true,
-        "status": "PASS_ALTA",
-        "citation_ok": true,
-        "real_citations": [
-          [
-            "gehl_v270_parts",
-            171
-          ]
-        ],
-        "matched_expected_page": true
-      }
-    ],
-    "stable": "N/A",
-    "final_level": "ALTA",
-    "hit": true,
-    "status": "PASS_ALTA",
-    "citation_ok": true,
-    "matched_expected_page": true
+    "postgres": {
+      "host": "localhost",
+      "port": 5432,
+      "db": "aike_registry"
+    }
   },
-  "C003": {
-    "intent": "code",
-    "lang": "IT",
-    "expected": {
-      "doc": "kohler_marine_tp6954",
-      "page": 95,
-      "code": "GM41013"
-    },
-    "runs": [
-      {
-        "latency": 1.6937520503997803,
-        "final_level": "ALTA",
-        "hit": true,
-        "status": "PASS_ALTA",
-        "citation_ok": true,
-        "real_citations": [
-          [
-            "kohler_marine_tp6954",
-            95
-          ]
-        ],
-        "matched_expected_page": true
-      }
-    ],
-    "stable": "N/A",
-    "final_level": "ALTA",
-    "hit": true,
-    "status": "PASS_ALTA",
-    "citation_ok": true,
-    "matched_expected_page": true
+  "run": {
+    "generated_at": "2026-08-12T10:26:11",
+    "dataset": "data/golden/golden_v1.jsonl",
+    "n_queries": 42,
+    "elapsed_s": 1230.5
   },
-  "C004": {
-    "intent": "code",
-    "lang": "IT",
-    "expected": {
-      "doc": "kohler_industrial_tp7120",
-      "page": 41,
-      "code": "M125A-08-80",
-      "value": "16.0"
+  "results": {
+    "C001": {
+      "intent": "code",
+      "lang": "IT",
+      "expected": {
+        "doc": "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+        "page": 100,
+        "code": "14576"
+      },
+      "runs": [
+        {
+          "latency": 12.313644170761108,
+          "final_level": "ALTA",
+          "hit": true,
+          "status": "PASS_ALTA",
+          "citation_ok": true,
+          "real_citations": [
+            [
+              "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+              100
+            ]
+          ],
+          "matched_expected_page": true
+        }
+      ],
+      "stable": "N/A",
+      "final_level": "ALTA",
+      "hit": true,
+      "status": "PASS_ALTA",
+      "citation_ok": true,
+      "matched_expected_page": true
     },
-    "runs": [
-      {
-        "latency": 1.5695927143096924,
-        "final_level": "ALTA",
-        "hit": true,
-        "status": "PASS_ALTA",
-        "citation_ok": true,
-        "real_citations": [
-          [
-            "kohler_industrial_tp7120",
-            41
-          ]
-        ],
-        "matched_expected_page": true
-      }
-    ],
-    "stable": "N/A",
-    "final_level": "ALTA",
-    "hit": true,
-    "status": "PASS_ALTA",
-    "citation_ok": true,
-    "matched_expected_page": true
-  },
-  "C005": {
-    "intent": "code",
-    "lang": "IT",
-    "expected": {
-      "doc": "rotax_912_914_IPC",
-      "page": 79,
-      "code": "961267"
+    "C002": {
+      "intent": "code",
+      "lang": "IT",
+      "expected": {
+        "doc": "gehl_v270_parts",
+        "page": 171,
+        "code": "242788"
+      },
+      "runs": [
+        {
+          "latency": 2.5378057956695557,
+          "final_level": "ALTA",
+          "hit": true,
+          "status": "PASS_ALTA",
+          "citation_ok": true,
+          "real_citations": [
+            [
+              "gehl_v270_parts",
+              171
+            ]
+          ],
+          "matched_expected_page": true
+        }
+      ],
+      "stable": "N/A",
+      "final_level": "ALTA",
+      "hit": true,
+      "status": "PASS_ALTA",
+      "citation_ok": true,
+      "matched_expected_page": true
     },
-    "runs": [
-      {
-        "latency": 2.7081100940704346,
-        "final_level": "BASSA",
-        "hit": true,
-        "status": "MISS",
-        "citation_ok": true,
-        "real_citations": [
-          [
-            "rotax_912_914_IPC",
-            79
-          ]
-        ],
-        "matched_expected_page": true
-      }
-    ],
-    "stable": "N/A",
-    "final_level": "BASSA",
-    "hit": true,
-    "status": "MISS",
-    "citation_ok": true,
-    "matched_expected_page": true
-  },
-  "C006": {
-    "intent": "code",
-    "lang": "IT",
-    "expected": {
-      "doc": "rotax_912iS_IPC",
-      "page": 15,
-      "code": "877615"
+    "C003": {
+      "intent": "code",
+      "lang": "IT",
+      "expected": {
+        "doc": "kohler_marine_tp6954",
+        "page": 95,
+        "code": "GM41013"
+      },
+      "runs": [
+        {
+          "latency": 1.6561651229858398,
+          "final_level": "ALTA",
+          "hit": true,
+          "status": "PASS_ALTA",
+          "citation_ok": true,
+          "real_citations": [
+            [
+              "kohler_marine_tp6954",
+              95
+            ]
+          ],
+          "matched_expected_page": true
+        }
+      ],
+      "stable": "N/A",
+      "final_level": "ALTA",
+      "hit": true,
+      "status": "PASS_ALTA",
+      "citation_ok": true,
+      "matched_expected_page": true
     },
-    "runs": [
-      {
-        "latency": 1.785621166229248,
-        "final_level": "ALTA",
-        "hit": true,
-        "status": "PASS_ALTA",
-        "citation_ok": true,
-        "real_citations": [
-          [
-            "rotax_912iS_IPC",
-            15
-          ]
-        ],
-        "matched_expected_page": true
-      }
-    ],
-    "stable": "N/A",
-    "final_level": "ALTA",
-    "hit": true,
-    "status": "PASS_ALTA",
-    "citation_ok": true,
-    "matched_expected_page": true
-  },
-  "C007": {
-    "intent": "code",
-    "lang": "IT",
-    "expected": {
-      "doc": "lycoming_IGO540_PC116",
-      "page": 76,
-      "code": "77300"
+    "C004": {
+      "intent": "code",
+      "lang": "IT",
+      "expected": {
+        "doc": "kohler_industrial_tp7120",
+        "page": 41,
+        "code": "M125A-08-80",
+        "value": "16.0"
+      },
+      "runs": [
+        {
+          "latency": 1.544456958770752,
+          "final_level": "ALTA",
+          "hit": true,
+          "status": "PASS_ALTA",
+          "citation_ok": true,
+          "real_citations": [
+            [
+              "kohler_marine_tp6954",
+              156
+            ]
+          ],
+          "matched_expected_page": false
+        }
+      ],
+      "stable": "N/A",
+      "final_level": "ALTA",
+      "hit": true,
+      "status": "PASS_ALTA",
+      "citation_ok": true,
+      "matched_expected_page": false
     },
-    "runs": [
-      {
-        "latency": 1.763178825378418,
-        "final_level": "ALTA",
-        "hit": true,
-        "status": "PASS_ALTA",
-        "citation_ok": true,
-        "real_citations": [
-          [
-            "lycoming_IGO540_PC116",
-            76
-          ]
-        ],
-        "matched_expected_page": true
-      }
-    ],
-    "stable": "N/A",
-    "final_level": "ALTA",
-    "hit": true,
-    "status": "PASS_ALTA",
-    "citation_ok": true,
-    "matched_expected_page": true
-  },
-  "C008": {
-    "intent": "code",
-    "lang": "IT",
-    "expected": {
-      "doc": "lycoming_IGO540_PC116",
-      "page": 99,
-      "code": "67193"
+    "C005": {
+      "intent": "code",
+      "lang": "IT",
+      "expected": {
+        "doc": "rotax_912_914_IPC",
+        "page": 79,
+        "code": "961267"
+      },
+      "runs": [
+        {
+          "latency": 2.409151077270508,
+          "final_level": "BASSA",
+          "hit": true,
+          "status": "MISS",
+          "citation_ok": true,
+          "real_citations": [
+            [
+              "rotax_912_914_IPC",
+              79
+            ]
+          ],
+          "matched_expected_page": true
+        }
+      ],
+      "stable": "N/A",
+      "final_level": "BASSA",
+      "hit": true,
+      "status": "MISS",
+      "citation_ok": true,
+      "matched_expected_page": true
     },
-    "runs": [
-      {
-        "latency": 1.451436996459961,
-        "final_level": "ALTA",
-        "hit": true,
-        "status": "PASS_ALTA",
-        "citation_ok": true,
-        "real_citations": [
-          [
-            "lycoming_IGO540_PC116",
-            99
-          ]
-        ],
-        "matched_expected_page": true
-      }
-    ],
-    "stable": "N/A",
-    "final_level": "ALTA",
-    "hit": true,
-    "status": "PASS_ALTA",
-    "citation_ok": true,
-    "matched_expected_page": true
-  },
-  "C009": {
-    "intent": "code",
-    "lang": "IT",
-    "expected": {
-      "doc": "branson_4520R_parts",
-      "page": 14,
-      "code": "AF02110000E4"
+    "C006": {
+      "intent": "code",
+      "lang": "IT",
+      "expected": {
+        "doc": "rotax_912iS_IPC",
+        "page": 15,
+        "code": "877615"
+      },
+      "runs": [
+        {
+          "latency": 1.5467231273651123,
+          "final_level": "ALTA",
+          "hit": true,
+          "status": "PASS_ALTA",
+          "citation_ok": true,
+          "real_citations": [
+            [
+              "rotax_912iS_IPC",
+              15
+            ]
+          ],
+          "matched_expected_page": true
+        }
+      ],
+      "stable": "N/A",
+      "final_level": "ALTA",
+      "hit": true,
+      "status": "PASS_ALTA",
+      "citation_ok": true,
+      "matched_expected_page": true
     },
-    "runs": [
-      {
-        "latency": 1.9651026725769043,
-        "final_level": "ALTA",
-        "hit": true,
-        "status": "PASS_ALTA",
-        "citation_ok": true,
-        "real_citations": [
-          [
-            "branson_4520R_parts",
-            14
-          ]
-        ],
-        "matched_expected_page": true
-      }
-    ],
-    "stable": "N/A",
-    "final_level": "ALTA",
-    "hit": true,
-    "status": "PASS_ALTA",
-    "citation_ok": true,
-    "matched_expected_page": true
-  },
-  "C010": {
-    "intent": "code",
-    "lang": "IT",
-    "expected": {
-      "doc": "branson_4520R_parts",
-      "page": 8,
-      "code": "HRA0100700A4"
+    "C007": {
+      "intent": "code",
+      "lang": "IT",
+      "expected": {
+        "doc": "lycoming_IGO540_PC116",
+        "page": 76,
+        "code": "77300"
+      },
+      "runs": [
+        {
+          "latency": 1.7533869743347168,
+          "final_level": "ALTA",
+          "hit": true,
+          "status": "PASS_ALTA",
+          "citation_ok": true,
+          "real_citations": [
+            [
+              "lycoming_IGO540_PC116",
+              76
+            ]
+          ],
+          "matched_expected_page": true
+        }
+      ],
+      "stable": "N/A",
+      "final_level": "ALTA",
+      "hit": true,
+      "status": "PASS_ALTA",
+      "citation_ok": true,
+      "matched_expected_page": true
     },
-    "runs": [
-      {
-        "latency": 1.7787818908691406,
-        "final_level": "ALTA",
-        "hit": true,
-        "status": "PASS_ALTA",
-        "citation_ok": true,
-        "real_citations": [
-          [
-            "branson_4520R_parts",
-            8
-          ]
-        ],
-        "matched_expected_page": true
-      }
-    ],
-    "stable": "N/A",
-    "final_level": "ALTA",
-    "hit": true,
-    "status": "PASS_ALTA",
-    "citation_ok": true,
-    "matched_expected_page": true
-  },
-  "C011": {
-    "intent": "code",
-    "lang": "IT",
-    "expected": {
-      "doc": "manzoni_comac_spareparts_A",
-      "page": 45,
-      "code": "415869"
+    "C008": {
+      "intent": "code",
+      "lang": "IT",
+      "expected": {
+        "doc": "lycoming_IGO540_PC116",
+        "page": 99,
+        "code": "67193"
+      },
+      "runs": [
+        {
+          "latency": 1.4575529098510742,
+          "final_level": "ALTA",
+          "hit": true,
+          "status": "PASS_ALTA",
+          "citation_ok": true,
+          "real_citations": [
+            [
+              "lycoming_IGO540_PC116",
+              99
+            ]
+          ],
+          "matched_expected_page": true
+        }
+      ],
+      "stable": "N/A",
+      "final_level": "ALTA",
+      "hit": true,
+      "status": "PASS_ALTA",
+      "citation_ok": true,
+      "matched_expected_page": true
     },
-    "runs": [
-      {
-        "latency": 2.0372180938720703,
-        "final_level": "ALTA",
-        "hit": true,
-        "status": "PASS_ALTA",
-        "citation_ok": true,
-        "real_citations": [
-          [
-            "manzoni_comac_spareparts_A",
-            45
-          ]
-        ],
-        "matched_expected_page": true
-      }
-    ],
-    "stable": "N/A",
-    "final_level": "ALTA",
-    "hit": true,
-    "status": "PASS_ALTA",
-    "citation_ok": true,
-    "matched_expected_page": true
-  },
-  "C012": {
-    "intent": "code",
-    "lang": "IT",
-    "expected": {
-      "doc": "manzoni_comac_spareparts_A",
-      "page": 47,
-      "code": "420025"
+    "C009": {
+      "intent": "code",
+      "lang": "IT",
+      "expected": {
+        "doc": "branson_4520R_parts",
+        "page": 14,
+        "code": "AF02110000E4"
+      },
+      "runs": [
+        {
+          "latency": 1.9095890522003174,
+          "final_level": "ALTA",
+          "hit": true,
+          "status": "PASS_ALTA",
+          "citation_ok": true,
+          "real_citations": [
+            [
+              "branson_4520R_parts",
+              14
+            ]
+          ],
+          "matched_expected_page": true
+        }
+      ],
+      "stable": "N/A",
+      "final_level": "ALTA",
+      "hit": true,
+      "status": "PASS_ALTA",
+      "citation_ok": true,
+      "matched_expected_page": true
     },
-    "runs": [
-      {
-        "latency": 1.9055120944976807,
-        "final_level": "ALTA",
-        "hit": true,
-        "status": "PASS_ALTA",
-        "citation_ok": true,
-        "real_citations": [
-          [
-            "manzoni_comac_spareparts_A",
-            47
-          ]
-        ],
-        "matched_expected_page": true
-      }
-    ],
-    "stable": "N/A",
-    "final_level": "ALTA",
-    "hit": true,
-    "status": "PASS_ALTA",
-    "citation_ok": true,
-    "matched_expected_page": true
-  },
-  "C013": {
-    "intent": "code",
-    "lang": "IT",
-    "expected": {
-      "doc": "iwaki_TC-X252PH-NPT",
-      "page": 3,
-      "code": "1H30023MM"
+    "C010": {
+      "intent": "code",
+      "lang": "IT",
+      "expected": {
+        "doc": "branson_4520R_parts",
+        "page": 8,
+        "code": "HRA0100700A4"
+      },
+      "runs": [
+        {
+          "latency": 1.6732478141784668,
+          "final_level": "ALTA",
+          "hit": true,
+          "status": "PASS_ALTA",
+          "citation_ok": true,
+          "real_citations": [
+            [
+              "branson_4520R_parts",
+              8
+            ]
+          ],
+          "matched_expected_page": true
+        }
+      ],
+      "stable": "N/A",
+      "final_level": "ALTA",
+      "hit": true,
+      "status": "PASS_ALTA",
+      "citation_ok": true,
+      "matched_expected_page": true
     },
-    "runs": [
-      {
-        "latency": 1.9099252223968506,
-        "final_level": "ALTA",
-        "hit": true,
-        "status": "PASS_ALTA",
-        "citation_ok": true,
-        "real_citations": [
-          [
-            "iwaki_TC-X252PH-NPT",
-            3
-          ]
-        ],
-        "matched_expected_page": true
-      }
-    ],
-    "stable": "N/A",
-    "final_level": "ALTA",
-    "hit": true,
-    "status": "PASS_ALTA",
-    "citation_ok": true,
-    "matched_expected_page": true
-  },
-  "C014": {
-    "intent": "code",
-    "lang": "IT",
-    "expected": {
-      "doc": "oleodinamica_sangro_catalogo_generale",
-      "page": 44,
-      "code": "102036200PF"
+    "C011": {
+      "intent": "code",
+      "lang": "IT",
+      "expected": {
+        "doc": "manzoni_comac_spareparts_A",
+        "page": 45,
+        "code": "415869"
+      },
+      "runs": [
+        {
+          "latency": 1.997467041015625,
+          "final_level": "ALTA",
+          "hit": true,
+          "status": "PASS_ALTA",
+          "citation_ok": true,
+          "real_citations": [
+            [
+              "manzoni_comac_spareparts_A",
+              45
+            ]
+          ],
+          "matched_expected_page": true
+        }
+      ],
+      "stable": "N/A",
+      "final_level": "ALTA",
+      "hit": true,
+      "status": "PASS_ALTA",
+      "citation_ok": true,
+      "matched_expected_page": true
     },
-    "runs": [
-      {
-        "latency": 1.716592788696289,
-        "final_level": "ALTA",
-        "hit": true,
-        "status": "PASS_ALTA",
-        "citation_ok": true,
-        "real_citations": [
-          [
-            "oleodinamica_sangro_catalogo_generale",
-            44
-          ]
-        ],
-        "matched_expected_page": true
-      }
-    ],
-    "stable": "N/A",
-    "final_level": "ALTA",
-    "hit": true,
-    "status": "PASS_ALTA",
-    "citation_ok": true,
-    "matched_expected_page": true
-  },
-  "C015": {
-    "intent": "code",
-    "lang": "IT",
-    "expected": {
-      "doc": "oleodinamica_sangro_catalogo_generale",
-      "page": 35,
-      "code": "154060130"
+    "C012": {
+      "intent": "code",
+      "lang": "IT",
+      "expected": {
+        "doc": "manzoni_comac_spareparts_A",
+        "page": 47,
+        "code": "420025"
+      },
+      "runs": [
+        {
+          "latency": 1.8665010929107666,
+          "final_level": "ALTA",
+          "hit": true,
+          "status": "PASS_ALTA",
+          "citation_ok": true,
+          "real_citations": [
+            [
+              "manzoni_comac_spareparts_A",
+              47
+            ]
+          ],
+          "matched_expected_page": true
+        }
+      ],
+      "stable": "N/A",
+      "final_level": "ALTA",
+      "hit": true,
+      "status": "PASS_ALTA",
+      "citation_ok": true,
+      "matched_expected_page": true
     },
-    "runs": [
-      {
-        "latency": 1.8000290393829346,
-        "final_level": "ALTA",
-        "hit": true,
-        "status": "PASS_ALTA",
-        "citation_ok": true,
-        "real_citations": [
-          [
-            "oleodinamica_sangro_catalogo_generale",
-            35
-          ]
-        ],
-        "matched_expected_page": true
-      }
-    ],
-    "stable": "N/A",
-    "final_level": "ALTA",
-    "hit": true,
-    "status": "PASS_ALTA",
-    "citation_ok": true,
-    "matched_expected_page": true
-  },
-  "V001": {
-    "intent": "visual",
-    "lang": "IT",
-    "expected": {
-      "doc": "branson_4520R_parts",
-      "pages": [
-        22
-      ]
+    "C013": {
+      "intent": "code",
+      "lang": "IT",
+      "expected": {
+        "doc": "iwaki_TC-X252PH-NPT",
+        "page": 3,
+        "code": "1H30023MM"
+      },
+      "runs": [
+        {
+          "latency": 1.778913974761963,
+          "final_level": "ALTA",
+          "hit": true,
+          "status": "PASS_ALTA",
+          "citation_ok": true,
+          "real_citations": [
+            [
+              "iwaki_TC-X252PH-NPT",
+              3
+            ]
+          ],
+          "matched_expected_page": true
+        }
+      ],
+      "stable": "N/A",
+      "final_level": "ALTA",
+      "hit": true,
+      "status": "PASS_ALTA",
+      "citation_ok": true,
+      "matched_expected_page": true
     },
-    "runs": [
-      {
-        "latency": 41.54732394218445,
-        "final_level": "MEDIA",
-        "hit": true,
-        "status": "PASS",
-        "citation_ok": true,
-        "real_citations": [
-          [
-            "branson_4520R_parts",
-            67
+    "C014": {
+      "intent": "code",
+      "lang": "IT",
+      "expected": {
+        "doc": "oleodinamica_sangro_catalogo_generale",
+        "page": 44,
+        "code": "102036200PF"
+      },
+      "runs": [
+        {
+          "latency": 1.7105090618133545,
+          "final_level": "ALTA",
+          "hit": true,
+          "status": "PASS_ALTA",
+          "citation_ok": true,
+          "real_citations": [
+            [
+              "oleodinamica_sangro_catalogo_generale",
+              44
+            ]
           ],
-          [
-            "branson_4520R_parts",
-            113
-          ],
-          [
-            "branson_4520R_parts",
-            22
-          ]
-        ]
-      }
-    ],
-    "stable": "N/A",
-    "final_level": "MEDIA",
-    "hit": true,
-    "status": "PASS",
-    "citation_ok": true,
-    "matched_expected_page": null
-  },
-  "V002": {
-    "intent": "visual",
-    "lang": "IT",
-    "expected": {
-      "doc": "branson_4520R_parts",
-      "pages": [
-        68
-      ]
+          "matched_expected_page": true
+        }
+      ],
+      "stable": "N/A",
+      "final_level": "ALTA",
+      "hit": true,
+      "status": "PASS_ALTA",
+      "citation_ok": true,
+      "matched_expected_page": true
     },
-    "runs": [
-      {
-        "latency": 0.25401782989501953,
-        "final_level": "MEDIA",
-        "hit": false,
-        "status": "MISS",
-        "citation_ok": false,
-        "real_citations": [
-          [
-            "branson_4520R_parts",
-            94
+    "C015": {
+      "intent": "code",
+      "lang": "IT",
+      "expected": {
+        "doc": "oleodinamica_sangro_catalogo_generale",
+        "page": 35,
+        "code": "154060130"
+      },
+      "runs": [
+        {
+          "latency": 1.748194932937622,
+          "final_level": "ALTA",
+          "hit": true,
+          "status": "PASS_ALTA",
+          "citation_ok": true,
+          "real_citations": [
+            [
+              "oleodinamica_sangro_catalogo_generale",
+              35
+            ]
           ],
-          [
-            "branson_4520R_parts",
-            69
-          ],
-          [
-            "branson_4520R_parts",
-            67
-          ]
-        ]
-      }
-    ],
-    "stable": "N/A",
-    "final_level": "MEDIA",
-    "hit": false,
-    "status": "MISS",
-    "citation_ok": false,
-    "matched_expected_page": null
-  },
-  "V003": {
-    "intent": "visual",
-    "lang": "EN",
-    "expected": {
-      "doc": "branson_4520R_parts",
-      "pages": [
-        127
-      ]
+          "matched_expected_page": true
+        }
+      ],
+      "stable": "N/A",
+      "final_level": "ALTA",
+      "hit": true,
+      "status": "PASS_ALTA",
+      "citation_ok": true,
+      "matched_expected_page": true
     },
-    "runs": [
-      {
-        "latency": 0.15999794006347656,
-        "final_level": "MEDIA",
-        "hit": false,
-        "status": "MISS",
-        "citation_ok": false,
-        "real_citations": [
-          [
-            "manzoni_comac_spareparts_B",
-            8
-          ],
-          [
-            "rotax_912iS_IPC",
-            78
-          ],
-          [
-            "rotax_912_914_IPC",
-            149
-          ]
-        ]
-      }
-    ],
-    "stable": "N/A",
-    "final_level": "MEDIA",
-    "hit": false,
-    "status": "MISS",
-    "citation_ok": false,
-    "matched_expected_page": null
-  },
-  "V004": {
-    "intent": "visual",
-    "lang": "IT",
-    "expected": {
-      "doc": "gehl_v270_parts",
-      "pages": [
-        94
-      ]
-    },
-    "runs": [
-      {
-        "latency": 0.1147301197052002,
-        "final_level": "MEDIA",
-        "hit": false,
-        "status": "MISS",
-        "citation_ok": false,
-        "real_citations": [
-          [
-            "gehl_v270_parts",
-            54
-          ],
-          [
-            "gehl_v270_parts",
-            96
-          ],
-          [
-            "gehl_v270_parts",
-            126
-          ]
-        ]
-      }
-    ],
-    "stable": "N/A",
-    "final_level": "MEDIA",
-    "hit": false,
-    "status": "MISS",
-    "citation_ok": false,
-    "matched_expected_page": null
-  },
-  "V005": {
-    "intent": "visual",
-    "lang": "EN",
-    "expected": {
-      "doc": "gehl_v270_parts",
-      "pages": [
-        167
-      ]
-    },
-    "runs": [
-      {
-        "latency": 0.11084794998168945,
-        "final_level": "MEDIA",
-        "hit": true,
-        "status": "PASS",
-        "citation_ok": true,
-        "real_citations": [
-          [
-            "gehl_v270_parts",
-            167
-          ],
-          [
-            "flow_exploded_2022",
-            6
-          ],
-          [
-            "gehl_v270_parts",
-            126
-          ]
-        ]
-      }
-    ],
-    "stable": "N/A",
-    "final_level": "MEDIA",
-    "hit": true,
-    "status": "PASS",
-    "citation_ok": true,
-    "matched_expected_page": null
-  },
-  "V006": {
-    "intent": "visual",
-    "lang": "IT",
-    "expected": {
-      "doc": "kohler_industrial_tp7120",
-      "pages": [
-        24
-      ]
-    },
-    "runs": [
-      {
-        "latency": 0.23972582817077637,
-        "final_level": "MEDIA",
-        "hit": false,
-        "status": "MISS",
-        "citation_ok": false,
-        "real_citations": [
-          [
-            "kohler_marine_tp6954",
-            88
-          ],
-          [
-            "flow_exploded_2022",
-            6
-          ],
-          [
-            "kohler_marine_tp6954",
-            90
-          ]
-        ]
-      }
-    ],
-    "stable": "N/A",
-    "final_level": "MEDIA",
-    "hit": false,
-    "status": "MISS",
-    "citation_ok": false,
-    "matched_expected_page": null
-  },
-  "V007": {
-    "intent": "visual",
-    "lang": "IT",
-    "expected": {
-      "doc": "iwaki_TC-X101SH-NPT",
-      "pages": [
-        2
-      ]
-    },
-    "runs": [
-      {
-        "latency": 0.26447415351867676,
-        "final_level": "MEDIA",
-        "hit": false,
-        "status": "MISS",
-        "citation_ok": false,
-        "real_citations": [
-          [
-            "hydrogear_Pseries_pump",
-            74
-          ],
-          [
-            "hydrogear_Pseries_pump",
-            38
-          ],
-          [
-            "edwards_booster_pump_parts",
-            39
-          ]
-        ]
-      }
-    ],
-    "stable": "N/A",
-    "final_level": "MEDIA",
-    "hit": false,
-    "status": "MISS",
-    "citation_ok": false,
-    "matched_expected_page": null
-  },
-  "V008": {
-    "intent": "visual",
-    "lang": "DE",
-    "expected": {
-      "doc": "NordCap_Esploso_Ricambi_DE",
-      "pages": [
-        2
-      ]
-    },
-    "runs": [
-      {
-        "latency": 0.26068878173828125,
-        "final_level": "MEDIA",
-        "hit": true,
-        "status": "PASS",
-        "citation_ok": true,
-        "real_citations": [
-          [
-            "NordCap_Esploso_Ricambi_DE",
-            1
-          ],
-          [
-            "crusader_marine_L510008",
-            30
-          ],
-          [
-            "NordCap_Esploso_Ricambi_DE",
-            2
-          ]
-        ]
-      }
-    ],
-    "stable": "N/A",
-    "final_level": "MEDIA",
-    "hit": true,
-    "status": "PASS",
-    "citation_ok": true,
-    "matched_expected_page": null
-  },
-  "V009": {
-    "intent": "visual",
-    "lang": "IT",
-    "expected": {
-      "doc": "kbs_gastrotechnik_1717",
-      "pages": [
-        3
-      ]
-    },
-    "runs": [
-      {
-        "latency": 0.21571993827819824,
-        "final_level": "MEDIA",
-        "hit": false,
-        "status": "MISS",
-        "citation_ok": false,
-        "real_citations": [
-          [
-            "Mamoli_Catalogo_Ricambi_2021_IT_EN",
-            14
-          ],
-          [
-            "DirectKitchen_Forni_Schemi_IT_EN",
-            60
-          ],
-          [
-            "kbs_gastrotechnik_4055041",
-            4
-          ]
-        ]
-      }
-    ],
-    "stable": "N/A",
-    "final_level": "MEDIA",
-    "hit": false,
-    "status": "MISS",
-    "citation_ok": false,
-    "matched_expected_page": null
-  },
-  "V010": {
-    "intent": "visual",
-    "lang": "EN",
-    "expected": {
-      "doc": "flow_exploded_2022",
-      "pages": [
-        16
-      ]
-    },
-    "runs": [
-      {
-        "latency": 0.11344718933105469,
-        "final_level": "MEDIA",
-        "hit": true,
-        "status": "PASS",
-        "citation_ok": true,
-        "real_citations": [
-          [
-            "flow_exploded_2022",
-            16
-          ],
-          [
-            "flow_exploded_2022",
-            15
-          ],
-          [
-            "flow_exploded_2022",
-            6
-          ]
-        ]
-      }
-    ],
-    "stable": "N/A",
-    "final_level": "MEDIA",
-    "hit": true,
-    "status": "PASS",
-    "citation_ok": true,
-    "matched_expected_page": null
-  },
-  "V011": {
-    "intent": "visual",
-    "lang": "IT",
-    "expected": {
-      "doc": "benassi_t623_flail_mower",
-      "pages": [
-        2
-      ]
-    },
-    "runs": [
-      {
-        "latency": 0.12383484840393066,
-        "final_level": "MEDIA",
-        "hit": false,
-        "status": "MISS",
-        "citation_ok": false,
-        "real_citations": [
-          [
-            "benassi_t623_flail_mower",
-            1
-          ],
-          [
-            "westermann_kehrmaschine",
-            2
-          ],
-          [
-            "Mamoli_Catalogo_Ricambi_2021_IT_EN",
-            214
-          ]
-        ]
-      }
-    ],
-    "stable": "N/A",
-    "final_level": "MEDIA",
-    "hit": false,
-    "status": "MISS",
-    "citation_ok": false,
-    "matched_expected_page": null
-  },
-  "V012": {
-    "intent": "visual",
-    "lang": "ES",
-    "expected": {
-      "doc": "panciroli_garmec_BL200",
-      "pages": [
-        24
-      ]
-    },
-    "runs": [
-      {
-        "latency": 0.1112370491027832,
-        "final_level": "MEDIA",
-        "hit": true,
-        "status": "PASS",
-        "citation_ok": true,
-        "real_citations": [
-          [
-            "panciroli_garmec_BL200",
-            24
-          ],
-          [
-            "panciroli_garmec_BL200",
-            41
-          ],
-          [
-            "panciroli_garmec_BL200",
-            29
-          ]
-        ]
-      }
-    ],
-    "stable": "N/A",
-    "final_level": "MEDIA",
-    "hit": true,
-    "status": "PASS",
-    "citation_ok": true,
-    "matched_expected_page": null
-  },
-  "V013": {
-    "intent": "visual",
-    "lang": "IT",
-    "expected": {
-      "doc": "Silca_TriaxPro_Ricambi_Multilingua",
-      "pages": [
-        2
-      ]
-    },
-    "runs": [
-      {
-        "latency": 0.22699999809265137,
-        "final_level": "MEDIA",
-        "hit": true,
-        "status": "PASS",
-        "citation_ok": true,
-        "real_citations": [
-          [
-            "Silca_TriaxPro_Ricambi_Multilingua",
-            2
-          ],
-          [
-            "Mamoli_Catalogo_Ricambi_2021_IT_EN",
-            214
-          ],
-          [
-            "flow_exploded_2022",
-            6
-          ]
-        ]
-      }
-    ],
-    "stable": "N/A",
-    "final_level": "MEDIA",
-    "hit": true,
-    "status": "PASS",
-    "citation_ok": true,
-    "matched_expected_page": null
-  },
-  "V014": {
-    "intent": "visual",
-    "lang": "IT",
-    "expected": {
-      "doc": "rimoldi_327_spareparts",
-      "pages": [
-        7
-      ]
-    },
-    "runs": [
-      {
-        "latency": 0.27655887603759766,
-        "final_level": "MEDIA",
-        "hit": true,
-        "status": "PASS",
-        "citation_ok": true,
-        "real_citations": [
-          [
-            "rimoldi_327_spareparts",
-            47
-          ],
-          [
-            "rimoldi_327_spareparts",
-            52
-          ],
-          [
-            "rimoldi_327_spareparts",
-            7
-          ]
-        ]
-      }
-    ],
-    "stable": "N/A",
-    "final_level": "MEDIA",
-    "hit": true,
-    "status": "PASS",
-    "citation_ok": true,
-    "matched_expected_page": null
-  },
-  "V015": {
-    "intent": "visual",
-    "lang": "IT",
-    "expected": {
-      "doc": "kohler_marine_tp6954",
-      "pages": [
-        14
-      ]
-    },
-    "runs": [
-      {
-        "latency": 0.22115588188171387,
-        "final_level": "MEDIA",
-        "hit": true,
-        "status": "PASS",
-        "citation_ok": true,
-        "real_citations": [
-          [
-            "kohler_marine_tp6954",
-            14
-          ],
-          [
-            "kohler_marine_tp6954",
-            100
-          ],
-          [
-            "kohler_industrial_tp7120",
-            14
-          ]
-        ]
-      }
-    ],
-    "stable": "N/A",
-    "final_level": "MEDIA",
-    "hit": true,
-    "status": "PASS",
-    "citation_ok": true,
-    "matched_expected_page": null
-  },
-  "N001": {
-    "intent": "narrative",
-    "lang": "IT",
-    "expected": {
-      "doc": "Silca_TriaxPro_Ricambi_Multilingua",
-      "page": 3
-    },
-    "runs": [
-      {
-        "latency": 111.99775218963623,
-        "final_level": "ALTA",
-        "hit": true,
-        "status": "PASS",
-        "citation_ok": true,
-        "real_citations": [
-          [
-            "Silca_TriaxPro_Ricambi_Multilingua",
-            3
-          ]
+    "V001": {
+      "intent": "visual",
+      "lang": "IT",
+      "expected": {
+        "doc": "branson_4520R_parts",
+        "pages": [
+          22
         ]
       },
-      {
-        "latency": 236.51601696014404,
-        "final_level": "ALTA",
-        "hit": true,
-        "status": "PASS",
-        "citation_ok": true,
-        "real_citations": [
-          [
-            "Silca_TriaxPro_Ricambi_Multilingua",
-            3
-          ]
+      "runs": [
+        {
+          "latency": 122.34761905670166,
+          "final_level": "BASSA",
+          "hit": false,
+          "status": "MISS",
+          "citation_ok": false,
+          "real_citations": []
+        }
+      ],
+      "stable": "N/A",
+      "final_level": "BASSA",
+      "hit": false,
+      "status": "MISS",
+      "citation_ok": false,
+      "matched_expected_page": null
+    },
+    "V002": {
+      "intent": "visual",
+      "lang": "IT",
+      "expected": {
+        "doc": "branson_4520R_parts",
+        "pages": [
+          68
         ]
       },
-      {
-        "latency": 124.33001184463501,
-        "final_level": "ALTA",
-        "hit": true,
-        "status": "PASS",
-        "citation_ok": true,
-        "real_citations": [
-          [
-            "Silca_TriaxPro_Ricambi_Multilingua",
-            3
+      "runs": [
+        {
+          "latency": 66.62424898147583,
+          "final_level": "MEDIA",
+          "hit": false,
+          "status": "MISS",
+          "citation_ok": false,
+          "real_citations": [
+            [
+              "branson_4520R_parts",
+              69
+            ],
+            [
+              "branson_4520R_parts",
+              96
+            ],
+            [
+              "branson_4520R_parts",
+              67
+            ]
           ]
-        ]
-      }
-    ],
-    "stable": "STABILE",
-    "final_level": "ALTA",
-    "hit": true,
-    "status": "PASS",
-    "citation_ok": true,
-    "matched_expected_page": null
-  },
-  "N002": {
-    "intent": "narrative",
-    "lang": "IT",
-    "expected": {
-      "doc": "Mamoli_Catalogo_Ricambi_2021_IT_EN",
-      "page": 133
+        }
+      ],
+      "stable": "N/A",
+      "final_level": "MEDIA",
+      "hit": false,
+      "status": "MISS",
+      "citation_ok": false,
+      "matched_expected_page": null
     },
-    "runs": [
-      {
-        "latency": 322.3067719936371,
-        "final_level": "MEDIA",
-        "hit": true,
-        "status": "PASS",
-        "citation_ok": true,
-        "real_citations": [
-          [
-            "Mamoli_Catalogo_Ricambi_2021_IT_EN",
-            133
-          ]
+    "V003": {
+      "intent": "visual",
+      "lang": "EN",
+      "expected": {
+        "doc": "branson_4520R_parts",
+        "pages": [
+          127
         ]
       },
-      {
-        "latency": 208.70264291763306,
-        "final_level": "MEDIA",
-        "hit": true,
-        "status": "PASS",
-        "citation_ok": true,
-        "real_citations": [
-          [
-            "Mamoli_Catalogo_Ricambi_2021_IT_EN",
-            133
-          ]
+      "runs": [
+        {
+          "latency": 65.32757306098938,
+          "final_level": "BASSA",
+          "hit": false,
+          "status": "MISS",
+          "citation_ok": false,
+          "real_citations": []
+        }
+      ],
+      "stable": "N/A",
+      "final_level": "BASSA",
+      "hit": false,
+      "status": "MISS",
+      "citation_ok": false,
+      "matched_expected_page": null
+    },
+    "V004": {
+      "intent": "visual",
+      "lang": "IT",
+      "expected": {
+        "doc": "gehl_v270_parts",
+        "pages": [
+          94
         ]
       },
-      {
-        "latency": 252.26238489151,
-        "final_level": "MEDIA",
-        "hit": true,
-        "status": "PASS",
-        "citation_ok": true,
-        "real_citations": [
-          [
-            "Mamoli_Catalogo_Ricambi_2021_IT_EN",
-            133
+      "runs": [
+        {
+          "latency": 65.65387487411499,
+          "final_level": "MEDIA",
+          "hit": true,
+          "status": "PASS",
+          "citation_ok": true,
+          "real_citations": [
+            [
+              "gehl_v270_parts",
+              74
+            ],
+            [
+              "gehl_v270_parts",
+              94
+            ],
+            [
+              "gehl_v270_parts",
+              96
+            ]
           ]
-        ]
-      }
-    ],
-    "stable": "STABILE",
-    "final_level": "MEDIA",
-    "hit": true,
-    "status": "PASS",
-    "citation_ok": true,
-    "matched_expected_page": null
-  },
-  "N003": {
-    "intent": "narrative",
-    "lang": "IT",
-    "expected": {
-      "doc": "manzoni_comac_spareparts_B",
-      "page": 14
+        }
+      ],
+      "stable": "N/A",
+      "final_level": "MEDIA",
+      "hit": true,
+      "status": "PASS",
+      "citation_ok": true,
+      "matched_expected_page": null
     },
-    "runs": [
-      {
-        "latency": 510.10514092445374,
-        "final_level": "MEDIA",
-        "hit": true,
-        "status": "PASS",
-        "citation_ok": true,
-        "real_citations": [
-          [
-            "manzoni_comac_spareparts_B",
-            14
-          ]
+    "V005": {
+      "intent": "visual",
+      "lang": "EN",
+      "expected": {
+        "doc": "gehl_v270_parts",
+        "pages": [
+          167
         ]
       },
-      {
-        "latency": 96.01869297027588,
-        "final_level": "MEDIA",
-        "hit": true,
-        "status": "PASS",
-        "citation_ok": true,
-        "real_citations": [
-          [
-            "manzoni_comac_spareparts_B",
-            14
+      "runs": [
+        {
+          "latency": 65.47677993774414,
+          "final_level": "MEDIA",
+          "hit": true,
+          "status": "PASS",
+          "citation_ok": true,
+          "real_citations": [
+            [
+              "gehl_v270_parts",
+              167
+            ],
+            [
+              "gehl_v270_parts",
+              126
+            ],
+            [
+              "gehl_v270_parts",
+              150
+            ]
           ]
+        }
+      ],
+      "stable": "N/A",
+      "final_level": "MEDIA",
+      "hit": true,
+      "status": "PASS",
+      "citation_ok": true,
+      "matched_expected_page": null
+    },
+    "V006": {
+      "intent": "visual",
+      "lang": "IT",
+      "expected": {
+        "doc": "kohler_industrial_tp7120",
+        "pages": [
+          24
         ]
       },
-      {
-        "latency": 53.479246854782104,
-        "final_level": "MEDIA",
-        "hit": true,
-        "status": "PASS",
-        "citation_ok": true,
-        "real_citations": [
-          [
-            "manzoni_comac_spareparts_B",
-            14
-          ]
+      "runs": [
+        {
+          "latency": 67.38203191757202,
+          "final_level": "BASSA",
+          "hit": false,
+          "status": "MISS",
+          "citation_ok": false,
+          "real_citations": []
+        }
+      ],
+      "stable": "N/A",
+      "final_level": "BASSA",
+      "hit": false,
+      "status": "MISS",
+      "citation_ok": false,
+      "matched_expected_page": null
+    },
+    "V007": {
+      "intent": "visual",
+      "lang": "IT",
+      "expected": {
+        "doc": "iwaki_TC-X101SH-NPT",
+        "pages": [
+          2
         ]
-      }
-    ],
-    "stable": "STABILE",
-    "final_level": "MEDIA",
-    "hit": true,
-    "status": "PASS",
-    "citation_ok": true,
-    "matched_expected_page": null
-  },
-  "R001": {
-    "intent": "refusal",
-    "lang": "IT",
-    "expected": {},
-    "runs": [
-      {
-        "latency": 31.137290954589844,
-        "final_level": "BASSA",
-        "hit": true,
-        "status": "PASS",
-        "citation_ok": true,
-        "real_citations": []
-      }
-    ],
-    "stable": "N/A",
-    "final_level": "BASSA",
-    "hit": true,
-    "status": "PASS",
-    "citation_ok": true,
-    "matched_expected_page": null
-  },
-  "C_DE_01": {
-    "intent": "code",
-    "lang": "DE",
-    "expected": {
-      "doc": "kbs_gastrotechnik_1717",
-      "page": 18,
-      "code": "80637"
+      },
+      "runs": [
+        {
+          "latency": 67.02089715003967,
+          "final_level": "BASSA",
+          "hit": false,
+          "status": "MISS",
+          "citation_ok": false,
+          "real_citations": []
+        }
+      ],
+      "stable": "N/A",
+      "final_level": "BASSA",
+      "hit": false,
+      "status": "MISS",
+      "citation_ok": false,
+      "matched_expected_page": null
     },
-    "runs": [
-      {
-        "latency": 2.7797441482543945,
-        "final_level": "ALTA",
-        "hit": true,
-        "status": "PASS_ALTA",
-        "citation_ok": true,
-        "real_citations": [
-          [
-            "kbs_gastrotechnik_1717",
-            18
+    "V008": {
+      "intent": "visual",
+      "lang": "DE",
+      "expected": {
+        "doc": "NordCap_Esploso_Ricambi_DE",
+        "pages": [
+          2
+        ]
+      },
+      "runs": [
+        {
+          "latency": 66.39561200141907,
+          "final_level": "BASSA",
+          "hit": false,
+          "status": "MISS",
+          "citation_ok": false,
+          "real_citations": []
+        }
+      ],
+      "stable": "N/A",
+      "final_level": "BASSA",
+      "hit": false,
+      "status": "MISS",
+      "citation_ok": false,
+      "matched_expected_page": null
+    },
+    "V009": {
+      "intent": "visual",
+      "lang": "IT",
+      "expected": {
+        "doc": "kbs_gastrotechnik_1717",
+        "pages": [
+          3
+        ]
+      },
+      "runs": [
+        {
+          "latency": 67.02751517295837,
+          "final_level": "BASSA",
+          "hit": false,
+          "status": "MISS",
+          "citation_ok": false,
+          "real_citations": []
+        }
+      ],
+      "stable": "N/A",
+      "final_level": "BASSA",
+      "hit": false,
+      "status": "MISS",
+      "citation_ok": false,
+      "matched_expected_page": null
+    },
+    "V010": {
+      "intent": "visual",
+      "lang": "EN",
+      "expected": {
+        "doc": "flow_exploded_2022",
+        "pages": [
+          16
+        ]
+      },
+      "runs": [
+        {
+          "latency": 65.29908609390259,
+          "final_level": "BASSA",
+          "hit": false,
+          "status": "MISS",
+          "citation_ok": false,
+          "real_citations": []
+        }
+      ],
+      "stable": "N/A",
+      "final_level": "BASSA",
+      "hit": false,
+      "status": "MISS",
+      "citation_ok": false,
+      "matched_expected_page": null
+    },
+    "V011": {
+      "intent": "visual",
+      "lang": "IT",
+      "expected": {
+        "doc": "benassi_t623_flail_mower",
+        "pages": [
+          2
+        ]
+      },
+      "runs": [
+        {
+          "latency": 66.70852708816528,
+          "final_level": "MEDIA",
+          "hit": true,
+          "status": "PASS",
+          "citation_ok": true,
+          "real_citations": [
+            [
+              "benassi_t623_flail_mower",
+              1
+            ],
+            [
+              "benassi_t623_flail_mower",
+              22
+            ],
+            [
+              "benassi_t623_flail_mower",
+              2
+            ]
           ]
-        ],
-        "matched_expected_page": true
-      }
-    ],
-    "stable": "N/A",
-    "final_level": "ALTA",
-    "hit": true,
-    "status": "PASS_ALTA",
-    "citation_ok": true,
-    "matched_expected_page": true
-  },
-  "C_DE_02": {
-    "intent": "code",
-    "lang": "DE",
-    "expected": {
-      "doc": "kbs_gastrotechnik_1717",
-      "page": 17,
-      "code": "70167"
+        }
+      ],
+      "stable": "N/A",
+      "final_level": "MEDIA",
+      "hit": true,
+      "status": "PASS",
+      "citation_ok": true,
+      "matched_expected_page": null
     },
-    "runs": [
-      {
-        "latency": 1.6898257732391357,
-        "final_level": "ALTA",
-        "hit": true,
-        "status": "PASS_ALTA",
-        "citation_ok": true,
-        "real_citations": [
-          [
-            "kbs_gastrotechnik_20322006",
-            14
+    "V012": {
+      "intent": "visual",
+      "lang": "ES",
+      "expected": {
+        "doc": "panciroli_garmec_BL200",
+        "pages": [
+          24
+        ]
+      },
+      "runs": [
+        {
+          "latency": 66.38415265083313,
+          "final_level": "BASSA",
+          "hit": false,
+          "status": "MISS",
+          "citation_ok": false,
+          "real_citations": []
+        }
+      ],
+      "stable": "N/A",
+      "final_level": "BASSA",
+      "hit": false,
+      "status": "MISS",
+      "citation_ok": false,
+      "matched_expected_page": null
+    },
+    "V013": {
+      "intent": "visual",
+      "lang": "IT",
+      "expected": {
+        "doc": "Silca_TriaxPro_Ricambi_Multilingua",
+        "pages": [
+          2
+        ]
+      },
+      "runs": [
+        {
+          "latency": 65.94629311561584,
+          "final_level": "MEDIA",
+          "hit": true,
+          "status": "PASS",
+          "citation_ok": true,
+          "real_citations": [
+            [
+              "Silca_TriaxPro_Ricambi_Multilingua",
+              2
+            ],
+            [
+              "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+              214
+            ],
+            [
+              "rimoldi_327_spareparts",
+              23
+            ]
           ]
-        ],
-        "matched_expected_page": false
-      }
-    ],
-    "stable": "N/A",
-    "final_level": "ALTA",
-    "hit": true,
-    "status": "PASS_ALTA",
-    "citation_ok": true,
-    "matched_expected_page": false
-  },
-  "C_DE_03": {
-    "intent": "code",
-    "lang": "DE",
-    "expected": {
-      "doc": "kbs_gastrotechnik_1717",
-      "page": 15,
-      "code": "87131"
+        }
+      ],
+      "stable": "N/A",
+      "final_level": "MEDIA",
+      "hit": true,
+      "status": "PASS",
+      "citation_ok": true,
+      "matched_expected_page": null
     },
-    "runs": [
-      {
-        "latency": 1.5913832187652588,
-        "final_level": "ALTA",
-        "hit": true,
-        "status": "PASS_ALTA",
-        "citation_ok": true,
-        "real_citations": [
-          [
-            "kbs_gastrotechnik_1717",
-            15
+    "V014": {
+      "intent": "visual",
+      "lang": "IT",
+      "expected": {
+        "doc": "rimoldi_327_spareparts",
+        "pages": [
+          7
+        ]
+      },
+      "runs": [
+        {
+          "latency": 66.10833382606506,
+          "final_level": "MEDIA",
+          "hit": false,
+          "status": "MISS",
+          "citation_ok": false,
+          "real_citations": [
+            [
+              "rimoldi_327_spareparts",
+              1
+            ],
+            [
+              "rimoldi_327_spareparts",
+              11
+            ],
+            [
+              "rimoldi_327_spareparts",
+              52
+            ]
           ]
-        ],
-        "matched_expected_page": true
-      }
-    ],
-    "stable": "N/A",
-    "final_level": "ALTA",
-    "hit": true,
-    "status": "PASS_ALTA",
-    "citation_ok": true,
-    "matched_expected_page": true
-  },
-  "C_EN_01": {
-    "intent": "code",
-    "lang": "EN",
-    "expected": {
-      "doc": "rotax_912_914_IPC",
-      "page": 24,
-      "code": "877380"
+        }
+      ],
+      "stable": "N/A",
+      "final_level": "MEDIA",
+      "hit": false,
+      "status": "MISS",
+      "citation_ok": false,
+      "matched_expected_page": null
     },
-    "runs": [
-      {
-        "latency": 1.9455320835113525,
-        "final_level": "ALTA",
-        "hit": true,
-        "status": "PASS_ALTA",
-        "citation_ok": true,
-        "real_citations": [
-          [
-            "rotax_912_914_IPC",
-            24
+    "V015": {
+      "intent": "visual",
+      "lang": "IT",
+      "expected": {
+        "doc": "kohler_marine_tp6954",
+        "pages": [
+          14
+        ]
+      },
+      "runs": [
+        {
+          "latency": 65.55367588996887,
+          "final_level": "MEDIA",
+          "hit": true,
+          "status": "PASS",
+          "citation_ok": true,
+          "real_citations": [
+            [
+              "kohler_marine_tp6954",
+              90
+            ],
+            [
+              "kohler_marine_tp6954",
+              88
+            ],
+            [
+              "kohler_marine_tp6954",
+              14
+            ]
           ]
-        ],
-        "matched_expected_page": true
-      }
-    ],
-    "stable": "N/A",
-    "final_level": "ALTA",
-    "hit": true,
-    "status": "PASS_ALTA",
-    "citation_ok": true,
-    "matched_expected_page": true
-  },
-  "C_EN_02": {
-    "intent": "code",
-    "lang": "EN",
-    "expected": {
-      "doc": "crusader_marine_L510008",
-      "page": 55,
-      "code": "22112"
+        }
+      ],
+      "stable": "N/A",
+      "final_level": "MEDIA",
+      "hit": true,
+      "status": "PASS",
+      "citation_ok": true,
+      "matched_expected_page": null
     },
-    "runs": [
-      {
-        "latency": 1.6718940734863281,
-        "final_level": "ALTA",
-        "hit": true,
-        "status": "PASS_ALTA",
-        "citation_ok": true,
-        "real_citations": [
-          [
-            "crusader_marine_L510008",
-            53
+    "N001": {
+      "intent": "narrative",
+      "lang": "IT",
+      "expected": {
+        "doc": "Silca_TriaxPro_Ricambi_Multilingua",
+        "page": 3
+      },
+      "runs": [
+        {
+          "latency": 44.543370962142944,
+          "final_level": "ALTA",
+          "hit": true,
+          "status": "PASS",
+          "citation_ok": true,
+          "real_citations": [
+            [
+              "Silca_TriaxPro_Ricambi_Multilingua",
+              3
+            ]
           ]
-        ],
-        "matched_expected_page": false
-      }
-    ],
-    "stable": "N/A",
-    "final_level": "ALTA",
-    "hit": true,
-    "status": "PASS_ALTA",
-    "citation_ok": true,
-    "matched_expected_page": false
-  },
-  "C_EN_03": {
-    "intent": "code",
-    "lang": "EN",
-    "expected": {
-      "doc": "rotax_912_914_IPC",
-      "page": 84,
-      "code": "874300"
-    },
-    "runs": [
-      {
-        "latency": 2.634883165359497,
-        "final_level": "ALTA",
-        "hit": true,
-        "status": "PASS_ALTA",
-        "citation_ok": true,
-        "real_citations": [
-          [
-            "rotax_912_914_IPC",
-            84
+        },
+        {
+          "latency": 13.703718900680542,
+          "final_level": "ALTA",
+          "hit": true,
+          "status": "PASS",
+          "citation_ok": true,
+          "real_citations": [
+            [
+              "Silca_TriaxPro_Ricambi_Multilingua",
+              3
+            ]
           ]
-        ],
-        "matched_expected_page": true
-      }
-    ],
-    "stable": "N/A",
-    "final_level": "ALTA",
-    "hit": true,
-    "status": "PASS_ALTA",
-    "citation_ok": true,
-    "matched_expected_page": true
-  },
-  "RBAC002": {
-    "intent": "rbac_negative",
-    "lang": "IT",
-    "expected": {
-      "doc": "branson_4520R_parts",
-      "page": 14,
-      "code": "AF02110000E4"
+        },
+        {
+          "latency": 12.571099281311035,
+          "final_level": "ALTA",
+          "hit": true,
+          "status": "PASS",
+          "citation_ok": true,
+          "real_citations": [
+            [
+              "Silca_TriaxPro_Ricambi_Multilingua",
+              3
+            ]
+          ]
+        }
+      ],
+      "stable": "STABILE",
+      "final_level": "ALTA",
+      "hit": true,
+      "status": "PASS",
+      "citation_ok": true,
+      "matched_expected_page": null
     },
-    "runs": [
-      {
-        "latency": 0.057248830795288086,
-        "final_level": "BASSA",
-        "hit": true,
-        "status": "PASS",
-        "citation_ok": true,
-        "real_citations": []
-      }
-    ],
-    "stable": "N/A",
-    "final_level": "BASSA",
-    "hit": true,
-    "status": "PASS",
-    "citation_ok": true,
-    "matched_expected_page": null
+    "N002": {
+      "intent": "narrative",
+      "lang": "IT",
+      "expected": {
+        "doc": "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+        "page": 133
+      },
+      "runs": [
+        {
+          "latency": 13.777034044265747,
+          "final_level": "MEDIA",
+          "hit": true,
+          "status": "PASS",
+          "citation_ok": true,
+          "real_citations": [
+            [
+              "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+              133
+            ]
+          ]
+        },
+        {
+          "latency": 7.432326793670654,
+          "final_level": "MEDIA",
+          "hit": true,
+          "status": "PASS",
+          "citation_ok": true,
+          "real_citations": [
+            [
+              "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+              133
+            ]
+          ]
+        },
+        {
+          "latency": 4.684327840805054,
+          "final_level": "MEDIA",
+          "hit": true,
+          "status": "PASS",
+          "citation_ok": true,
+          "real_citations": [
+            [
+              "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+              133
+            ]
+          ]
+        }
+      ],
+      "stable": "STABILE",
+      "final_level": "MEDIA",
+      "hit": true,
+      "status": "PASS",
+      "citation_ok": true,
+      "matched_expected_page": null
+    },
+    "N003": {
+      "intent": "narrative",
+      "lang": "IT",
+      "expected": {
+        "doc": "manzoni_comac_spareparts_B",
+        "page": 14
+      },
+      "runs": [
+        {
+          "latency": 13.50373125076294,
+          "final_level": "BASSA",
+          "hit": false,
+          "status": "MISS",
+          "citation_ok": false,
+          "real_citations": []
+        },
+        {
+          "latency": 4.699010848999023,
+          "final_level": "BASSA",
+          "hit": false,
+          "status": "MISS",
+          "citation_ok": false,
+          "real_citations": []
+        },
+        {
+          "latency": 2.511204957962036,
+          "final_level": "BASSA",
+          "hit": false,
+          "status": "MISS",
+          "citation_ok": false,
+          "real_citations": []
+        }
+      ],
+      "stable": "STABILE",
+      "final_level": "BASSA",
+      "hit": false,
+      "status": "MISS",
+      "citation_ok": false,
+      "matched_expected_page": null
+    },
+    "R001": {
+      "intent": "refusal",
+      "lang": "IT",
+      "expected": {},
+      "runs": [
+        {
+          "latency": 7.327137231826782,
+          "final_level": "BASSA",
+          "hit": true,
+          "status": "PASS",
+          "citation_ok": true,
+          "real_citations": []
+        }
+      ],
+      "stable": "N/A",
+      "final_level": "BASSA",
+      "hit": true,
+      "status": "PASS",
+      "citation_ok": true,
+      "matched_expected_page": null
+    },
+    "C_DE_01": {
+      "intent": "code",
+      "lang": "DE",
+      "expected": {
+        "doc": "kbs_gastrotechnik_1717",
+        "page": 18,
+        "code": "80637"
+      },
+      "runs": [
+        {
+          "latency": 1.7184576988220215,
+          "final_level": "ALTA",
+          "hit": true,
+          "status": "PASS_ALTA",
+          "citation_ok": true,
+          "real_citations": [
+            [
+              "kbs_gastrotechnik_1717",
+              18
+            ]
+          ],
+          "matched_expected_page": true
+        }
+      ],
+      "stable": "N/A",
+      "final_level": "ALTA",
+      "hit": true,
+      "status": "PASS_ALTA",
+      "citation_ok": true,
+      "matched_expected_page": true
+    },
+    "C_DE_02": {
+      "intent": "code",
+      "lang": "DE",
+      "expected": {
+        "doc": "kbs_gastrotechnik_1717",
+        "page": 17,
+        "code": "70167"
+      },
+      "runs": [
+        {
+          "latency": 1.6118719577789307,
+          "final_level": "ALTA",
+          "hit": true,
+          "status": "PASS_ALTA",
+          "citation_ok": true,
+          "real_citations": [
+            [
+              "kbs_gastrotechnik_20322006",
+              14
+            ]
+          ],
+          "matched_expected_page": false
+        }
+      ],
+      "stable": "N/A",
+      "final_level": "ALTA",
+      "hit": true,
+      "status": "PASS_ALTA",
+      "citation_ok": true,
+      "matched_expected_page": false
+    },
+    "C_DE_03": {
+      "intent": "code",
+      "lang": "DE",
+      "expected": {
+        "doc": "kbs_gastrotechnik_1717",
+        "page": 15,
+        "code": "87131"
+      },
+      "runs": [
+        {
+          "latency": 1.6102609634399414,
+          "final_level": "ALTA",
+          "hit": true,
+          "status": "PASS_ALTA",
+          "citation_ok": true,
+          "real_citations": [
+            [
+              "kbs_gastrotechnik_1717",
+              15
+            ]
+          ],
+          "matched_expected_page": true
+        }
+      ],
+      "stable": "N/A",
+      "final_level": "ALTA",
+      "hit": true,
+      "status": "PASS_ALTA",
+      "citation_ok": true,
+      "matched_expected_page": true
+    },
+    "C_EN_01": {
+      "intent": "code",
+      "lang": "EN",
+      "expected": {
+        "doc": "rotax_912_914_IPC",
+        "page": 24,
+        "code": "877380"
+      },
+      "runs": [
+        {
+          "latency": 1.5932607650756836,
+          "final_level": "ALTA",
+          "hit": true,
+          "status": "PASS_ALTA",
+          "citation_ok": true,
+          "real_citations": [
+            [
+              "rotax_912_914_IPC",
+              24
+            ]
+          ],
+          "matched_expected_page": true
+        }
+      ],
+      "stable": "N/A",
+      "final_level": "ALTA",
+      "hit": true,
+      "status": "PASS_ALTA",
+      "citation_ok": true,
+      "matched_expected_page": true
+    },
+    "C_EN_02": {
+      "intent": "code",
+      "lang": "EN",
+      "expected": {
+        "doc": "crusader_marine_L510008",
+        "page": 55,
+        "code": "22112"
+      },
+      "runs": [
+        {
+          "latency": 1.5036540031433105,
+          "final_level": "ALTA",
+          "hit": true,
+          "status": "PASS_ALTA",
+          "citation_ok": true,
+          "real_citations": [
+            [
+              "crusader_marine_L510008",
+              53
+            ]
+          ],
+          "matched_expected_page": false
+        }
+      ],
+      "stable": "N/A",
+      "final_level": "ALTA",
+      "hit": true,
+      "status": "PASS_ALTA",
+      "citation_ok": true,
+      "matched_expected_page": false
+    },
+    "C_EN_03": {
+      "intent": "code",
+      "lang": "EN",
+      "expected": {
+        "doc": "rotax_912_914_IPC",
+        "page": 84,
+        "code": "874300"
+      },
+      "runs": [
+        {
+          "latency": 1.9621858596801758,
+          "final_level": "ALTA",
+          "hit": true,
+          "status": "PASS_ALTA",
+          "citation_ok": true,
+          "real_citations": [
+            [
+              "rotax_912_914_IPC",
+              84
+            ]
+          ],
+          "matched_expected_page": true
+        }
+      ],
+      "stable": "N/A",
+      "final_level": "ALTA",
+      "hit": true,
+      "status": "PASS_ALTA",
+      "citation_ok": true,
+      "matched_expected_page": true
+    },
+    "RBAC002": {
+      "intent": "rbac_negative",
+      "lang": "IT",
+      "expected": {
+        "doc": "branson_4520R_parts",
+        "page": 14,
+        "code": "AF02110000E4"
+      },
+      "runs": [
+        {
+          "latency": 0.06070876121520996,
+          "final_level": "BASSA",
+          "hit": true,
+          "status": "PASS",
+          "citation_ok": true,
+          "real_citations": []
+        }
+      ],
+      "stable": "N/A",
+      "final_level": "BASSA",
+      "hit": true,
+      "status": "PASS",
+      "citation_ok": true,
+      "matched_expected_page": null
+    },
+    "S-MAM-09": {
+      "intent": "code",
+      "lang": "IT",
+      "expected": {
+        "doc": "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+        "page": null,
+        "code": "10011"
+      },
+      "runs": [
+        {
+          "latency": 8.3330819606781,
+          "final_level": "ALTA",
+          "hit": true,
+          "status": "PASS_ALTA",
+          "citation_ok": true,
+          "real_citations": [
+            [
+              "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+              29
+            ],
+            [
+              "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+              34
+            ],
+            [
+              "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+              42
+            ],
+            [
+              "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+              43
+            ],
+            [
+              "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+              44
+            ],
+            [
+              "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+              45
+            ],
+            [
+              "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+              53
+            ],
+            [
+              "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+              57
+            ],
+            [
+              "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+              58
+            ],
+            [
+              "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+              59
+            ],
+            [
+              "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+              70
+            ],
+            [
+              "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+              87
+            ],
+            [
+              "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+              130
+            ],
+            [
+              "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+              138
+            ],
+            [
+              "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+              139
+            ],
+            [
+              "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+              143
+            ],
+            [
+              "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+              144
+            ],
+            [
+              "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+              145
+            ],
+            [
+              "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+              149
+            ],
+            [
+              "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+              154
+            ],
+            [
+              "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+              155
+            ],
+            [
+              "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+              159
+            ],
+            [
+              "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+              160
+            ],
+            [
+              "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+              161
+            ],
+            [
+              "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+              163
+            ],
+            [
+              "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+              167
+            ],
+            [
+              "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+              171
+            ],
+            [
+              "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+              175
+            ],
+            [
+              "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+              178
+            ],
+            [
+              "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+              181
+            ],
+            [
+              "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+              185
+            ],
+            [
+              "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+              188
+            ]
+          ],
+          "matched_expected_page": true
+        }
+      ],
+      "stable": "N/A",
+      "final_level": "ALTA",
+      "hit": true,
+      "status": "PASS_ALTA",
+      "citation_ok": true,
+      "matched_expected_page": true
+    }
   }
 }

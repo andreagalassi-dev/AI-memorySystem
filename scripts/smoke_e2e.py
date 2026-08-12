@@ -7,10 +7,27 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
+# Il .env PRIMA di qualunque import che legga l'ambiente: senza, lo smoke gira
+# in una configurazione diversa dalla produzione e non lo dichiara.
+from src.common.run_config import (  # noqa: E402
+    effective_config,
+    format_config_banner,
+    load_runtime_env,
+)
+
+load_runtime_env()
+
 from src.graph.pipeline import answer  # noqa: E402
 
 def preflight():
     print("--- PREFLIGHT ---")
+    print(format_config_banner(effective_config()))
+    print(
+        "NOTA: smoke_e2e chiama answer() SENZA deps -> build_default_deps.\n"
+        "      Il ramo visivo gira quindi SEMPRE senza reranker e senza\n"
+        "      visual_score_floor, qualunque cosa dica AIKE_VISUAL_RERANK:\n"
+        "      i singleton di src/serving/session_deps.py non sono coinvolti.\n"
+    )
     subprocess.run(["ollama", "ps"])
     
     # Check RAM usage of python processes

@@ -153,3 +153,24 @@ def test_compare_to_baseline():
     base_low = {"hit": False, "final_level": "BASSA", "stable": "UNSTABLE", "citation_ok": False}
     curr_high = {"hit": True, "final_level": "ALTA", "stable": "STABILE", "citation_ok": True}
     assert compare_to_baseline(base_low, curr_high)[0] is False
+
+
+def test_audit_payload_porta_la_config_di_primo_livello():
+    """Un audit senza la configurazione che l'ha prodotto non e' interpretabile."""
+    import json
+
+    from scripts.golden_gate import build_audit_payload
+
+    cfg = {"visual_rerank": {"enabled": True, "reason": "env AIKE_VISUAL_RERANK='1' (esplicito)"},
+           "visual_score_floor": 0.20}
+    results = {"V001": {"status": "PASS"}, "V002": {"status": "MISS"}}
+
+    payload = build_audit_payload(cfg, results, "data/golden/golden_v1.jsonl", 1234.5)
+
+    assert payload["config"] is cfg
+    assert payload["results"] == results
+    assert payload["run"]["n_queries"] == 2
+    assert payload["run"]["dataset"] == "data/golden/golden_v1.jsonl"
+    assert payload["run"]["elapsed_s"] == 1234.5
+    assert payload["run"]["generated_at"]
+    json.dumps(payload)  # deve restare serializzabile
