@@ -8,12 +8,13 @@ ed end-to-end con dipendenze fittizie (incluso 'synthesize NON chiamato su BASSA
 from __future__ import annotations
 
 from src.retrieval.confidence import Thresholds
-from src.retrieval.synthesis import REFUSAL
+from src.retrieval.synthesis import REFUSAL, extract_citations
 from src.graph.pipeline import (
     Deps,
     Evidence,
     build_graph,
     confidence_node,
+    guardrail_node,
     reconcile,
     retrieval_node,
     synthesis_node,
@@ -159,3 +160,41 @@ class TestEndToEnd:
             raise TimeoutError("ollama down")
         r = self._run(make_deps(synthesize=boom))
         assert r["final_level"] == "BASSA" and "non disponibile" in r["final_answer"].lower()
+
+
+# ------------------------------------------- wiring citazioni -> guardrail (C005)
+
+# Forma del caso golden C005: la descrizione della riga recuperata contiene
+# token code-shaped che NON sono part-number. Il guardrail deve poterli
+# confermare, ma solo se la pagina della riga e' quella citata: serve quindi
+# che guardrail_node passi le citazioni a check_answer.
+EV_C005 = Evidence(
+    doc="rotax_912_914_IPC", page=79, lang="EN", code="961267",
+    desc="CABLE SUPPORT ASSY. For cylinder 2 and 4 SI-912-012 SI-914-014",
+    text=None, qty=1, price=None, type="table_row", status="clean",
+    warnings=[], score=18.4)
+
+C005_ANSWER = ("Il codice 961267 è un CABLE SUPPORT ASSY. per i cilindri 2 e 4 "
+               "SI-912-012 SI-914-014 (rotax_912_914_IPC, pag. 79).")
+
+
+class TestGuardrailCitazioni:
+    def test_c005_non_bloccato_quando_la_pagina_e_citata(self):
+        st = {"query": "codice 961267", "evidence": [EV_C005],
+              "answer": C005_ANSWER,
+              "citations": extract_citations(C005_ANSWER)}
+        out = guardrail_node(st, make_deps())
+        assert out["guardrail_gate"] == "PASS", out["audit"]
+
+    def test_c005_verify_se_la_pagina_citata_e_un_altra(self):
+        st = {"query": "codice 961267", "evidence": [EV_C005],
+              "answer": C005_ANSWER, "citations": [("rotax_912_914_IPC", 12)]}
+        out = guardrail_node(st, make_deps())
+        assert out["guardrail_gate"] == "VERIFY", out["audit"]
+
+    def test_c005_e2e_livello_non_bassa(self):
+        deps = make_deps(retrieve=lambda q: ([EV_C005], []),
+                         synthesize=lambda q, ev: C005_ANSWER)
+        r = build_graph(deps).invoke({"query": "codice 961267", "role": "tecnico"})
+        assert r["final_level"] != "BASSA", r["final_answer"]
+        assert "961267" in r["final_answer"] and "pag. 79" in r["final_answer"]

@@ -357,8 +357,12 @@ def guardrail_node(state: GraphState, deps: Deps) -> dict:
     combined_ev = (state.get("evidence") or []) + (state.get("children_evidence") or [])
     payloads = [e._asdict() for e in combined_ev]
     # il guardrail legge le AFFERMAZIONI, non le citazioni (nomi-doc code-shaped)
+    # ...ma le citazioni gli servono COME DATO: un token confermato solo dalla
+    # descrizione di una riga recuperata passa unicamente se quella riga e' fra
+    # le pagine che stiamo mostrando all'utente (percorso di verifica esatto).
     rep = check_answer(strip_citations(state.get("answer") or ""),
-                       payloads, deps.catalog_lookup)
+                       payloads, deps.catalog_lookup,
+                       citations=state.get("citations"))
     return {"guardrail_gate": rep.gate,
             "audit": _audit(state, f"guardrail: {rep.reason}")}
 

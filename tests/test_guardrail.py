@@ -11,11 +11,13 @@ Regola d'oro sotto test: giusto oppure "non lo so", mai sbagliato in silenzio.
 from __future__ import annotations
 
 from src.retrieval.guardrail import (
+    _literal_key,
     check_answer,
     extract_candidates,
     is_measurement,
     verify_code,
 )
+from src.retrieval.synthesis import extract_citations, strip_citations
 
 # Codici REALI (forma ancorata al corpus: V0 Mamoli, 0US Electrolux, num-9).
 REAL_V0 = "V09156800007"
@@ -229,3 +231,156 @@ class TestGateAggregazione:
         r = check_answer("Il codice 2311KJ ha un prezzo di 273.52 EUR",
                          ev("2311KJ"), cat())
         assert r.gate == "PASS"
+
+
+# ------------------------------------------ EXISTS_IN_TEXT: token nella DESCRIZIONE
+# SPEC §D chiede che il codice citato "esista letteralmente nella tabella
+# recuperata": la DESCRIZIONE fa parte della riga recuperata. L'LLM cita
+# verbatim la descrizione, che contiene token code-shaped non-part-number
+# (rimandi, misure, sigle). Il gradino EXISTS_IN_TEXT li riconosce SENZA
+# indebolire il guardrail: estrazione SIMMETRICA (mai `in` su stringa) e PASS
+# solo se la (doc, page) della riga sta fra le citazioni della risposta.
+
+DOC = "rotax_912_914_IPC"
+C005_DESC = "CABLE SUPPORT ASSY. For cylinder 2 and 4 SI-912-012 SI-914-014"
+
+
+def evd(code, desc=None, text=None, doc=DOC, page=79, status="clean", warnings=None):
+    """Evidence row completa (con doc/page/desc), come i payload reali."""
+    return {"code": code, "desc": desc, "text": text, "doc": doc, "page": page,
+            "status": status, "warnings": warnings or []}
+
+
+CITE_79 = [(DOC, 79)]
+
+# Risposta REALE misurata sul corpus (e2e `answer("codice 961267", "tecnico")`).
+C005_ANSWER = ("Il codice 961267 è un CABLE SUPPORT ASSY. per i cilindri 2 e 4 "
+               "SI-912-012 SI-914-014 (rotax_912_914_IPC, pag. 79).")
+
+
+class TestExistsInText:
+    """NB: i token non sono mai incollati al punto finale della frase. Non e'
+    cosmesi: `extract_candidates` include il punto nel token (comportamento
+    PRE-ESISTENTE, invariato da questa modifica), quindi 'X.' e 'X' sono token
+    diversi. La risposta reale misurata su C005 ha i codici seguiti da spazio."""
+
+    def test_verdetto_distinguibile(self):
+        """Non e' una promozione a EXISTS: il report deve poterlo contare."""
+        keys = {_literal_key("SI-912-012"): (DOC, 79)}
+        v = verify_code("SI-912-012", ["961267"], cat(), keys)
+        assert v.status == "EXISTS_IN_TEXT"
+
+    def test_c005_reale_passa(self):
+        """Il caso golden C005, con la risposta REALE dell'LLM (misurata) e il
+        pre-trattamento reale del nodo guardrail (strip_citations)."""
+        r = check_answer(strip_citations(C005_ANSWER),
+                         [evd("961267", desc=C005_DESC)], cat(),
+                         citations=extract_citations(C005_ANSWER))
+        assert r.gate == "PASS", [(v.raw, v.status) for v in r.verdicts]
+        assert [v.status for v in r.verdicts] == [
+            "EXISTS", "EXISTS_IN_TEXT", "EXISTS_IN_TEXT"]
+
+    def test_casi_reali_misurati_passano(self):
+        """I token code-shaped delle descrizioni reali (11.5% delle righe)."""
+        for tok, desc in [
+            ("Max.80mm", "PRESSURE GAUGE Max.80mm housing"),
+            ("12V-70A", "ALTERNATOR 12V-70A"),
+            ("DN19", "HOSE CLAMP DN19 stainless"),
+            ("BOILER95", "SPARE KIT for BOILER95 series"),
+            ("4D/4E", "GASKET SET 4D/4E series"),
+        ]:
+            r = check_answer(f"Si tratta di {tok} come da tabella",
+                             [evd("961267", desc=desc)], cat(), citations=CITE_79)
+            assert r.gate == "PASS", (tok, [(v.raw, v.status) for v in r.verdicts])
+
+    def test_near_miss_un_carattere_bloccato(self):
+        """DN19 nella descrizione, la risposta dice DN18 -> BLOCK."""
+        r = check_answer("Il raccordo e DN18 come da tabella",
+                         [evd("961267", desc="HOSE CLAMP DN19 stainless")],
+                         cat(), citations=CITE_79)
+        assert r.gate == "BLOCK", [(v.raw, v.status) for v in r.verdicts]
+
+    def test_allucinazione_forma_dimensionale_bloccata(self):
+        """DN99 non esiste da nessuna parte -> BLOCK (nessun filtro per forma:
+        un token dimensionale ALLUCINATO deve restare controllato)."""
+        r = check_answer("Il raccordo e DN99 come da tabella",
+                         [evd("961267", desc="HOSE CLAMP DN19 stainless")],
+                         cat(), citations=CITE_79)
+        assert r.gate == "BLOCK", [(v.raw, v.status) for v in r.verdicts]
+
+    def test_prefisso_non_passa_per_sottostringa(self):
+        """Lezione ac8da1a: 'Max.80m' e' SOTTOSTRINGA di 'Max.80mm' ma e' un
+        token DIVERSO. Confronto fra insiemi, mai `in` su stringa."""
+        r = check_answer("La misura e Max.80m nominale",
+                         [evd("961267", desc="PRESSURE GAUGE Max.80mm housing")],
+                         cat(), citations=CITE_79)
+        assert r.gate == "BLOCK", [(v.raw, v.status) for v in r.verdicts]
+
+    def test_suffisso_non_passa_per_sottostringa(self):
+        """Simmetrico: 'I-912-012' e' suffisso di 'SI-912-012' -> BLOCK."""
+        r = check_answer("Il codice e I-912-012 per il supporto",
+                         [evd("961267", desc=C005_DESC)], cat(), citations=CITE_79)
+        assert r.gate == "BLOCK", [(v.raw, v.status) for v in r.verdicts]
+
+    def test_riga_non_citata_verifica(self):
+        """Stesso token, ma la riga che lo contiene NON e' fra le citazioni:
+        e' il caso pericoloso (rimando pescato da un'altra riga) -> VERIFY."""
+        r = check_answer("Il codice e SI-912-012 per il supporto",
+                         [evd("961267", desc=C005_DESC, page=79)],
+                         cat(), citations=[(DOC, 12)])
+        assert r.gate == "VERIFY", [(v.raw, v.status) for v in r.verdicts]
+
+    def test_documento_diverso_verifica(self):
+        r = check_answer("Il codice e SI-912-012 per il supporto",
+                         [evd("961267", desc=C005_DESC, page=79)],
+                         cat(), citations=[("altro_doc", 79)])
+        assert r.gate == "VERIFY", [(v.raw, v.status) for v in r.verdicts]
+
+    def test_senza_citazioni_verifica_mai_pass(self):
+        """Default conservativo: senza citazioni note non si puo' confermare."""
+        r = check_answer("Il codice e SI-912-012 per il supporto",
+                         [evd("961267", desc=C005_DESC)], cat())
+        assert r.gate == "VERIFY", [(v.raw, v.status) for v in r.verdicts]
+
+    def test_riga_senza_pagina_non_conferma(self):
+        """Evidence senza (doc, page) non puo' offrire un percorso di verifica."""
+        r = check_answer("Il codice e SI-912-012 per il supporto",
+                         [{"code": "961267", "desc": C005_DESC, "doc": DOC,
+                           "page": None, "status": "clean", "warnings": []}],
+                         cat(), citations=CITE_79)
+        assert r.gate == "BLOCK", [(v.raw, v.status) for v in r.verdicts]
+
+    def test_token_nel_campo_text(self):
+        """Anche il chunk narrativo ('text') e' parte della riga recuperata."""
+        r = check_answer("Il codice e SI-912-012 per il supporto",
+                         [evd(None, text=C005_DESC)], cat(), citations=CITE_79)
+        assert r.gate == "PASS", [(v.raw, v.status) for v in r.verdicts]
+
+    def test_evidenza_degradata_resta_verifica(self):
+        """Il gancio OCR/degraded vince comunque su EXISTS_IN_TEXT."""
+        r = check_answer("Il codice e SI-912-012 per il supporto",
+                         [evd("961267", desc=C005_DESC, status="degraded")],
+                         cat(), citations=CITE_79)
+        assert r.gate == "VERIFY", [(v.raw, v.status) for v in r.verdicts]
+
+    def test_regressione_inventato_resta_block(self):
+        r = check_answer("Monta il ZZZ99999 nuovo", [evd("961267", desc=C005_DESC)],
+                         cat(), citations=CITE_79)
+        assert r.gate == "BLOCK", [(v.raw, v.status) for v in r.verdicts]
+
+    def test_regressione_catalogo_resta_miss_retrieval(self):
+        r = check_answer(f"Monta il {REAL_V0} nuovo", [evd("961267", desc=C005_DESC)],
+                         cat(REAL_V0), citations=CITE_79)
+        assert r.gate == "VERIFY"
+        assert [v.status for v in r.verdicts] == ["MISS_RETRIEVAL"]
+
+    def test_default_preserva_i_chiamanti_esistenti(self):
+        """verify_code senza il nuovo parametro = comportamento invariato."""
+        assert verify_code("SI-912-012", ["961267"], cat()).status == "ABSENT"
+
+    def test_citazione_malformata_non_esplode(self):
+        """Fail-closed: una citazione malformata degrada a VERIFY, non solleva."""
+        r = check_answer("Il codice e SI-912-012 per il supporto",
+                         [evd("961267", desc=C005_DESC)], cat(),
+                         citations=[None, ("solo_doc",), (DOC, "pag79")])
+        assert r.gate == "VERIFY", [(v.raw, v.status) for v in r.verdicts]

@@ -8,9 +8,12 @@ guardrail-codici-design.md.
 
 Tre stadi + aggregazione fail-closed:
   A) extract_candidates  — cattura i token code-shaped, scarta misure/date;
-  C) verify_code         — scala a 3 gradini (letterale / variante-separatore /
+  C) verify_code         — scala a 4 gradini (letterale sul codice / letterale
+                           nel TESTO della riga / variante-separatore /
                            assente) + lookup globale sul catalogo;
-     check_answer        — orchestratore: verdetto peggiore-vince.
+     check_answer        — orchestratore: verdetto peggiore-vince; il gradino
+                           EXISTS_IN_TEXT diventa PASS solo se la pagina della
+                           riga d'origine e' fra le citazioni della risposta.
 
 Regola d'oro: giusto oppure "non lo so", mai sbagliato in silenzio.
 """
@@ -19,7 +22,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
-from typing import Callable, Literal, Sequence
+from typing import Callable, Iterable, Literal, Mapping, Sequence
 
 from src.ingestion.brands import all_extract_patterns
 from src.ingestion.codes import base_cleanup, canonical
@@ -51,8 +54,12 @@ _DECIMAL = re.compile(
     r"|^\d+[.,]\d{1,2}$"                    # forma piana: 273.52 / 141,98
 )
 
-Verdict = Literal["EXISTS", "AMBIGUOUS", "MISS_RETRIEVAL", "ABSENT"]
+Verdict = Literal["EXISTS", "EXISTS_IN_TEXT", "AMBIGUOUS", "MISS_RETRIEVAL", "ABSENT"]
 Gate = Literal["PASS", "VERIFY", "BLOCK"]
+
+# Chiave di pagina: (doc_stem, page) normalizzata, per confrontare la riga
+# d'origine di un token con le citazioni della risposta.
+PageKey = tuple[str, int]
 
 
 @dataclass
@@ -165,13 +172,28 @@ def verify_code(
     candidate: str,
     evidence_codes: Sequence[str],
     catalog_lookup: Callable[[str], bool],
+    evidence_text_keys: Mapping[str, PageKey] | None = None,
 ) -> CodeVerdict:
-    """Scala a 3 gradini contro l'evidenza + lookup globale sul catalogo."""
+    """Scala a 4 gradini contro l'evidenza + lookup globale sul catalogo.
+
+    `evidence_text_keys` mappa forma-letterale -> (doc, page) dei token
+    code-shaped estratti dai TESTI della riga recuperata (descrizione/chunk).
+    Default None = comportamento pre-esistente (solo `evidence_codes`)."""
     lk = _literal_key(candidate)
     ev_literal = {_literal_key(e): e for e in evidence_codes if e}
     if lk in ev_literal:
         return CodeVerdict(candidate, "EXISTS", ev_literal[lk],
                            "match letterale nell'evidenza recuperata")
+
+    # SPEC §D: il codice deve esistere letteralmente nella TABELLA recuperata,
+    # e la descrizione fa parte della riga. Un token verbatim nella descrizione
+    # NON e' pero' un part-number confermato: resta un gradino distinto
+    # (EXISTS_IN_TEXT), che l'orchestratore promuove a PASS solo se la pagina
+    # d'origine e' fra le citazioni della risposta.
+    if evidence_text_keys and lk in evidence_text_keys:
+        return CodeVerdict(candidate, "EXISTS_IN_TEXT", None,
+                           "presente verbatim nella descrizione della riga "
+                           f"recuperata {evidence_text_keys[lk]}")
 
     can = canonical(candidate)
     ev_canon = {canonical(e): e for e in evidence_codes if e}
@@ -205,23 +227,78 @@ def _degraded(evidence: Sequence[dict]) -> bool:
     return False
 
 
+def _page_key(doc, page) -> PageKey | None:
+    """Normalizza (doc, page) in una chiave confrontabile; None se incompleta."""
+    if doc is None or page is None:
+        return None
+    try:
+        return (str(doc).strip(), int(page))
+    except (TypeError, ValueError):
+        return None
+
+
+def _evidence_text_keys(evidence: Sequence[dict]) -> dict[str, PageKey]:
+    """Token code-shaped dei TESTI della riga recuperata (desc + chunk), come
+    insieme di forme-letterali -> pagina d'origine.
+
+    L'estrazione e' la STESSA `extract_candidates` usata sulla risposta
+    (simmetria): il confronto avviene fra INSIEMI di token, mai con un `in` su
+    stringa. Un test di sottostringa farebbe passare 'Max.80m' dentro
+    'Max.80mm' — la lezione del fix ac8da1a sulla guardia M1."""
+    keys: dict[str, PageKey] = {}
+    for e in evidence:
+        src_page = _page_key(e.get("doc"), e.get("page"))
+        if src_page is None:
+            continue
+        for src in (e.get("desc"), e.get("text")):
+            for tok in extract_candidates(src or ""):
+                keys.setdefault(_literal_key(tok), src_page)
+    return keys
+
+
 def check_answer(
     answer_text: str,
     evidence: Sequence[dict],
     catalog_lookup: Callable[[str], bool] | None = None,
+    citations: Iterable[tuple[str, int]] | None = None,
 ) -> GuardrailReport:
-    """Gate complessivo della risposta (peggiore-vince, fail-closed)."""
+    """Gate complessivo della risposta (peggiore-vince, fail-closed).
+
+    `citations` = le fonti (doc, pag) dichiarate dalla risposta. Servono al
+    gradino EXISTS_IN_TEXT: un token trovato nella descrizione di una riga
+    recuperata e' PASS solo se QUELLA riga e' fra le pagine citate, cosi'
+    l'utente ha un percorso di verifica esatto ("il token compare nella
+    descrizione della riga a pagina N, e pagina N e' quella mostrata").
+    Il caso pericoloso — un codice di rimando pescato da una riga recuperata
+    DIVERSA da quella citata e presentato come LA risposta — resta a VERIFY.
+    Default None (chiamante che non sa le citazioni) = conservativo: mai PASS
+    per questa via."""
     lookup = catalog_lookup or (lambda _k: False)
     evidence_codes = [e.get("code") for e in evidence if e.get("code")]
-    verdicts = [verify_code(c, evidence_codes, lookup)
+    text_keys = _evidence_text_keys(evidence)
+    verdicts = [verify_code(c, evidence_codes, lookup, text_keys)
                 for c in extract_candidates(answer_text)]
+
+    # Una citazione malformata non deve far ESPLODERE il guardrail (sarebbe un
+    # fail-open a monte): viene semplicemente ignorata -> resta VERIFY.
+    cited = {k for k in (_page_key(c[0], c[1]) for c in (citations or ())
+                         if isinstance(c, (tuple, list)) and len(c) == 2) if k}
+    unconfirmed = [v for v in verdicts
+                   if v.status == "EXISTS_IN_TEXT"
+                   and text_keys.get(_literal_key(v.raw)) not in cited]
 
     if any(v.status == "ABSENT" for v in verdicts):
         return GuardrailReport("BLOCK", verdicts,
                                "almeno un codice non a catalogo -> risposta bloccata")
     soft = [v for v in verdicts if v.status in ("AMBIGUOUS", "MISS_RETRIEVAL")]
-    if soft or _degraded(evidence):
-        why = "codici ambigui/non recuperati" if soft else "evidenza inaffidabile (OCR/degraded)"
+    if soft or unconfirmed or _degraded(evidence):
+        if soft:
+            why = "codici ambigui/non recuperati"
+        elif unconfirmed:
+            why = ("token presente nella descrizione di una riga NON citata "
+                   "dalla risposta")
+        else:
+            why = "evidenza inaffidabile (OCR/degraded)"
         return GuardrailReport("VERIFY", verdicts, f"{why} -> verifica manuale")
     return GuardrailReport("PASS", verdicts,
                            "tutti i codici citati esistono nell'evidenza" if verdicts
