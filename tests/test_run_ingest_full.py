@@ -4,10 +4,15 @@ Solo funzioni pure: nessun modello, nessun DB, nessuna rete."""
 
 from __future__ import annotations
 
+from types import SimpleNamespace
+
 from scripts.run_ingest_full import (
+    branch_coverage,
     filter_by_coverage,
     partition_giants,
     pending,
+    pending_branches,
+    resolve_branches,
     select_branches,
 )
 
@@ -105,3 +110,153 @@ def test_select_branches_nessuno_selezionato_tutto_noop():
     assert out["structured"]() == 0
     assert out["narrative"]() == 0
     assert out["visual"]() == 0
+
+
+# ---------------------------------------------------------------------------
+# Copertura PER-RAMO (bug C.3: l'OR globale fra righe_listino e aike_chunks
+# dichiarava "coperto" un documento con SOLO lo strutturato fatto, e il ramo
+# narrativo/visivo non entrava mai in coda).
+# ---------------------------------------------------------------------------
+CHUNKS = "aike_chunks"
+VISUAL = "aike_pages_visual"
+
+
+class _FakeCursor:
+    """Cursore Postgres minimale: risponde alla sola SELECT su righe_listino."""
+
+    def __init__(self, stems):
+        self._stems = stems
+        self._rows: list[tuple] = []
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        return False
+
+    def execute(self, sql, *args):
+        assert "righe_listino" in sql, sql
+        self._rows = [(s,) for s in self._stems]
+
+    def fetchall(self):
+        return self._rows
+
+
+class _FakeConn:
+    def __init__(self, stems):
+        self._stems = stems
+
+    def cursor(self):
+        return _FakeCursor(self._stems)
+
+
+class _FakeQdrant:
+    """Scroll paginato su piu' collection: {collection: [stem_del_payload, ...]}."""
+
+    def __init__(self, per_collection, page=2):
+        self._data = per_collection
+        self._page = page
+        self.seen: list[str] = []
+
+    def scroll(self, collection, limit=1000, offset=None, with_payload=None,
+               with_vectors=False):
+        self.seen.append(collection)
+        docs = self._data.get(collection)
+        if docs is None:
+            raise RuntimeError(f"collection inesistente: {collection}")
+        start = offset or 0
+        end = start + self._page
+        points = [SimpleNamespace(payload={"doc": d}) for d in docs[start:end]]
+        next_offset = end if end < len(docs) else None
+        return points, next_offset
+
+
+def _coverage(struct=(), narr=(), vis=()):
+    conn = _FakeConn(list(struct))
+    qc = _FakeQdrant({CHUNKS: list(narr), VISUAL: list(vis)})
+    return branch_coverage(conn, qc, chunks_collection=CHUNKS,
+                           visual_collection=VISUAL)
+
+
+def test_branch_coverage_tiene_i_rami_separati():
+    cov = _coverage(struct=["solo_struct", "tutti"], narr=["tutti"],
+                    vis=["tutti", "solo_vis"])
+    assert cov["structured"] == {"solo_struct", "tutti"}
+    assert cov["narrative"] == {"tutti"}
+    assert cov["visual"] == {"tutti", "solo_vis"}
+
+
+def test_branch_coverage_legge_la_collection_visiva():
+    conn = _FakeConn([])
+    qc = _FakeQdrant({CHUNKS: [], VISUAL: ["v"]})
+    branch_coverage(conn, qc, chunks_collection=CHUNKS, visual_collection=VISUAL)
+    assert VISUAL in qc.seen, "il ramo visivo non e' stato interrogato affatto"
+
+
+# --- la FIRMA del difetto: righe strutturate, ZERO chunk ---------------------
+def test_doc_con_righe_ma_zero_chunk_e_pending_per_il_narrativo():
+    cov = _coverage(struct=["monstre"], narr=[], vis=[])
+    todo = pending_branches(["monstre"], cov, {"structured", "narrative", "visual"})
+    assert "monstre" in todo, (
+        "regressione: un doc con righe_listino e 0 chunk risulta 'coperto' e "
+        "non entra mai in coda (bug dell'OR globale)"
+    )
+    assert todo["monstre"] == {"narrative", "visual"}
+
+
+def test_doc_con_tutti_e_tre_i_rami_non_e_pending():
+    cov = _coverage(struct=["ok"], narr=["ok"], vis=["ok"])
+    assert pending_branches(["ok"], cov, {"structured", "narrative", "visual"}) == {}
+
+
+def test_doc_con_narrativo_fatto_ma_visivo_no_e_pending_solo_per_il_visivo():
+    cov = _coverage(struct=["x"], narr=["x"], vis=[])
+    assert pending_branches(["x"], cov, {"structured", "narrative", "visual"}) == {
+        "x": {"visual"}
+    }
+
+
+def test_nessun_documento_nessun_crash():
+    cov = _coverage()
+    assert cov == {"structured": set(), "narrative": set(), "visual": set()}
+    assert pending_branches([], cov, {"structured", "narrative", "visual"}) == {}
+
+
+def test_pending_branches_considera_solo_i_rami_richiesti():
+    # --branches=narrative: lo strutturato mancante NON deve rendere pending.
+    cov = _coverage(struct=[], narr=["n"], vis=[])
+    assert pending_branches(["n"], cov, {"narrative"}) == {}
+    assert pending_branches(["n"], cov, {"narrative", "structured"}) == {
+        "n": {"structured"}
+    }
+
+
+def test_pending_branches_preserva_ordine_dei_candidates():
+    cov = _coverage(struct=[], narr=[], vis=[])
+    todo = pending_branches(["c", "a", "b"], cov, {"narrative"})
+    assert list(todo) == ["c", "a", "b"]
+
+
+def test_branch_coverage_non_esplode_se_una_collection_manca():
+    # Qdrant giu'/collection assente: si degrada a "niente coperto", non crasha.
+    conn = _FakeConn(["s"])
+    qc = _FakeQdrant({})  # nessuna collection -> scroll solleva
+    cov = branch_coverage(conn, qc, chunks_collection=CHUNKS,
+                          visual_collection=VISUAL)
+    assert cov["structured"] == {"s"}
+    assert cov["narrative"] == set()
+    assert cov["visual"] == set()
+
+
+# --- il runner deve eseguire SOLO i rami mancanti, per documento -------------
+def test_resolve_branches_usa_il_piano_per_documento():
+    plan = {"a": {"narrative"}, "b": {"visual", "narrative"}}
+    assert resolve_branches("a", plan, {"structured", "narrative", "visual"}) == {
+        "narrative"
+    }
+    assert resolve_branches("b", plan, {"structured"}) == {"visual", "narrative"}
+
+
+def test_resolve_branches_fallback_sul_default_se_lo_stem_non_e_nel_piano():
+    assert resolve_branches("z", {}, {"structured"}) == {"structured"}
+    assert resolve_branches("z", None, {"visual"}) == {"visual"}

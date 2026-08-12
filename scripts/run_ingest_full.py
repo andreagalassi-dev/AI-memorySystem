@@ -2,8 +2,19 @@
 
 Orchestra l'orchestratore GIA' ESISTENTE `src/ingestion/ingest_full.py`
 (build_branches + ingest_document_full) su TUTTO il corpus, in modo ripartibile:
-i documenti gia' coperti (Postgres estrazione.righe_listino OR Qdrant aike_chunks)
-vengono saltati, cosi' un run interrotto puo' riprendere da dove si era fermato.
+un run interrotto riprende da dove si era fermato saltando cio' che e' gia' fatto.
+
+RIPARTIBILITA' PER-RAMO (non per-documento). La pipeline ha TRE rami indipendenti
+con TRE fonti di verita' distinte:
+    structured -> Postgres estrazione.righe_listino
+    narrative  -> Qdrant aike_chunks         (payload `doc`)
+    visual     -> Qdrant aike_pages_visual   (payload `doc`)
+La copertura si legge ramo per ramo: un documento e' pending se gli manca
+ALMENO UNO dei rami richiesti (--branches), e di quel documento si esegue SOLO
+il ramo mancante. Prima la copertura era l'UNIONE delle fonti (OR globale): un
+documento con righe di listino ma ZERO chunk risultava "coperto" e il suo ramo
+narrativo/visivo non entrava MAI in coda (misurati sul corpus reale: 28 doc
+`version_status=current`, 21434 righe di listino, 0 chunk e 0 pagine visive).
 
 Sicurezza: `--dry-run` NON scrive nulla (elenca solo i pending). I run veri
 li lancia il reviewer con snapshot.
@@ -33,7 +44,19 @@ if str(ROOT) not in sys.path:
 
 CENSUS_PATH = ROOT / "output" / "audit" / "b1_census_coverage.json"
 DEFAULT_PROGRESS = "output/audit/c3_ingest_progress.jsonl"
-CHUNKS_COLLECTION = "aike_chunks"
+BRANCHES = ("structured", "narrative", "visual")
+
+
+def default_chunks_collection() -> str:
+    """Collection narrativa reale: la costante usata dall'ingestion testuale."""
+    from src.ingestion.embedding import COLLECTION
+    return COLLECTION
+
+
+def default_visual_collection() -> str:
+    """Collection visiva reale: la costante usata dall'indice PixelRAG."""
+    from src.retrieval.pixelrag.index import DEFAULT_VISUAL_COLLECTION
+    return DEFAULT_VISUAL_COLLECTION
 
 
 # ----------------------------------------------------------------------------
@@ -42,6 +65,40 @@ CHUNKS_COLLECTION = "aike_chunks"
 def pending(candidates: list[str], covered: set[str]) -> list[str]:
     """Ritorna i candidates NON in covered, preservando l'ordine dato."""
     return [c for c in candidates if c not in covered]
+
+
+def pending_branches(
+    candidates: list[str],
+    coverage: dict[str, set[str]],
+    requested: set[str],
+) -> dict[str, set[str]]:
+    """{stem: rami RICHIESTI mancanti}, solo per gli stem cui ne manca almeno uno.
+
+    `coverage` e' per-ramo (vedi `branch_coverage`): un ramo non presente nella
+    mappa vale "niente coperto". Ordine dei candidates preservato (dict ordinato).
+    Uno stem con TUTTI i rami richiesti gia' fatti NON compare: e' la
+    ripartibilita', applicata al ramo e non piu' al documento intero.
+    """
+    out: dict[str, set[str]] = {}
+    for c in candidates:
+        missing = {b for b in requested if c not in coverage.get(b, set())}
+        if missing:
+            out[c] = missing
+    return out
+
+
+def resolve_branches(
+    stem: str,
+    branches_by_stem: dict[str, set[str]] | None,
+    default_selected: set[str],
+) -> set[str]:
+    """Rami da eseguire per UNO stem: il piano per-documento se c'e', altrimenti
+    la selezione globale (--branches)."""
+    if branches_by_stem:
+        sel = branches_by_stem.get(stem)
+        if sel is not None:
+            return set(sel)
+    return set(default_selected)
 
 
 def filter_by_coverage(
@@ -115,28 +172,18 @@ def load_census() -> dict[str, int]:
     return {row["stem"]: int(row["pages"]) for row in data}
 
 
-def covered_stems(conn, qc) -> set[str]:
-    """Unione dei doc gia' coperti: Postgres estrazione.righe_listino
-    (DISTINCT doc_stem) E Qdrant aike_chunks (payload key `doc`, i chunk
-    vecchi hanno doc_stem=None) via scroll."""
-    covered: set[str] = set()
+def _qdrant_docs(qc, collection: str) -> set[str]:
+    """Stem distinti presenti in una collection Qdrant (payload key `doc`,
+    i punti vecchi hanno doc_stem=None) via scroll paginato.
 
-    # Postgres: strutturato
-    try:
-        with conn.cursor() as cur:
-            cur.execute("SELECT DISTINCT doc_stem FROM estrazione.righe_listino")
-            for (stem,) in cur.fetchall():
-                if stem:
-                    covered.add(stem)
-    except Exception as exc:  # noqa: BLE001
-        print(f"WARN covered_stems postgres: {exc}", file=sys.stderr, flush=True)
-
-    # Qdrant: narrativo (payload `doc`)
+    Fail-soft: se la collection non esiste / Qdrant e' giu', WARN e insieme
+    VUOTO -> quel ramo risulta da fare (mai "coperto per errore")."""
+    docs: set[str] = set()
     try:
         offset = None
         while True:
             points, offset = qc.scroll(
-                CHUNKS_COLLECTION,
+                collection,
                 limit=1000,
                 offset=offset,
                 with_payload=["doc"],
@@ -145,13 +192,41 @@ def covered_stems(conn, qc) -> set[str]:
             for p in points:
                 doc = (p.payload or {}).get("doc")
                 if doc:
-                    covered.add(doc)
+                    docs.add(doc)
             if offset is None:
                 break
     except Exception as exc:  # noqa: BLE001
-        print(f"WARN covered_stems qdrant: {exc}", file=sys.stderr, flush=True)
+        print(f"WARN copertura qdrant {collection}: {exc}", file=sys.stderr, flush=True)
+    return docs
 
-    return covered
+
+def branch_coverage(
+    conn,
+    qc,
+    *,
+    chunks_collection: str | None = None,
+    visual_collection: str | None = None,
+) -> dict[str, set[str]]:
+    """Copertura PER-RAMO: {"structured"|"narrative"|"visual" -> set(stem)}.
+
+    Tre fonti distinte, MAI unite fra loro: Postgres estrazione.righe_listino
+    (DISTINCT doc_stem), Qdrant chunks, Qdrant pagine visive. Un OR fra queste
+    dichiarerebbe "coperto" un documento con un solo ramo fatto."""
+    structured: set[str] = set()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT DISTINCT doc_stem FROM estrazione.righe_listino")
+            for (stem,) in cur.fetchall():
+                if stem:
+                    structured.add(stem)
+    except Exception as exc:  # noqa: BLE001
+        print(f"WARN copertura postgres: {exc}", file=sys.stderr, flush=True)
+
+    return {
+        "structured": structured,
+        "narrative": _qdrant_docs(qc, chunks_collection or default_chunks_collection()),
+        "visual": _qdrant_docs(qc, visual_collection or default_visual_collection()),
+    }
 
 
 # ----------------------------------------------------------------------------
@@ -190,10 +265,15 @@ def run_batch(
     progress_path: str,
     role: str = "tecnico",
     branches_selected: set[str] | None = None,
+    branches_by_stem: dict[str, set[str]] | None = None,
 ) -> None:
     """Per ogni doc: build_branches + ingest_document_full; APPENDE una riga
     JSON a progress_path e stampa una riga tabella (flush). Un errore fatale
-    su un doc NON ferma il batch."""
+    su un doc NON ferma il batch.
+
+    `branches_by_stem` e' il piano PER-DOCUMENTO (rami mancanti): ha la
+    precedenza su `branches_selected`, che resta il default per gli stem non
+    nel piano. I rami esclusi diventano no-op via `select_branches`."""
     import psycopg
 
     from src.backend.clients.postgres_client import conninfo
@@ -202,7 +282,8 @@ def run_batch(
     prog = Path(progress_path)
     prog.parent.mkdir(parents=True, exist_ok=True)
 
-    header = f"{'doc_stem':45s} {'struct':>7s} {'narr':>6s} {'vis':>5s} {'sec':>7s}"
+    header = (f"{'doc_stem':45s} {'struct':>7s} {'narr':>6s} {'vis':>5s} "
+              f"{'sec':>7s}  rami")
     print(header, flush=True)
     print("-" * len(header), flush=True)
 
@@ -212,6 +293,11 @@ def run_batch(
         if pdf_path is None:
             print(f"{stem:45s}  SKIP: nessun path nel corpus", flush=True)
             continue
+        selected: set[str] | None = None
+        if branches_selected is not None or branches_by_stem:
+            selected = resolve_branches(
+                stem, branches_by_stem, branches_selected or set(BRANCHES)
+            )
         try:
             with psycopg.connect(conninfo()) as conn:
                 branches = build_branches(
@@ -228,8 +314,8 @@ def run_batch(
                     chunks_collection=chunks_collection,
                     visual_collection=visual_collection,
                 )
-                if branches_selected is not None:
-                    branches = select_branches(branches, branches_selected)
+                if selected is not None:
+                    branches = select_branches(branches, selected)
                 report = ingest_document_full(stem, **branches)
             secs = round(time.perf_counter() - t0, 2)
             row = {
@@ -239,6 +325,7 @@ def run_batch(
                 "visual_pages": report.visual_pages,
                 "scarti": report.scarti,
                 "secondi": secs,
+                "rami": sorted(selected) if selected is not None else sorted(BRANCHES),
             }
             with prog.open("a") as fh:
                 fh.write(json.dumps(row, ensure_ascii=False) + "\n")
@@ -246,12 +333,14 @@ def run_batch(
             print(
                 f"{stem:45s} {report.structured_rows:7d} "
                 f"{report.narrative_chunks:6d} {report.visual_pages:5d} "
-                f"{secs:7.2f}{flag}",
+                f"{secs:7.2f}  {','.join(row['rami'])}{flag}",
                 flush=True,
             )
         except Exception as exc:  # noqa: BLE001 -- un doc rotto non ferma il batch
             secs = round(time.perf_counter() - t0, 2)
-            row = {"doc_stem": stem, "error": f"{type(exc).__name__}: {exc}", "secondi": secs}
+            row = {"doc_stem": stem, "error": f"{type(exc).__name__}: {exc}",
+                   "secondi": secs,
+                   "rami": sorted(selected) if selected is not None else sorted(BRANCHES)}
             with prog.open("a") as fh:
                 fh.write(json.dumps(row, ensure_ascii=False) + "\n")
             print(f"{stem:45s}  ERRORE: {type(exc).__name__}: {exc}", flush=True)
@@ -283,18 +372,20 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--stems", type=str, default="",
                     help="Sottoinsieme esplicito, stem separati da virgola.")
     ap.add_argument("--force", action="store_true",
-                    help="NON filtrare i candidates per copertura: processa anche i doc "
-                         "gia' coperti (per completare rami mancanti).")
+                    help="NON filtrare per copertura: processa TUTTI i candidates e su "
+                         "ognuno esegue TUTTI i rami di --branches, anche quelli gia' fatti "
+                         "(re-ingest volontario). Senza --force i rami gia' fatti sono saltati.")
     ap.add_argument("--branches", type=str, default="structured,narrative,visual",
-                    help="Rami da eseguire (CSV: structured,narrative,visual). I rami "
-                         "esclusi diventano no-op. Default: tutti e tre.")
+                    help="Rami RICHIESTI (CSV: structured,narrative,visual). Un doc e' "
+                         "pending se gliene manca almeno uno; di quel doc si esegue solo "
+                         "il ramo mancante. Default: tutti e tre.")
     ap.add_argument("--dry-run", action="store_true",
                     help="Stampa i pending che processerebbe ed ESCE senza scrivere nulla.")
     ap.add_argument("--progress", type=str, default=DEFAULT_PROGRESS,
                     help=f"File JSONL di progresso (default {DEFAULT_PROGRESS}).")
     ap.add_argument("--schema", type=str, default="estrazione")
     ap.add_argument("--chunks-collection", type=str, default=None)
-    ap.add_argument("--visual-collection", type=str, default="aike_pages_visual")
+    ap.add_argument("--visual-collection", type=str, default=None)
     args = ap.parse_args(argv)
 
     if args.only_giants and args.exclude_giants:
@@ -303,25 +394,38 @@ def main(argv: list[str] | None = None) -> int:
 
     candidates, corpus = _select_candidates(args)
 
-    # copertura (I/O)
+    # rami richiesti (--branches): servono PRIMA della copertura, che e' per-ramo.
+    branches_selected = {b.strip() for b in args.branches.split(",") if b.strip()}
+    unknown = branches_selected - set(BRANCHES)
+    if unknown:
+        print(f"ERRORE: rami sconosciuti in --branches: {sorted(unknown)} "
+              f"(validi: {sorted(BRANCHES)})", file=sys.stderr)
+        return 2
+
+    visual_collection = args.visual_collection or default_visual_collection()
+
+    # copertura PER-RAMO (I/O, sola lettura)
     from src.backend.clients.postgres_client import conninfo
     from src.backend.clients.qdrant_client import get_qdrant_client
     import psycopg
 
     qc = get_qdrant_client()
     with psycopg.connect(conninfo()) as conn:
-        covered = covered_stems(conn, qc)
+        coverage = branch_coverage(
+            conn, qc,
+            chunks_collection=args.chunks_collection,
+            visual_collection=visual_collection,
+        )
 
-    todo = filter_by_coverage(candidates, covered, force=args.force)
-
-    # rami selezionati (--branches)
-    valid_branches = {"structured", "narrative", "visual"}
-    branches_selected = {b.strip() for b in args.branches.split(",") if b.strip()}
-    unknown = branches_selected - valid_branches
-    if unknown:
-        print(f"ERRORE: rami sconosciuti in --branches: {sorted(unknown)} "
-              f"(validi: {sorted(valid_branches)})", file=sys.stderr)
-        return 2
+    # pending = manca almeno UNO dei rami richiesti; il valore e' cosa manca.
+    missing = pending_branches(candidates, coverage, branches_selected)
+    fully_covered = {s for s in candidates if s not in missing}
+    todo = filter_by_coverage(candidates, fully_covered, force=args.force)
+    # piano per-documento: senza --force solo i rami mancanti; con --force tutti
+    # i rami richiesti (re-ingest volontario).
+    plan = {
+        s: (set(branches_selected) if args.force else missing[s]) for s in todo
+    }
 
     # partizione giganti/normali
     census = load_census()
@@ -338,12 +442,15 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.dry_run:
         kind = "GIGANTI" if args.only_giants else "NORMALI"
-        print(f"[dry-run] candidates={len(candidates)} coperti={len(covered)} "
-              f"force={args.force} todo={len(todo)} normali={len(normali)} giganti={len(giganti)}")
-        print(f"[dry-run] rami={sorted(branches_selected)}")
+        cov_line = " ".join(f"{b}={len(coverage[b])}" for b in BRANCHES)
+        print(f"[dry-run] candidates={len(candidates)} coperti_per_ramo[{cov_line}] "
+              f"completi={len(fully_covered)} force={args.force} todo={len(todo)} "
+              f"normali={len(normali)} giganti={len(giganti)}")
+        print(f"[dry-run] rami richiesti={sorted(branches_selected)}")
         print(f"[dry-run] processerebbe {len(selected)} documenti ({kind}):")
         for s in selected:
-            print(f"  {s}  ({doc_pages(census, s)} pag)")
+            rami = ",".join(sorted(plan.get(s, branches_selected)))
+            print(f"  {s}  ({doc_pages(census, s)} pag)  rami_mancanti={rami}")
         print("[dry-run] NESSUNA scrittura eseguita.")
         return 0
 
@@ -358,9 +465,10 @@ def main(argv: list[str] | None = None) -> int:
         deps,
         schema=args.schema,
         chunks_collection=args.chunks_collection,
-        visual_collection=args.visual_collection,
+        visual_collection=visual_collection,
         progress_path=args.progress,
         branches_selected=branches_selected,
+        branches_by_stem=plan,
     )
     return 0
 
