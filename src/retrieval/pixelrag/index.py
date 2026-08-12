@@ -205,19 +205,22 @@ class QdrantVisualIndex:
                 musts.extend(hint_filter.must)
             combined_filter = models.Filter(must=musts)
             
+        # Se la query nomina un documento indicizzato, la ricerca resta DENTRO quel
+        # documento e il risultato non si tocca. Prima, sotto le 10 pagine distinte,
+        # si rifaceva la ricerca senza hint e si BUTTAVA il risultato filtrato:
+        # quella soglia confondeva "poche pagine distinte" con "filtro sbagliato",
+        # mentre su un documento piccolo poche pagine distinte sono l'esito CORRETTO.
+        # Misurato (12/08): lo scarto colpisce 6 query su 34 appena `doc_hint_filter`
+        # diventa preciso, e ne rompe 3 che erano giuste (V008, CV06, CV15) —
+        # piu' il filtro e' buono, piu' lo scarto fa danno.
+        # Non si "completa" nemmeno con risultati globali: `k` e' il pool di TILE del
+        # reranker (300), riempirlo di tile estranei lo diluisce e spinge fuori le
+        # pagine giuste (misurato: golden R@3 0.667 -> 0.467). Se il filtro rende
+        # poco, il posto giusto per rimediare e' `doc_hint_filter`, non qui.
         res = self._client.query_points(
             self._collection, query=query_vector, query_filter=combined_filter,
             limit=k, with_payload=True)
-            
-        if hint_filter is not None:
-            # Fallback logic: check distinct pages
-            distinct_pages = len({(p.payload.get("doc"), p.payload.get("page")) 
-                                 for p in res.points if p.payload and "doc" in p.payload and "page" in p.payload})
-            if distinct_pages < 10:
-                res = self._client.query_points(
-                    self._collection, query=query_vector, query_filter=base_filter,
-                    limit=k, with_payload=True)
-                    
+
         hits = []
         for sp in res.points:
             pl = sp.payload or {}

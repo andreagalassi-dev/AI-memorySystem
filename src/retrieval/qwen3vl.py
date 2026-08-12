@@ -12,6 +12,7 @@ prima chiamata reale, dopo che il ModelMultiplexer ha garantito lo spazio RAM/VR
 
 from __future__ import annotations
 
+import re
 from functools import lru_cache
 
 QWEN3VL_MODEL = "Qwen/Qwen3-VL-Embedding-2B"
@@ -109,14 +110,52 @@ def _indexed_docs_cache() -> tuple[str, ...]:
             return tuple(sorted(docs))
 
 
+HINT_MIN_TOKEN_LEN = 3
+
+
+def _word_parts(text: str) -> list[str]:
+    """Spezza su tutto cio' che non e' alfanumerico -> parole minuscole.
+
+    Stessa funzione per la query e per lo stem del documento, cosi' i due lati si
+    confrontano nello stesso alfabeto: `kbs_gastrotechnik_4055041` ->
+    {kbs, gastrotechnik, 4055041}, `(KBS Gastrotechnik)` -> {kbs, gastrotechnik}.
+    """
+    return [p for p in re.split(r"[^0-9a-zA-Z]+", text.lower()) if p]
+
+
 def doc_hint_filter(query: str):
-    """Filtro deterministico: token della query che matchano il NOME documento."""
+    """Filtro deterministico: token della query che nominano un DOCUMENTO indicizzato.
+
+    Un token e' un hint se coincide con una PAROLA INTERA del nome-documento.
+    Due difetti strutturali corretti il 12/08, entrambi misurati sui set di eval:
+
+    1. Il match era per SOTTOSTRINGA sullo stem intero, quindi 'der' (articolo
+       tedesco, 3 lettere) pescava `as_schneider`, `centro_siderurgico` e
+       `crusader_marine`. Confrontare PAROLE INTERE elimina la classe di rumore
+       senza bisogno di una stoplist: e' il corpus a dire cosa e' una parola, non
+       un elenco da manutenere.
+    2. Il pre-filtro `t.isalpha()` non scartava la punteggiatura: scartava i TOKEN
+       che la contengono. Su «... (KBS Gastrotechnik)» buttava via proprio i due
+       token buoni e teneva 'der', producendo un filtro che ESCLUDEVA il documento
+       atteso — un fail-closed che nasconde la risposta giusta. Ora la
+       punteggiatura si normalizza (`_word_parts`), e i token numerici o misti
+       ('BL200', '4520R') diventano hint legittimi invece di essere scartati.
+
+    Nota sulla document-frequency: si e' valutato di scartare i token che matchano
+    "troppi" documenti (rumore di genere: 'catalogo' df 16, 'listino' df 15). NON
+    adottato: qualunque soglia stretta abbastanza da tagliare quel rumore (df < 5)
+    ributta fuori i marchi veri, perche' 'kbs', 'gastrotechnik' e 'iwaki' hanno df
+    esattamente 5 — e reintroduce il difetto 2 su V009 e CV16. La df confonde
+    "marchio con molti cataloghi" con "parola di genere".
+
+    Fail-OPEN: se nessun documento matcha si torna None (ricerca globale), mai un
+    filtro vuoto. Il controllo d'accesso e' l'altro filtro (RBAC), quello fail-closed.
+    """
     from qdrant_client import models
 
-    tokens = {t.lower() for t in query.replace("-", " ").split()
-               if len(t) >= 3 and t.isalpha()}
+    tokens = {t for t in _word_parts(query) if len(t) >= HINT_MIN_TOKEN_LEN}
     matched = [d for d in _indexed_docs_cache()
-               if any(tok in d.lower() for tok in tokens)]
+               if tokens & set(_word_parts(d))]
     if not matched:
         return None
     return models.Filter(must=[models.FieldCondition(
