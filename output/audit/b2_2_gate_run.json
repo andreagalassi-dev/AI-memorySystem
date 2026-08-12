@@ -28,10 +28,10 @@
     }
   },
   "run": {
-    "generated_at": "2026-08-12T11:18:12",
+    "generated_at": "2026-08-12T17:20:41",
     "dataset": "data/golden/golden_v1.jsonl",
     "n_queries": 42,
-    "elapsed_s": 1291.9
+    "elapsed_s": 1416.4
   },
   "results": {
     "C001": {
@@ -44,7 +44,7 @@
       },
       "runs": [
         {
-          "latency": 10.722673177719116,
+          "latency": 12.30434775352478,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -75,7 +75,7 @@
       },
       "runs": [
         {
-          "latency": 2.701118230819702,
+          "latency": 2.5831990242004395,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -106,7 +106,7 @@
       },
       "runs": [
         {
-          "latency": 1.7629387378692627,
+          "latency": 1.669830083847046,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -138,7 +138,7 @@
       },
       "runs": [
         {
-          "latency": 1.6728131771087646,
+          "latency": 1.5673482418060303,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -169,7 +169,7 @@
       },
       "runs": [
         {
-          "latency": 2.5648140907287598,
+          "latency": 2.3498239517211914,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -200,7 +200,7 @@
       },
       "runs": [
         {
-          "latency": 1.8165409564971924,
+          "latency": 1.731727123260498,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -231,7 +231,7 @@
       },
       "runs": [
         {
-          "latency": 1.8453099727630615,
+          "latency": 1.7711818218231201,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -262,7 +262,7 @@
       },
       "runs": [
         {
-          "latency": 1.3997159004211426,
+          "latency": 1.4677157402038574,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -293,7 +293,7 @@
       },
       "runs": [
         {
-          "latency": 2.0165090560913086,
+          "latency": 1.8964550495147705,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -324,7 +324,7 @@
       },
       "runs": [
         {
-          "latency": 1.8665096759796143,
+          "latency": 1.6890041828155518,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -355,7 +355,7 @@
       },
       "runs": [
         {
-          "latency": 2.11152720451355,
+          "latency": 1.9564011096954346,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -386,7 +386,7 @@
       },
       "runs": [
         {
-          "latency": 1.936039924621582,
+          "latency": 2.0090928077697754,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -417,7 +417,7 @@
       },
       "runs": [
         {
-          "latency": 1.8510499000549316,
+          "latency": 1.8412401676177979,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -448,7 +448,7 @@
       },
       "runs": [
         {
-          "latency": 1.7863812446594238,
+          "latency": 1.7506909370422363,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -479,7 +479,7 @@
       },
       "runs": [
         {
-          "latency": 1.8906681537628174,
+          "latency": 1.755223035812378,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -511,7 +511,7 @@
       },
       "runs": [
         {
-          "latency": 129.00813484191895,
+          "latency": 122.81317496299744,
           "final_level": "BASSA",
           "hit": false,
           "status": "MISS",
@@ -537,7 +537,7 @@
       },
       "runs": [
         {
-          "latency": 70.23292970657349,
+          "latency": 65.69790697097778,
           "final_level": "MEDIA",
           "hit": true,
           "status": "PASS",
@@ -576,7 +576,7 @@
       },
       "runs": [
         {
-          "latency": 68.9546492099762,
+          "latency": 64.65896320343018,
           "final_level": "BASSA",
           "hit": false,
           "status": "MISS",
@@ -602,7 +602,7 @@
       },
       "runs": [
         {
-          "latency": 69.1781439781189,
+          "latency": 64.90542197227478,
           "final_level": "MEDIA",
           "hit": true,
           "status": "PASS",
@@ -641,7 +641,7 @@
       },
       "runs": [
         {
-          "latency": 69.12056708335876,
+          "latency": 64.73507404327393,
           "final_level": "MEDIA",
           "hit": true,
           "status": "PASS",
@@ -680,7 +680,7 @@
       },
       "runs": [
         {
-          "latency": 70.20544266700745,
+          "latency": 65.8182590007782,
           "final_level": "BASSA",
           "hit": false,
           "status": "MISS",
@@ -706,7 +706,7 @@
       },
       "runs": [
         {
-          "latency": 70.8682758808136,
+          "latency": 65.74435210227966,
           "final_level": "BASSA",
           "hit": false,
           "status": "MISS",
@@ -732,7 +732,7 @@
       },
       "runs": [
         {
-          "latency": 70.26385474205017,
+          "latency": 11.446787118911743,
           "final_level": "BASSA",
           "hit": false,
           "status": "MISS",
@@ -758,7 +758,7 @@
       },
       "runs": [
         {
-          "latency": 71.10406184196472,
+          "latency": 66.8406331539154,
           "final_level": "BASSA",
           "hit": false,
           "status": "MISS",
@@ -784,7 +784,7 @@
       },
       "runs": [
         {
-          "latency": 71.72377109527588,
+          "latency": 64.69714307785034,
           "final_level": "BASSA",
           "hit": false,
           "status": "MISS",
@@ -810,7 +810,7 @@
       },
       "runs": [
         {
-          "latency": 66.80446219444275,
+          "latency": 66.05028104782104,
           "final_level": "MEDIA",
           "hit": true,
           "status": "PASS",
@@ -849,7 +849,7 @@
       },
       "runs": [
         {
-          "latency": 66.64124584197998,
+          "latency": 65.85184502601624,
           "final_level": "BASSA",
           "hit": false,
           "status": "MISS",
@@ -875,7 +875,7 @@
       },
       "runs": [
         {
-          "latency": 66.0970470905304,
+          "latency": 66.23836398124695,
           "final_level": "MEDIA",
           "hit": true,
           "status": "PASS",
@@ -890,8 +890,8 @@
               214
             ],
             [
-              "rimoldi_327_spareparts",
-              23
+              "ercos_ricambi_accessori_listino_2025",
+              17
             ]
           ]
         }
@@ -914,7 +914,7 @@
       },
       "runs": [
         {
-          "latency": 66.28859996795654,
+          "latency": 65.51640510559082,
           "final_level": "MEDIA",
           "hit": false,
           "status": "MISS",
@@ -953,7 +953,7 @@
       },
       "runs": [
         {
-          "latency": 65.86162781715393,
+          "latency": 64.99503993988037,
           "final_level": "MEDIA",
           "hit": true,
           "status": "PASS",
@@ -990,7 +990,7 @@
       },
       "runs": [
         {
-          "latency": 46.32101511955261,
+          "latency": 41.37592029571533,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS",
@@ -1003,7 +1003,7 @@
           ]
         },
         {
-          "latency": 13.847685098648071,
+          "latency": 16.732044219970703,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS",
@@ -1016,7 +1016,7 @@
           ]
         },
         {
-          "latency": 4.110824823379517,
+          "latency": 5.937426805496216,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS",
@@ -1045,7 +1045,7 @@
       },
       "runs": [
         {
-          "latency": 20.561731100082397,
+          "latency": 19.89410424232483,
           "final_level": "MEDIA",
           "hit": true,
           "status": "PASS",
@@ -1058,7 +1058,7 @@
           ]
         },
         {
-          "latency": 13.433005094528198,
+          "latency": 15.968166828155518,
           "final_level": "MEDIA",
           "hit": true,
           "status": "PASS",
@@ -1071,7 +1071,7 @@
           ]
         },
         {
-          "latency": 6.95884108543396,
+          "latency": 7.444303750991821,
           "final_level": "MEDIA",
           "hit": true,
           "status": "PASS",
@@ -1100,7 +1100,7 @@
       },
       "runs": [
         {
-          "latency": 19.347193717956543,
+          "latency": 21.87488579750061,
           "final_level": "BASSA",
           "hit": false,
           "status": "MISS",
@@ -1108,7 +1108,7 @@
           "real_citations": []
         },
         {
-          "latency": 6.677973031997681,
+          "latency": 71.5219099521637,
           "final_level": "BASSA",
           "hit": false,
           "status": "MISS",
@@ -1116,7 +1116,7 @@
           "real_citations": []
         },
         {
-          "latency": 3.31789493560791,
+          "latency": 105.24658417701721,
           "final_level": "BASSA",
           "hit": false,
           "status": "MISS",
@@ -1137,7 +1137,7 @@
       "expected": {},
       "runs": [
         {
-          "latency": 6.727030038833618,
+          "latency": 65.21134805679321,
           "final_level": "BASSA",
           "hit": true,
           "status": "PASS",
@@ -1162,7 +1162,7 @@
       },
       "runs": [
         {
-          "latency": 1.6992878913879395,
+          "latency": 1.9496891498565674,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -1193,7 +1193,7 @@
       },
       "runs": [
         {
-          "latency": 1.7105426788330078,
+          "latency": 1.8136482238769531,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -1224,7 +1224,7 @@
       },
       "runs": [
         {
-          "latency": 1.6946310997009277,
+          "latency": 1.6974310874938965,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -1255,7 +1255,7 @@
       },
       "runs": [
         {
-          "latency": 1.8386690616607666,
+          "latency": 1.7120108604431152,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -1286,7 +1286,7 @@
       },
       "runs": [
         {
-          "latency": 1.756197214126587,
+          "latency": 1.704970121383667,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -1317,7 +1317,7 @@
       },
       "runs": [
         {
-          "latency": 1.9931137561798096,
+          "latency": 2.233879804611206,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -1348,7 +1348,7 @@
       },
       "runs": [
         {
-          "latency": 0.20237398147583008,
+          "latency": 0.12667608261108398,
           "final_level": "BASSA",
           "hit": true,
           "status": "PASS",
@@ -1373,7 +1373,7 @@
       },
       "runs": [
         {
-          "latency": 9.141644954681396,
+          "latency": 9.085139274597168,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",

@@ -611,6 +611,7 @@ def build_default_deps(role: Role, *, llm=None, visual_search=None) -> Deps:
     from qdrant_client import models
 
     from src.backend.clients.qdrant_client import get_qdrant_client
+    from src.retrieval.catalog import get_pg_catalog, make_catalog_lookup
     from src.retrieval.confidence import CALIBRATED_V1
     from src.retrieval.rerank import RERANK_TOPK, _reranker
     from src.retrieval.search import access_filter, search
@@ -691,11 +692,6 @@ def build_default_deps(role: Role, *, llm=None, visual_search=None) -> Deps:
 
         return retrieve
 
-    def catalog_lookup(key: str) -> bool:
-        r = qc.count("aike_chunks", exact=True, count_filter=models.Filter(
-            must=[models.FieldCondition(key="code", match=models.MatchValue(value=key))]))
-        return r.count > 0
-
     def synthesize(query: str, ev: list[Evidence]) -> str:
         return _synth(llm, query, [e._asdict() for e in ev])
 
@@ -713,12 +709,22 @@ def build_default_deps(role: Role, *, llm=None, visual_search=None) -> Deps:
         with psycopg.connect(cinfo):
             pass # probe veloce: se il DB non e' raggiungibile degrada
         sql_query = PgSqlExecutor(cinfo)
+        # Stesso percorso read-only anche per il lookup di catalogo del guardrail: la
+        # fonte di verita' dei codici e' `estrazione.righe_listino` (SSOT), non la sua
+        # proiezione in Qdrant. Vedi src/retrieval/catalog.py.
+        pg_catalog = get_pg_catalog(cinfo)
     except Exception as e:
         logger.warning(
             "Ramo STRUCTURED degradato: %s (%s). Fallback a NARRATIVE.",
             type(e).__name__, e, exc_info=True
         )
         sql_query = None
+        pg_catalog = None
+
+    # Guardrail: un codice esiste a catalogo se e' nella SSOT Postgres OPPURE nella
+    # proiezione Qdrant. Senza la SSOT (Postgres giu') resta il solo controllo Qdrant,
+    # cioe' il comportamento storico.
+    catalog_lookup = make_catalog_lookup(qc, pg_catalog)
 
     if visual_search is None:
         # Fase 1.3 — ramo VISUAL: retrieval PixelRAG reale su `aike_pages_visual`
