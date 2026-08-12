@@ -24,7 +24,7 @@ from src.common.roles import Role, parse_role
 from src.graph.llm import LanguageModel
 from src.graph.render import SYSTEM_RENDER, build_render_prompt, verify_price_grounding
 from src.graph.tools.sql_tool import LookupRow, SqlExecutor, SqlParams, extract_params
-from src.graph.tools.page_judge import REFUSE_NONE_TAG, REFUSE_OTHER_TAG
+from src.graph.tools.page_judge import OTHER_PAGE_TAG, REFUSE_NONE_TAG
 from src.graph.tools.visual_tool import format_visual_answer, visual_citations
 from src.retrieval.pixelrag.index import PageHit
 from src.retrieval.confidence import (Signals, Thresholds, compute_margin,
@@ -320,23 +320,27 @@ def visual_node(state: GraphState, deps: Deps) -> dict:
             verdict = None
         if verdict is not None:
             top = f"{pages[0].doc} p.{pages[0].page}"
-            motivo = None
             if verdict.decision == "REFUSE":
-                motivo = f"{REFUSE_NONE_TAG} — {verdict.reason}"
-            elif verdict.decision == "CONFIRM" and verdict.chosen_index:
-                # Regola STRETTA: il giudice conferma il documento ma NON la pagina
-                # in cima. Rifiutiamo — che NON e' riordinare: la pagina indicata
-                # non viene promossa, semplicemente non rispondiamo.
-                chosen = pages[verdict.chosen_index]
-                motivo = (f"{REFUSE_OTHER_TAG} — indica {chosen.doc} p.{chosen.page} "
-                          f"({verdict.reason})")
-            if motivo is not None:
+                # NESSUNA: nessuna delle pagine che mostreremmo e' pertinente.
+                # E' l'UNICO motivo di rifiuto.
                 return {"visual_pages": [], "citations": [], "level": "BASSA",
                         "audit": _audit(state, f"visual: giudice pagina RIFIUTA {top} "
-                                               f"— {motivo} -> non lo so")}
+                                               f"— {REFUSE_NONE_TAG} — {verdict.reason} "
+                                               f"-> non lo so")}
             if verdict.decision == "SKIP":
                 audit_extra.append(f"visual: giudice pagina SALTATO ({verdict.reason}) "
                                    f"-> nessun blocco")
+            elif verdict.chosen_index:
+                # Il giudice indica una pagina diversa dalla prima. NON e' un
+                # rifiuto: quella pagina e' fra le 3 che l'utente vede comunque,
+                # quindi la risposta contiene gia' la risposta (vedi page_judge,
+                # "Perche' ALTRA_PAGINA NON rifiuta": la regola stretta costava
+                # V004/V011/V015 PASS->MISS al golden gate). Solo diagnostica.
+                chosen = pages[verdict.chosen_index]
+                audit_extra.append(
+                    f"visual: giudice pagina {OTHER_PAGE_TAG} — indica {chosen.doc} "
+                    f"p.{chosen.page} invece di {top}, ma e' gia' fra le pagine "
+                    f"mostrate: nessun rifiuto, nessun riordino")
 
     audit = _audit(state, f"visual: {len(pages)} pagina/e -> MEDIA") + audit_extra
     return {"visual_pages": pages, "answer": format_visual_answer(pages),

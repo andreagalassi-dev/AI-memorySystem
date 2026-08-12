@@ -53,11 +53,29 @@ def _visual_rerank_enabled() -> bool:
 def _page_judge_enabled() -> bool:
     """Gate del verificatore di pertinenza della pagina (ramo visivo).
 
-    AIKE_VISUAL_PAGE_JUDGE = "0"/"false" -> spento. Qualunque altro valore
-    (assente incluso) -> ACCESO: e' l'unica difesa contro il confident-wrong
-    visivo, quindi il default sicuro e' 'attivo'.
+    AIKE_VISUAL_PAGE_JUDGE = "1"/"true" -> acceso. Assente o qualunque altro
+    valore -> SPENTO.
+
+    Il default e' OFF perche' MISURATO in perdita sul metro del progetto. Il
+    gate conta una risposta corretta se la pagina attesa e' fra quelle CITATE
+    (`citation_ok` sulla lista, non sul top-1) e il ramo visivo ne mostra 3.
+    Con quella definizione, sulle 34 query dei due truth set il giudice elimina
+    **0** confident-wrong e ne perde **2** (V011, CV09), al costo di +12.6% di
+    tempo sul carico misto. Non e' tarabile con un prompt piu' permissivo: le
+    due perdite sono `NESSUNA` su casi in cui la pagina giusta era gia' mostrata
+    (V011 = copertina in cima ma tavola giusta in terza posizione; CV09 = tre
+    modelli 250/500/1200 e domanda ambigua), quindi allentare il giudice lo
+    spegnerebbe con piu' passaggi.
+
+    Il codice resta in piedi, testato e spento: manca il SEGNALE che lo
+    renderebbe utile, cioe' distinguere una COPERTINA di catalogo da una TAVOLA
+    (l'unico confident-wrong vero rimasto, V014, e' la copertina Rimoldi, e il
+    giudice la conferma). Vedi `src/graph/tools/page_judge.py`, sezione sul
+    limite noto: le tavole portano sempre un identificatore di figura
+    (`FIG`, `Figure`, `TAV`), le copertine mai — da validare sul corpus prima
+    di cablarlo.
     """
-    return os.getenv("AIKE_VISUAL_PAGE_JUDGE", "1").strip().lower() not in ("0", "false")
+    return os.getenv("AIKE_VISUAL_PAGE_JUDGE", "0").strip().lower() in ("1", "true")
 
 
 _LLM_EXECUTOR = concurrent.futures.ThreadPoolExecutor(max_workers=1, thread_name_prefix="LLMProxy")

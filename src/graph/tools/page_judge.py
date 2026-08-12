@@ -16,23 +16,46 @@ SI' a qualunque verifica). Il modello TESTUALE a scelta chiusa invece funziona:
 
 Contratto: puo' SOLO aggiungere rifiuti
 ---------------------------------------
-  - `REFUSE`  -> il nodo visivo degrada a BASSA ("non lo so"), citazioni vuote;
-  - `CONFIRM` con `chosen_index == 0` -> comportamento invariato;
-  - `CONFIRM` su una pagina DIVERSA dalla prima -> **anche questo e' un rifiuto**
-    (regola stretta). Il disaccordo sul QUALE e' un segnale forte quanto il
-    NESSUNA: e' misurato — la regola conservativa (rifiuta solo su NESSUNA)
-    faceva 1 confident-wrong eliminato contro 1 risposta corretta persa, quella
-    stretta 4 contro 3. Rifiutare NON e' riordinare: la pagina indicata dal
-    giudice non viene MAI promossa, semplicemente non si risponde. I due motivi
-    restano distinti nell'audit (`REFUSE_NONE_TAG` / `REFUSE_OTHER_TAG`) perche'
-    sono diagnostiche diverse: "nessuna di queste pagine" e' un fallimento del
-    retrieval, "e' un'altra di queste" e' un fallimento dell'ORDINAMENTO;
+  - `REFUSE` (= NESSUNA) -> il nodo visivo degrada a BASSA ("non lo so"),
+    citazioni vuote. E' l'UNICO motivo di rifiuto;
+  - `CONFIRM`, qualunque sia la pagina indicata -> si risponde come prima. Se la
+    pagina indicata non e' la prima, resta una riga di audit con `OTHER_PAGE_TAG`
+    (vedi sotto: e' diagnostica, non un rifiuto);
   - `SKIP`    -> non blocca. E' il degrado PERMISSIVO sull'infrastruttura:
     cartiglio assente, LLM non cablato, errore o timeout del modello. Un guasto
     non deve fabbricare rifiuti.
 
 Fail-closed dove conta: sul PARSING. Una risposta fuori dall'insieme chiuso
 (lettera inesistente, testo libero, due lettere) vale NESSUNA, mai conferma.
+
+Perche' ALTRA_PAGINA NON rifiuta (non ripristinare la "regola stretta")
+-----------------------------------------------------------------------
+Una versione precedente rifiutava anche quando il giudice indicava una pagina
+diversa dalla prima. Sembrava un irrigidimento della sicurezza. **Era una perdita
+netta, e il golden gate l'ha smascherata**: 3 query cambiate, tutte in peggio —
+`V004`, `V011`, `V015` da `PASS/MEDIA` a `MISS/BASSA`, distribuzione da
+`PASS 10 / MISS 10` a `PASS 7 / MISS 13`, zero guadagni.
+
+Il difetto e' di ragionamento, non di taratura, e nessuna soglia lo aggiusta:
+
+  1. il ramo visivo mostra all'utente fino a `VISUAL_K = 3` pagine, e il metro
+     del progetto (`citation_ok` del gate) conta come corretta una risposta in
+     cui la pagina attesa e' fra **quelle citate**, non solo in cima;
+  2. il giudice sceglie **fra le candidate che gli passiamo**, cioe' esattamente
+     quelle tre. Quindi `ALTRA_PAGINA` significa, alla lettera: "la pagina giusta
+     e' una di quelle che stiamo gia' mostrando, solo non e' la prima".
+
+L'utente la vede comunque. Rifiutare li' non elimina un errore: **butta via una
+risposta che conteneva la risposta**. Nei tre casi `ALTRA_PAGINA` del golden la
+pagina indicata dal giudice era esattamente il gold ed era gia' a schermo
+(`V004` -> gehl p.94, `V015` -> kohler_marine p.14, `CV10` -> bell p.19).
+
+`NESSUNA` resta invece un rifiuto legittimo: dice che **nessuna** delle pagine
+mostrate va bene, e li' "non lo so" e' l'unica risposta onesta.
+
+La riga `OTHER_PAGE_TAG` resta perche' misura una cosa reale e diversa — quante
+volte il primo posto e' sbagliato pur avendo la risposta in lista — ed e' il dato
+su cui si deciderebbe un eventuale RIORDINO, che e' il vero rimedio a quel caso.
 
 Limite noto: le COPERTINE dei cataloghi ricambi
 -----------------------------------------------
@@ -70,10 +93,11 @@ MAX_JUDGE_PAGES = 3
 LETTERS = "ABC"
 NO_TITLE = "(testo della pagina non disponibile)"
 
-# Marcatori dei DUE motivi di rifiuto, pensati per essere grep-abili senza
-# interpretare prosa: contano cose diverse e vanno diagnosticate separatamente.
-REFUSE_NONE_TAG = "motivo=NESSUNA"        # nessuna delle pagine recuperate va bene
-REFUSE_OTHER_TAG = "motivo=ALTRA_PAGINA"  # una va bene, ma non e' quella in cima
+# Marcatori grep-abili, per non dover interpretare prosa a valle. Uno solo dei due
+# e' un motivo di RIFIUTO: l'altro e' pura diagnostica (vedi docstring, sezione
+# "Perche' ALTRA_PAGINA non rifiuta").
+REFUSE_NONE_TAG = "motivo=NESSUNA"      # nessuna pagina mostrata va bene -> RIFIUTO
+OTHER_PAGE_TAG = "nota=ALTRA_PAGINA"    # una va bene ma non e' la prima -> si risponde
 
 # Prompt MISURATO. Una prima versione chiudeva con "nel dubbio rispondi NESSUNA":
 # su 21 risposte visive del truth set rifiutava 4 pagine CORRETTE per eliminare 2

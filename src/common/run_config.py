@@ -109,7 +109,7 @@ def effective_config(deps: Any | None = None) -> dict:
         judge_source = "previsto"
     raw_judge = os.getenv("AIKE_VISUAL_PAGE_JUDGE")
     judge_reason = (f"env AIKE_VISUAL_PAGE_JUDGE={raw_judge!r}" if raw_judge is not None
-                    else "env AIKE_VISUAL_PAGE_JUDGE assente (default ON)")
+                    else "env AIKE_VISUAL_PAGE_JUDGE assente (default OFF)")
 
     try:
         from src.ingestion.embedding import COLLECTION as TEXT_COLLECTION

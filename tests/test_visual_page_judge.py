@@ -24,12 +24,12 @@ import fitz
 
 from src.graph.llm import FakeLLM
 from src.graph.pipeline import Deps, answer, visual_node
-from src.graph.tools.page_judge import (REFUSE_NONE_TAG, REFUSE_OTHER_TAG,
+from src.graph.tools.page_judge import (OTHER_PAGE_TAG, REFUSE_NONE_TAG,
                                         JudgeOutcome, build_judge_prompt,
                                         make_page_judge, parse_judge_verdict)
 from src.retrieval.confidence import Thresholds
 from src.retrieval.pixelrag.index import PageHit
-from src.retrieval.synthesis import REFUSAL
+from src.retrieval.synthesis import REFUSAL, extract_citations
 
 _T = Thresholds(tau_hi=0.5, tau_lo=0.2)
 
@@ -259,7 +259,7 @@ class TestVisualNodeConGiudice:
         # i due motivi di rifiuto sono diagnostiche DIVERSE: devono restare
         # distinguibili a valle senza interpretare prosa
         assert any(REFUSE_NONE_TAG in a for a in out["audit"])
-        assert not any(REFUSE_OTHER_TAG in a for a in out["audit"])
+        assert not any(OTHER_PAGE_TAG in a for a in out["audit"])
 
     def test_giudice_conferma_media_invariata(self):
         judge = lambda q, pages: JudgeOutcome("CONFIRM", 0, "A")
@@ -270,34 +270,36 @@ class TestVisualNodeConGiudice:
         assert out["citations"] == [("branson_4520R_parts", 69),
                                     ("branson_4520R_parts", 22)]
 
-    def test_giudice_indica_altra_pagina_rifiuta_senza_riordinare(self):
-        # REGOLA STRETTA: il disaccordo sul QUALE e' esso stesso un motivo di
-        # rifiuto. Rifiutare NON e' riordinare: la pagina indicata dal giudice
-        # non viene mai promossa, semplicemente non si risponde.
+    def test_altra_pagina_NON_rifiuta_perche_e_gia_mostrata(self):
+        # La pagina indicata dal giudice e' per costruzione fra le candidate che
+        # gli abbiamo passato, cioe' fra quelle che l'utente vede: rifiutare li'
+        # butterebbe via una risposta che CONTIENE la risposta. Il golden gate
+        # l'ha misurato: V004/V011/V015 da PASS a MISS, zero guadagni.
         judge = lambda q, pages: JudgeOutcome("CONFIRM", 1, "B")
         out = visual_node({"query": "esploso", "role": "tecnico"},
                           _deps(visual=lambda q, r: _pages(), judge=judge))
-        assert out["level"] == "BASSA"
-        assert out["visual_pages"] == []
-        assert out.get("answer") in (None,)
-        assert out.get("citations") in (None, [])
+        assert out["level"] == "MEDIA"
+        assert out["visual_pages"] == _pages()
+        assert out["citations"] == [("branson_4520R_parts", 69),
+                                    ("branson_4520R_parts", 22)]
 
-    def test_motivo_altra_pagina_distinguibile_nell_audit(self):
+    def test_altra_pagina_lascia_la_nota_di_audit(self):
         judge = lambda q, pages: JudgeOutcome("CONFIRM", 1, "B")
         out = visual_node({"query": "esploso", "role": "tecnico"},
                           _deps(visual=lambda q, r: _pages(), judge=judge))
-        assert any(REFUSE_OTHER_TAG in a for a in out["audit"])
-        assert not any(REFUSE_NONE_TAG in a for a in out["audit"])
-        # e la pagina indicata resta scritta, per la diagnostica
+        # diagnostica conservata: quante volte il primo posto e' sbagliato pur
+        # avendo la risposta in lista (il dato su cui si decidera' il riordino)
+        assert any(OTHER_PAGE_TAG in a for a in out["audit"])
         assert any("p.22" in a for a in out["audit"])
+        # ma NON e' un motivo di rifiuto
+        assert not any(REFUSE_NONE_TAG in a for a in out["audit"])
 
-    def test_mai_promozione_la_pagina_indicata_non_diventa_la_risposta(self):
+    def test_nessun_riordino_la_pagina_indicata_non_va_in_cima(self):
         judge = lambda q, pages: JudgeOutcome("CONFIRM", 1, "B")
         out = visual_node({"query": "esploso", "role": "tecnico"},
                           _deps(visual=lambda q, r: _pages(), judge=judge))
-        # il gate puo' SOLO togliere: nessuna pagina esce dal nodo
-        assert not out.get("visual_pages")
-        assert not out.get("citations")
+        # il giudice indica la seconda, ma l'ordine resta quello del retrieval
+        assert out["citations"][0] == ("branson_4520R_parts", 69)
 
     def test_skip_non_blocca(self):
         judge = lambda q, pages: JudgeOutcome("SKIP", None, "cartiglio assente")
@@ -337,27 +339,33 @@ class TestVisualNodeConGiudice:
         assert res["final_level"] == "BASSA"
         assert res["final_answer"] == REFUSAL
 
-    def test_e2e_disaccordo_sul_quale_diventa_non_lo_so(self):
+    def test_e2e_disaccordo_sul_quale_risponde_comunque(self):
+        # la pagina indicata dal giudice e' fra quelle citate: l'utente la vede,
+        # quindi la risposta resta (regola stretta ritirata dopo il golden gate)
         judge = lambda q, pages: JudgeOutcome("CONFIRM", 1, "B")
         res = answer("mostrami l'esploso del gruppo pompa", "tecnico",
                      _deps(visual=lambda q, r: _pages(), judge=judge))
-        assert res["final_level"] == "BASSA"
-        assert res["final_answer"] == REFUSAL
-        # nessuna citazione trapela nella risposta finale
-        assert "pag." not in res["final_answer"]
+        assert res["final_level"] == "MEDIA"
+        cited = extract_citations(res["final_answer"])
+        assert ("branson_4520R_parts", 22) in cited   # quella indicata dal giudice
+        assert ("branson_4520R_parts", 69) in cited
 
 
 # ------------------------------------------------------------- configurazione
 
 class TestConfigurazione:
-    def test_default_acceso(self, monkeypatch):
+    def test_default_spento(self, monkeypatch):
+        """Il default e' OFF perche' MISURATO in perdita sul metro del gate:
+        0 confident-wrong eliminati, 2 risposte corrette perse (V011, CV09),
+        +12.6% di tempo. Se qualcuno riporta il default a ON, deve prima
+        rifare quella misura — vedi il docstring di `_page_judge_enabled`."""
         monkeypatch.delenv("AIKE_VISUAL_PAGE_JUDGE", raising=False)
         from src.serving.session_deps import _page_judge_enabled
-        assert _page_judge_enabled() is True
+        assert _page_judge_enabled() is False
 
     @pytest.mark.parametrize("val,expected", [
         ("0", False), ("false", False), ("FALSE", False),
-        ("1", True), ("true", True), ("", True), ("boh", True),
+        ("1", True), ("true", True), ("", False), ("boh", False),
     ])
     def test_env_spegne(self, monkeypatch, val, expected):
         monkeypatch.setenv("AIKE_VISUAL_PAGE_JUDGE", val)
