@@ -11,10 +11,15 @@ logger = logging.getLogger(__name__)
 
 # Singletons (lazy initialization)
 _llm = None
+_judge_llm = None
 _visual_search = None
 _visual_reranker = None
 _multiplexer = None
 _CACHE: dict[str, Deps] = {}
+
+# Giudice di pertinenza della pagina: scelta CHIUSA (una lettera o NESSUNA), quindi
+# temperatura 0 e pochissimi token. Seed fisso: la misura dev'essere riproducibile.
+JUDGE_OPTIONS = {"temperature": 0.0, "seed": 7, "num_predict": 16}
 
 
 def _visual_rerank_enabled() -> bool:
@@ -45,13 +50,23 @@ def _visual_rerank_enabled() -> bool:
     )
     return on
 
+def _page_judge_enabled() -> bool:
+    """Gate del verificatore di pertinenza della pagina (ramo visivo).
+
+    AIKE_VISUAL_PAGE_JUDGE = "0"/"false" -> spento. Qualunque altro valore
+    (assente incluso) -> ACCESO: e' l'unica difesa contro il confident-wrong
+    visivo, quindi il default sicuro e' 'attivo'.
+    """
+    return os.getenv("AIKE_VISUAL_PAGE_JUDGE", "1").strip().lower() not in ("0", "false")
+
+
 _LLM_EXECUTOR = concurrent.futures.ThreadPoolExecutor(max_workers=1, thread_name_prefix="LLMProxy")
 
 _INIT_LOCK = threading.Lock()
 _INFERENCE_LOCK = threading.Lock()
 
 def _init_shared_singletons():
-    global _llm, _visual_search, _visual_reranker
+    global _llm, _judge_llm, _visual_search, _visual_reranker
     if _llm is not None:
         return
         
@@ -90,7 +105,15 @@ def _init_shared_singletons():
             logger.warning("Impossibile contattare Ollama per il probe dei modelli: %s", e)
             
         _llm = FallbackLLM(primary_llm, fallback_llm, primary_name="Ollama (Brain)", fallback_name="Ollama (Fallback)")
-        
+
+        # Giudice di pertinenza della pagina: stesso backend, decoding DIVERSO
+        # (temperatura 0, pochissimi token: la risposta e' una lettera).
+        _judge_llm = FallbackLLM(
+            OllamaModel(model=settings.brain_model, think=settings.brain_think,
+                        options=JUDGE_OPTIONS),
+            OllamaModel(model=settings.ollama_model, options=JUDGE_OPTIONS),
+            primary_name="Ollama (Judge)", fallback_name="Ollama (Judge fallback)")
+
         # Initialize shared Visual Search
         try:
             from src.backend.clients.qdrant_client import get_qdrant_client
@@ -152,11 +175,24 @@ def get_deps(role: str) -> Deps:
     from src.graph.tools.visual_tool import VISUAL_SCORE_FLOOR
     floor = VISUAL_SCORE_FLOOR if _visual_reranker is not None else None
 
+    # Fase 2c — verificatore di pertinenza della pagina. Cablato solo se il ramo
+    # visivo esiste: senza pagine non c'e' nulla da verificare. L'LLM e' dietro
+    # LockedLLMProxy (serializzazione dell'inferenza), quindi il callable NON va
+    # ri-avvolto in locked_callable: il lock non e' rientrante.
+    page_judge = None
+    if _page_judge_enabled() and deps.visual_search is not None and _judge_llm is not None:
+        from src.graph.tools.page_judge import make_page_judge
+        page_judge = make_page_judge(LockedLLMProxy(_judge_llm))
+        logger.info("giudice pagina (ramo visivo): ON")
+    else:
+        logger.info("giudice pagina (ramo visivo): OFF")
+
     locked_deps = replace(
         deps,
         llm=LockedLLMProxy(deps.llm) if deps.llm is not None else None,
         visual_search=locked_callable(deps.visual_search),
         visual_score_floor=floor,
+        page_judge=page_judge,
         retrieve=locked_callable(deps.retrieve),
         retrieve_superseded=locked_callable(deps.retrieve_superseded),
         retrieve_deleted=locked_callable(deps.retrieve_deleted)

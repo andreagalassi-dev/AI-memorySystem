@@ -88,6 +88,7 @@ def effective_config(deps: Any | None = None) -> dict:
     """
     from src.backend.config import settings
     from src.graph.tools.visual_tool import VISUAL_SCORE_FLOOR
+    from src.serving.session_deps import _page_judge_enabled
 
     # PRIMA il .env, POI la fotografia: leggere l'ambiente prima di caricarlo
     # e' esattamente il bug che questo modulo esiste per chiudere.
@@ -98,10 +99,17 @@ def effective_config(deps: Any | None = None) -> dict:
         floor = getattr(deps, "visual_score_floor", None)
         floor_source = "osservato"
         visual_available = getattr(deps, "visual_search", None) is not None
+        judge_on = getattr(deps, "page_judge", None) is not None
+        judge_source = "osservato"
     else:
         floor = VISUAL_SCORE_FLOOR if rerank_on else None
         floor_source = "previsto"
         visual_available = None
+        judge_on = _page_judge_enabled()
+        judge_source = "previsto"
+    raw_judge = os.getenv("AIKE_VISUAL_PAGE_JUDGE")
+    judge_reason = (f"env AIKE_VISUAL_PAGE_JUDGE={raw_judge!r}" if raw_judge is not None
+                    else "env AIKE_VISUAL_PAGE_JUDGE assente (default ON)")
 
     try:
         from src.ingestion.embedding import COLLECTION as TEXT_COLLECTION
@@ -118,6 +126,8 @@ def effective_config(deps: Any | None = None) -> dict:
         "visual_score_floor": floor,
         "visual_score_floor_source": floor_source,
         "visual_search_available": visual_available,
+        "visual_page_judge": {"enabled": judge_on, "source": judge_source,
+                              "reason": judge_reason},
         "llm": {
             "brain_model": settings.brain_model,
             "brain_think": settings.brain_think,
@@ -154,6 +164,12 @@ def format_config_banner(cfg: dict) -> str:
         f"  reranker visivo      : {'ON' if rr['enabled'] else 'OFF'}  [{rr['reason']}]",
         f"  visual_score_floor   : {floor_txt}  ({cfg.get('visual_score_floor_source')})",
     ]
+    pj = cfg.get("visual_page_judge")
+    if pj is not None:
+        lines.append(
+            f"  giudice pagina       : {'ON' if pj['enabled'] else 'OFF'}  "
+            f"[{pj['reason']}] ({pj['source']})"
+        )
     if cfg.get("visual_search_available") is not None:
         lines.append(
             f"  ramo visivo          : {'attivo' if cfg['visual_search_available'] else 'DEGRADATO (visual_search=None)'}"

@@ -16,6 +16,7 @@ from typing import Callable, NamedTuple, TYPE_CHECKING, TypedDict
 
 if TYPE_CHECKING:
     from src.graph.context import ConversationContext
+    from src.graph.tools.page_judge import JudgeOutcome
 
 from langgraph.graph import END, START, StateGraph
 
@@ -23,6 +24,7 @@ from src.common.roles import Role, parse_role
 from src.graph.llm import LanguageModel
 from src.graph.render import SYSTEM_RENDER, build_render_prompt, verify_price_grounding
 from src.graph.tools.sql_tool import LookupRow, SqlExecutor, SqlParams, extract_params
+from src.graph.tools.page_judge import REFUSE_NONE_TAG, REFUSE_OTHER_TAG
 from src.graph.tools.visual_tool import format_visual_answer, visual_citations
 from src.retrieval.pixelrag.index import PageHit
 from src.retrieval.confidence import (Signals, Thresholds, compute_margin,
@@ -121,6 +123,10 @@ class Deps:
     # gate (reranker spento: gli score sono MaxSim, altra scala). Valorizzato dal
     # binder di produzione solo col reranker attivo (vedi session_deps).
     visual_score_floor: float | None = None
+    # Fase 2c — verificatore di pertinenza della pagina: `(query, pages) -> JudgeOutcome`
+    # (vedi src/graph/tools/page_judge.py). Puo' SOLO aggiungere rifiuti; None = spento
+    # e comportamento identico a prima.
+    page_judge: Callable[[str, list[PageHit]], "JudgeOutcome"] | None = None
 
 
 def _audit(state: GraphState, msg: str) -> list[str]:
@@ -299,9 +305,43 @@ def visual_node(state: GraphState, deps: Deps) -> dict:
                 "audit": _audit(state, f"visual: score top {pages[0].score:.3f} < soglia "
                                        f"{floor:.2f} -> immagine non chiaramente pertinente "
                                        f"(non lo so)")}
+
+    # Fase 2c — verificatore di pertinenza della pagina (giudice TESTUALE sul
+    # cartiglio del PDF). Nessuna soglia numerica separa qui il giusto dallo
+    # sbagliato: e' misurato. Il giudice puo' SOLO aggiungere rifiuti — mai
+    # promuovere, mai riordinare — e su qualunque guasto NON blocca.
+    audit_extra: list[str] = []
+    if deps.page_judge is not None:
+        try:
+            verdict = deps.page_judge(state["query"], pages)
+        except Exception as exc:   # difesa: un giudice rotto non fabbrica rifiuti
+            logger.warning("giudice pagina: eccezione inattesa (%s) -> nessun blocco",
+                           exc)
+            verdict = None
+        if verdict is not None:
+            top = f"{pages[0].doc} p.{pages[0].page}"
+            motivo = None
+            if verdict.decision == "REFUSE":
+                motivo = f"{REFUSE_NONE_TAG} — {verdict.reason}"
+            elif verdict.decision == "CONFIRM" and verdict.chosen_index:
+                # Regola STRETTA: il giudice conferma il documento ma NON la pagina
+                # in cima. Rifiutiamo — che NON e' riordinare: la pagina indicata
+                # non viene promossa, semplicemente non rispondiamo.
+                chosen = pages[verdict.chosen_index]
+                motivo = (f"{REFUSE_OTHER_TAG} — indica {chosen.doc} p.{chosen.page} "
+                          f"({verdict.reason})")
+            if motivo is not None:
+                return {"visual_pages": [], "citations": [], "level": "BASSA",
+                        "audit": _audit(state, f"visual: giudice pagina RIFIUTA {top} "
+                                               f"— {motivo} -> non lo so")}
+            if verdict.decision == "SKIP":
+                audit_extra.append(f"visual: giudice pagina SALTATO ({verdict.reason}) "
+                                   f"-> nessun blocco")
+
+    audit = _audit(state, f"visual: {len(pages)} pagina/e -> MEDIA") + audit_extra
     return {"visual_pages": pages, "answer": format_visual_answer(pages),
             "citations": visual_citations(pages), "level": "MEDIA",
-            "audit": _audit(state, f"visual: {len(pages)} pagina/e -> MEDIA")}
+            "audit": audit}
 
 
 def confidence_node(state: GraphState, deps: Deps) -> dict:

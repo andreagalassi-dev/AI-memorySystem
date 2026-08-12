@@ -107,7 +107,10 @@ def test_init_shared_singletons_concurrent_is_thread_safe(monkeypatch):
     for t in threads:
         t.join()
         
-    assert len(calls) == 2 # 1 for primary, 1 for fallback
+    # L'invariante e' "inizializzato UNA volta sola nonostante 10 thread", non il
+    # numero in se': ogni FallbackLLM costruisce primario + fallback, e da Fase 2c
+    # i FallbackLLM sono due (cervello + giudice di pertinenza della pagina).
+    assert len(calls) == 4  # 2 per il cervello, 2 per il giudice — una sola init
 
 def test_no_mlx_instantiated(monkeypatch):
     import src.serving.session_deps as sd
