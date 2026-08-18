@@ -147,6 +147,18 @@ def verify_citations(text: str, payloads: Sequence[Mapping]) -> CitationCheck:
     """Guardia deterministica NON-LLM: una citazione vale solo se la coppia
     (documento, pagina) e' fra quelle recuperate e passate al modello.
 
+    CAUSA DEL GUASTO ORIGINALE: NON ACCERTATA, e va detto. Sul momento
+    l'avevo attribuita alla formulazione della regola 3 ("N e' SEMPRE un
+    numero"), perche' un A/B dava 3/3 sbagliato col prompt nuovo e 3/3 giusto
+    col vecchio. Rimisurando piu' tardi, con la regola difettosa ricostruita
+    verbatim e la sintesi chiamata in isolamento, TUTTI e tre i prompt
+    (difettoso, attuale, storico) citano `pag. 84` 3 volte su 3: il difetto non
+    si riproduce. Indizio dell'alternativa piu' probabile: il gate che
+    registro' il guasto duro impiego' 58.2 min contro i ~21 abituali, cioe' la
+    macchina era in affanno e la generazione era degradata. Morale: la regola 3
+    irrigidita resta sensata ma NON e' una difesa provata; l'unica difesa
+    provata e' questa guardia, che non dipende da come il modello si comporta.
+
     Nasce dal caso reale `C_EN_03` ("code 874300"): il modello ha scritto
     `(rotax_912_914_IPC, pag. 874300)` — il codice ricambio al posto del numero
     di pagina — e il sistema ha accettato, restando ALTA, una citazione a una
