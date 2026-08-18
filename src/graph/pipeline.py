@@ -24,7 +24,9 @@ from src.common.roles import Role, parse_role
 from src.graph.llm import LanguageModel
 from src.graph.render import SYSTEM_RENDER, build_render_prompt, verify_price_grounding
 from src.graph.tools.sql_tool import LookupRow, SqlExecutor, SqlParams, extract_params
-from src.graph.tools.page_judge import OTHER_PAGE_TAG, REFUSE_NONE_TAG
+from src.graph.tools.page_judge import (JUDGE_MODE_REFUSE, JUDGE_MODE_REORDER,
+                                        OTHER_PAGE_TAG, REFUSE_NONE_TAG,
+                                        REORDER_TAG, promote_chosen)
 from src.graph.tools.visual_tool import format_visual_answer, visual_citations
 from src.retrieval.pixelrag.index import PageHit
 from src.retrieval.confidence import (Signals, Thresholds, compute_margin,
@@ -124,9 +126,14 @@ class Deps:
     # binder di produzione solo col reranker attivo (vedi session_deps).
     visual_score_floor: float | None = None
     # Fase 2c — verificatore di pertinenza della pagina: `(query, pages) -> JudgeOutcome`
-    # (vedi src/graph/tools/page_judge.py). Puo' SOLO aggiungere rifiuti; None = spento
-    # e comportamento identico a prima.
+    # (vedi src/graph/tools/page_judge.py). None = spento e comportamento identico
+    # a prima. COSA puo' fare dipende dalla modalita' qui sotto.
     page_judge: Callable[[str, list[PageHit]], "JudgeOutcome"] | None = None
+    # Le due letture dello stesso verdetto, esplicite e commutabili:
+    #   JUDGE_MODE_REFUSE  (default) = VETO: NESSUNA -> "non lo so". Mai riordina.
+    #   JUDGE_MODE_REORDER           = PREFERENZA: stesse pagine, la scelta in cima.
+    # Il default e' il veto: il riordino e' opt-in, mai un cambio silenzioso.
+    page_judge_mode: str = JUDGE_MODE_REFUSE
 
 
 def _audit(state: GraphState, msg: str) -> list[str]:
@@ -308,8 +315,13 @@ def visual_node(state: GraphState, deps: Deps) -> dict:
 
     # Fase 2c — verificatore di pertinenza della pagina (giudice TESTUALE sul
     # cartiglio del PDF). Nessuna soglia numerica separa qui il giusto dallo
-    # sbagliato: e' misurato. Il giudice puo' SOLO aggiungere rifiuti — mai
-    # promuovere, mai riordinare — e su qualunque guasto NON blocca.
+    # sbagliato: e' misurato. Una sola chiamata al giudice, DUE letture possibili
+    # del suo verdetto, esplicite in `deps.page_judge_mode`:
+    #   - JUDGE_MODE_REFUSE  (default): puo' SOLO aggiungere rifiuti, mai
+    #     promuovere e mai riordinare;
+    #   - JUDGE_MODE_REORDER: non puo' rifiutare NULLA, puo' solo promuovere in
+    #     cima una delle pagine che stiamo gia' mostrando.
+    # In entrambe, su qualunque guasto NON cambia nulla.
     audit_extra: list[str] = []
     if deps.page_judge is not None:
         try:
@@ -318,6 +330,27 @@ def visual_node(state: GraphState, deps: Deps) -> dict:
             logger.warning("giudice pagina: eccezione inattesa (%s) -> nessun blocco",
                            exc)
             verdict = None
+
+        if deps.page_judge_mode == JUDGE_MODE_REORDER:
+            # PREFERENZA, non veto. `promote_chosen` e' fail-closed su tutto
+            # (verdetto assente, NESSUNA, SKIP, indice fuori range): nel dubbio
+            # resta l'ordine del retrieval. L'INSIEME delle pagine non cambia
+            # mai, quindi recall@3/@5 non possono muoversi: solo il primo posto.
+            was = f"{pages[0].doc} p.{pages[0].page}"
+            pages, moved_from = promote_chosen(pages, verdict)
+            if moved_from is not None:
+                audit_extra.append(
+                    f"visual: giudice pagina {REORDER_TAG} — {pages[0].doc} "
+                    f"p.{pages[0].page} da posizione {moved_from + 1} a posizione 1 "
+                    f"(era in cima {was}); stesse {len(pages)} pagine mostrate, "
+                    f"nessun rifiuto")
+            else:
+                why = verdict.reason if verdict is not None else "giudice in errore"
+                audit_extra.append(
+                    f"visual: giudice pagina, nessun riordino ({why}) -> ordine "
+                    f"del retrieval invariato")
+            verdict = None      # in questa modalita' il verdetto non fa altro
+
         if verdict is not None:
             top = f"{pages[0].doc} p.{pages[0].page}"
             if verdict.decision == "REFUSE":

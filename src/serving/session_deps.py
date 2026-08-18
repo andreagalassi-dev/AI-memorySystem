@@ -6,6 +6,7 @@ import threading
 from dataclasses import replace
 
 from src.graph.pipeline import Deps, build_default_deps, parse_role
+from src.graph.tools.page_judge import JUDGE_MODE_REFUSE, JUDGE_MODE_REORDER
 
 logger = logging.getLogger(__name__)
 
@@ -76,6 +77,44 @@ def _page_judge_enabled() -> bool:
     di cablarlo.
     """
     return os.getenv("AIKE_VISUAL_PAGE_JUDGE", "0").strip().lower() in ("1", "true")
+
+
+def _page_reorder_enabled() -> bool:
+    """Gate del RIORDINO delle pagine visive (l'altro uso del giudice).
+
+    AIKE_VISUAL_PAGE_REORDER = "0"/"false" -> spento. Assente o altro -> ACCESO.
+
+    Default ON perche' MISURATO in guadagno, e con una perdita strutturalmente
+    impossibile: `promote_chosen` fa `out.insert(0, out.pop(idx))`, cioe' sposta
+    un elemento senza toglierne o aggiungerne, quindi l'INSIEME delle pagine
+    mostrate non puo' cambiare e `recall@3`/`recall@5` non possono scendere.
+    Misura su `data/eval/eval_visual_v0.jsonl` (15 query), confermata da due
+    esecuzioni indipendenti: recall@1 0.333 -> 0.467, MRR 0.478 -> 0.556,
+    recall@3 e @5 identici cifra per cifra. Costo: +0.4s p50 sul ramo visivo.
+    E' l'opposto del VETO (`AIKE_VISUAL_PAGE_JUDGE`), che resta OFF perche'
+    misurato in perdita: quello puo' togliere una risposta, questo no.
+
+    Interruttore SEPARATO da `AIKE_VISUAL_PAGE_JUDGE`, perche' i due usi hanno
+    poteri diversi e vanno decisi separatamente: il veto puo' togliere una
+    risposta, il riordino no. In riordino il giudice non toglie e non aggiunge
+    nulla — le stesse pagine restano a schermo, cambia solo quale sta in cima —
+    quindi non puo' peggiorare `recall@3`/`recall@5`, solo il primo posto.
+    Vedi `src/graph/tools/page_judge.py`, "Due usi dello stesso strumento".
+    """
+    return os.getenv("AIKE_VISUAL_PAGE_REORDER", "1").strip().lower() not in ("0", "false")
+
+
+def _page_judge_mode() -> str:
+    """Modalita' effettiva del giudice quando e' cablato.
+
+    Il giudice viene interrogato UNA volta sola: le due modalita' sono due
+    letture dello stesso verdetto, non due chiamate. Se qualcuno accende
+    entrambi gli interruttori vince il VETO, l'unica delle due che puo'
+    impedire una risposta sbagliata.
+    """
+    if _page_judge_enabled():
+        return JUDGE_MODE_REFUSE
+    return JUDGE_MODE_REORDER if _page_reorder_enabled() else JUDGE_MODE_REFUSE
 
 
 _LLM_EXECUTOR = concurrent.futures.ThreadPoolExecutor(max_workers=1, thread_name_prefix="LLMProxy")
@@ -198,10 +237,12 @@ def get_deps(role: str) -> Deps:
     # LockedLLMProxy (serializzazione dell'inferenza), quindi il callable NON va
     # ri-avvolto in locked_callable: il lock non e' rientrante.
     page_judge = None
-    if _page_judge_enabled() and deps.visual_search is not None and _judge_llm is not None:
+    judge_mode = _page_judge_mode()
+    judge_wanted = _page_judge_enabled() or _page_reorder_enabled()
+    if judge_wanted and deps.visual_search is not None and _judge_llm is not None:
         from src.graph.tools.page_judge import make_page_judge
         page_judge = make_page_judge(LockedLLMProxy(_judge_llm))
-        logger.info("giudice pagina (ramo visivo): ON")
+        logger.info("giudice pagina (ramo visivo): ON, modalita'=%s", judge_mode)
     else:
         logger.info("giudice pagina (ramo visivo): OFF")
 
@@ -211,6 +252,7 @@ def get_deps(role: str) -> Deps:
         visual_search=locked_callable(deps.visual_search),
         visual_score_floor=floor,
         page_judge=page_judge,
+        page_judge_mode=judge_mode,
         retrieve=locked_callable(deps.retrieve),
         retrieve_superseded=locked_callable(deps.retrieve_superseded),
         retrieve_deleted=locked_callable(deps.retrieve_deleted)

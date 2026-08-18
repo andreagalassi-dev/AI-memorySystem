@@ -373,11 +373,24 @@ class TestConfigurazione:
         assert _page_judge_enabled() is expected
 
     def test_valore_effettivo_nel_blocco_config(self, monkeypatch):
+        """Col VETO spento l'audit deve dire `veto: False`, e dirlo anche se il
+        giudice viene interrogato lo stesso per il RIORDINO (default ON): sono
+        due poteri diversi e un audit che li confonde mente. `enabled` da solo
+        non basta piu' a rispondere alla domanda "puo' togliermi una risposta?"."""
         monkeypatch.setenv("AIKE_VISUAL_PAGE_JUDGE", "0")
         from src.common.run_config import effective_config, format_config_banner
         cfg = effective_config()
-        assert cfg["visual_page_judge"]["enabled"] is False
+        assert cfg["visual_page_judge"]["veto"] is False
         assert "giudice pagina" in format_config_banner(cfg)
+
+    def test_veto_e_riordino_sono_dichiarati_separatamente(self, monkeypatch):
+        """Il caso che rompe un audit ingenuo: veto OFF, riordino ON."""
+        monkeypatch.setenv("AIKE_VISUAL_PAGE_JUDGE", "0")
+        monkeypatch.setenv("AIKE_VISUAL_PAGE_REORDER", "1")
+        from src.common.run_config import effective_config
+        pj = effective_config()["visual_page_judge"]
+        assert pj["veto"] is False and pj["reorder"] is True
+        assert pj["enabled"] is True          # interrogato, ma senza potere di veto
 
     def test_config_osserva_le_deps_quando_fornite(self):
         from src.common.run_config import effective_config

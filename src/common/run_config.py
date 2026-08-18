@@ -88,7 +88,9 @@ def effective_config(deps: Any | None = None) -> dict:
     """
     from src.backend.config import settings
     from src.graph.tools.visual_tool import VISUAL_SCORE_FLOOR
-    from src.serving.session_deps import _page_judge_enabled
+    from src.graph.tools.page_judge import JUDGE_MODE_REFUSE, JUDGE_MODE_REORDER
+    from src.serving.session_deps import (_page_judge_enabled, _page_judge_mode,
+                                          _page_reorder_enabled)
 
     # PRIMA il .env, POI la fotografia: leggere l'ambiente prima di caricarlo
     # e' esattamente il bug che questo modulo esiste per chiudere.
@@ -100,16 +102,21 @@ def effective_config(deps: Any | None = None) -> dict:
         floor_source = "osservato"
         visual_available = getattr(deps, "visual_search", None) is not None
         judge_on = getattr(deps, "page_judge", None) is not None
+        judge_mode = getattr(deps, "page_judge_mode", JUDGE_MODE_REFUSE)
         judge_source = "osservato"
     else:
         floor = VISUAL_SCORE_FLOOR if rerank_on else None
         floor_source = "previsto"
         visual_available = None
-        judge_on = _page_judge_enabled()
+        judge_on = _page_judge_enabled() or _page_reorder_enabled()
+        judge_mode = _page_judge_mode()
         judge_source = "previsto"
     raw_judge = os.getenv("AIKE_VISUAL_PAGE_JUDGE")
+    raw_reorder = os.getenv("AIKE_VISUAL_PAGE_REORDER")
     judge_reason = (f"env AIKE_VISUAL_PAGE_JUDGE={raw_judge!r}" if raw_judge is not None
                     else "env AIKE_VISUAL_PAGE_JUDGE assente (default OFF)")
+    judge_reason += (f", AIKE_VISUAL_PAGE_REORDER={raw_reorder!r}" if raw_reorder is not None
+                     else ", AIKE_VISUAL_PAGE_REORDER assente (default ON)")
 
     try:
         from src.ingestion.embedding import COLLECTION as TEXT_COLLECTION
@@ -126,8 +133,14 @@ def effective_config(deps: Any | None = None) -> dict:
         "visual_score_floor": floor,
         "visual_score_floor_source": floor_source,
         "visual_search_available": visual_available,
-        "visual_page_judge": {"enabled": judge_on, "source": judge_source,
-                              "reason": judge_reason},
+        # `enabled` = il giudice viene interrogato. NON basta: i suoi due usi
+        # hanno poteri diversi e un audit che li confonde mente. `veto` puo'
+        # TOGLIERE una risposta, `reorder` puo' solo cambiare quale pagina sta
+        # in cima. Vanno letti separatamente.
+        "visual_page_judge": {"enabled": judge_on, "mode": judge_mode,
+                              "veto": judge_mode == JUDGE_MODE_REFUSE and judge_on,
+                              "reorder": judge_mode == JUDGE_MODE_REORDER and judge_on,
+                              "source": judge_source, "reason": judge_reason},
         "llm": {
             "brain_model": settings.brain_model,
             "brain_think": settings.brain_think,
@@ -166,9 +179,13 @@ def format_config_banner(cfg: dict) -> str:
     ]
     pj = cfg.get("visual_page_judge")
     if pj is not None:
+        # la modalita' NON e' un dettaglio: 'refuse' puo' togliere una risposta,
+        # 'reorder' puo' solo cambiare quale pagina sta in cima.
+        modo = {"refuse": "rifiuto (veto)",
+                "reorder": "riordino (preferenza)"}.get(pj.get("mode"), pj.get("mode"))
         lines.append(
-            f"  giudice pagina       : {'ON' if pj['enabled'] else 'OFF'}  "
-            f"[{pj['reason']}] ({pj['source']})"
+            f"  giudice pagina       : {'ON' if pj['enabled'] else 'OFF'}"
+            f"  modalita'={modo}  [{pj['reason']}] ({pj['source']})"
         )
     if cfg.get("visual_search_available") is not None:
         lines.append(

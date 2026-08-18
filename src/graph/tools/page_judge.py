@@ -55,7 +55,26 @@ mostrate va bene, e li' "non lo so" e' l'unica risposta onesta.
 
 La riga `OTHER_PAGE_TAG` resta perche' misura una cosa reale e diversa — quante
 volte il primo posto e' sbagliato pur avendo la risposta in lista — ed e' il dato
-su cui si deciderebbe un eventuale RIORDINO, che e' il vero rimedio a quel caso.
+su cui si e' deciso il RIORDINO, che e' il vero rimedio a quel caso (sotto).
+
+Due usi dello stesso strumento: VETO e PREFERENZA
+-------------------------------------------------
+Lo stesso verdetto puo' essere letto in due modi, e sono due MODALITA' distinte
+e commutabili (`JUDGE_MODE_*`, cablate da `Deps.page_judge_mode`):
+
+  - `JUDGE_MODE_REFUSE` — il VETO descritto sopra. `NESSUNA` -> "non lo so".
+    E' l'uso storico, ed e' SPENTO di default: misurato in perdita (0
+    confident-wrong eliminati, 2 risposte corrette perse);
+  - `JUDGE_MODE_REORDER` — la PREFERENZA. Il giudice non toglie e non aggiunge
+    NULLA: le stesse pagine restano tutte a schermo, e la pagina che indica
+    viene solo promossa in cima (`promote_chosen`, riordino STABILE). `NESSUNA`
+    qui non e' un veto, e' "nessuna preferenza": ordine del retrieval invariato.
+
+La differenza non e' di taratura ma di potere: in riordino il giudice non puo'
+peggiorare l'INSIEME delle pagine mostrate, solo l'ordine. Per questo il criterio
+di misura e' una quasi-dimostrazione: `recall@3` e `recall@5` devono restare
+identici cifra per cifra (l'insieme non cambia) e possono salire solo `recall@1`
+e `MRR`. Se `recall@3` si muove, l'implementazione sta filtrando, non riordinando.
 
 Limite noto: le COPERTINE dei cataloghi ricambi
 -----------------------------------------------
@@ -98,6 +117,13 @@ NO_TITLE = "(testo della pagina non disponibile)"
 # "Perche' ALTRA_PAGINA non rifiuta").
 REFUSE_NONE_TAG = "motivo=NESSUNA"      # nessuna pagina mostrata va bene -> RIFIUTO
 OTHER_PAGE_TAG = "nota=ALTRA_PAGINA"    # una va bene ma non e' la prima -> si risponde
+REORDER_TAG = "nota=RIORDINO"           # una va bene e l'abbiamo promossa in cima
+
+# Le due letture possibili dello stesso verdetto. Non sono un dettaglio di
+# taratura: cambiano cosa il giudice ha il POTERE di fare (vedi docstring).
+JUDGE_MODE_REFUSE = "refuse"     # veto: NESSUNA -> "non lo so". Default, e spento.
+JUDGE_MODE_REORDER = "reorder"   # preferenza: stesse pagine, la scelta va in cima.
+JUDGE_MODES = (JUDGE_MODE_REFUSE, JUDGE_MODE_REORDER)
 
 # Prompt MISURATO. Una prima versione chiudeva con "nel dubbio rispondi NESSUNA":
 # su 21 risposte visive del truth set rifiutava 4 pagine CORRETTE per eliminare 2
@@ -203,3 +229,32 @@ def make_page_judge(
         return JudgeOutcome("CONFIRM", idx, f"{LETTERS[idx]} (risposta: {verbatim!r})")
 
     return _judge
+
+
+def promote_chosen(pages: Sequence, outcome: "JudgeOutcome | None") -> tuple[list, int | None]:
+    """Riordino STABILE per `JUDGE_MODE_REORDER`: la pagina scelta va in cima.
+
+    Ritorna `(pagine, posizione_di_partenza)`. `posizione_di_partenza` e' `None`
+    quando NON si e' riordinato nulla (niente da tracciare in audit).
+
+    Contratto — l'insieme non cambia MAI:
+      - nessuna pagina viene tolta, nessuna aggiunta, la cardinalita' resta;
+      - le pagine non promosse mantengono l'ordine relativo del retrieval;
+      - la lista in ingresso non viene mutata.
+
+    Fail-closed su tutto il resto: esito assente, `SKIP`, `REFUSE` (= NESSUNA:
+    qui non e' un veto, e' "nessuna preferenza"), indice non intero, negativo o
+    fuori dalla lista -> si tiene l'ordine originale. Mai un'eccezione: un
+    giudice che sbaglia non deve rompere una risposta che era gia' buona.
+    """
+    out = list(pages)
+    if outcome is None or getattr(outcome, "decision", None) != "CONFIRM":
+        return out, None
+    idx = outcome.chosen_index
+    # `bool` e' sottotipo di `int`: True passerebbe per l'indice 1. Escluso.
+    if isinstance(idx, bool) or not isinstance(idx, int):
+        return out, None
+    if idx <= 0 or idx >= len(out):
+        return out, None        # 0 = gia' in cima: nessun riordino da tracciare
+    out.insert(0, out.pop(idx))
+    return out, idx
