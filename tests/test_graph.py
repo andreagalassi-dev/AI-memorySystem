@@ -105,6 +105,58 @@ class TestNodi:
         out = confidence_node(st, make_deps())
         assert out["margin"] == 0.0 and out["level"] == "BASSA"
 
+    # --- epica D p.2: la guardia "evidenza singola" deve valere NEL NODO ---
+
+    def test_confidence_singleton_narrativo_non_e_alta(self):
+        # un solo gruppo-codice su rotta NATURALE e' la situazione MENO
+        # corroborata possibile: compute_margin da' 1.0 per convenzione
+        # (edge case "0 hit -> 0.0, 1 hit -> 1.0"), non perche' ci sia
+        # separazione misurata -> mai ALTA. Caso reale: NARR-Q035.
+        st = {"query": "aeratore 24x1 di ricambio", "route": "natural",
+              "evidence": [EV_CODE]}
+        out = confidence_node(st, make_deps())
+        assert out["margin"] == 1.0
+        assert out["level"] == "MEDIA"
+
+    def test_confidence_singleton_senza_codice_narrativo_non_e_alta(self):
+        # il caso tipico del narrativo: un unico chunk di testo, nessun codice
+        st = {"query": "come si smonta il gruppo", "route": "natural",
+              "evidence": [EV_CODE._replace(code=None, type="text")]}
+        out = confidence_node(st, make_deps())
+        assert out["margin"] == 1.0 and out["level"] == "MEDIA"
+
+    def test_confidence_rotta_code_resta_esente_da_guardia_singleton(self):
+        # ESENZIONE VOLUTA: sulla rotta 'code' il guardrail deterministico
+        # valida gia' il codice -> un solo gruppo NON degrada da ALTA.
+        st = {"query": "codice 877615", "route": "code", "evidence": [EV_CODE]}
+        out = confidence_node(st, make_deps())
+        assert out["margin"] == 1.0 and out["level"] == "ALTA"
+
+    def test_confidence_rotta_code_duplicati_stesso_codice_resta_alta(self):
+        # stesso caso del debito §3 (0USBX4): 2 hit -> 1 gruppo -> singleton,
+        # ma rotta code -> ALTA preservata (ramo saturo 22/22 PASS_ALTA).
+        st = {"query": "codice 877615", "route": "code",
+              "evidence": [EV_CODE, EV_CODE._replace(desc="PISTON PIN (DE)")]}
+        out = confidence_node(st, make_deps())
+        assert out["level"] == "ALTA"
+
+    def test_confidence_due_gruppi_narrativo_resta_alta(self):
+        # non-regressione: la guardia colpisce SOLO il singleton, non il
+        # narrativo corroborato da piu' gruppi-codice distinti.
+        st = {"query": "spinotto", "route": "natural",
+              "evidence": [EV_CODE, EV2._replace(score=0.5)]}
+        out = confidence_node(st, make_deps())
+        assert out["margin"] >= T.tau_hi and out["level"] == "ALTA"
+
+    def test_confidence_due_chunk_senza_codice_non_sono_singleton(self):
+        # i chunk senza codice ricevono una chiave unica ("_nocode", i):
+        # NON collassano in un gruppo solo -> la guardia non scatta.
+        a = EV_CODE._replace(code=None, type="text")
+        b = EV_CODE._replace(code=None, type="text", desc="ALTRO", score=0.5)
+        st = {"query": "smontaggio", "route": "natural", "evidence": [a, b]}
+        out = confidence_node(st, make_deps())
+        assert out["level"] == "ALTA"
+
 
 # --------------------------------------------------------------- fail-closed rete
 

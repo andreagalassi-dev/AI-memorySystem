@@ -362,8 +362,15 @@ def confidence_node(state: GraphState, deps: Deps) -> dict:
     # margine: evidence/citazioni/sintesi restano sugli hit originali.
     grouped = group_scores([(e.code, e.score) for e in ev])
     margin = compute_margin(grouped)
+    # Epica D p.2 — la guardia "evidenza singola" vive in confidence_level ma
+    # scatta solo se i segnali arrivano valorizzati: un unico gruppo-codice
+    # produce margine 1.0 per convenzione (compute_margin, 1 hit -> 1.0), non
+    # per separazione misurata. Esenzione VOLUTA per la rotta 'code', dove il
+    # guardrail deterministico valida gia' il codice.
     rep = confidence_level(
-        Signals("PASS", has_ev, margin, unreliable, agreement=None), deps.thresholds)
+        Signals("PASS", has_ev, margin, unreliable, agreement=None,
+                singleton=(len(grouped) <= 1), is_code=is_code),
+        deps.thresholds)
     return {"margin": margin, "has_evidence": has_ev, "unreliable": unreliable,
             "level": rep.level.value,
             "audit": _audit(state, f"confidence: {rep.reason} "
