@@ -32,7 +32,7 @@ from src.retrieval.confidence import (Signals, Thresholds, compute_margin,
 from src.retrieval.guardrail import check_answer
 from src.retrieval.price_variants import aggregate_price_variants, PriceAnswer
 from src.retrieval.router import classify_query, derive_intent
-from src.retrieval.synthesis import REFUSAL, extract_citations, strip_citations
+from src.retrieval.synthesis import REFUSAL, strip_citations, verify_citations
 
 logger = logging.getLogger(__name__)
 
@@ -393,12 +393,31 @@ def fusion_node(state: GraphState, deps: Deps) -> dict:
 
 
 def synthesis_node(state: GraphState, deps: Deps) -> dict:
+    """Sintesi ancorata + GUARDIA DETERMINISTICA sulle citazioni (non-LLM).
+
+    Il modello puo' citare una pagina che non abbiamo mai recuperato (caso reale
+    C_EN_03: codice ricambio scritto al posto del numero di pagina). Una
+    citazione vale solo se la coppia (doc, pagina) e' fra quelle passate al
+    modello; le altre vengono scartate, con traccia nell'audit. Se lo scarto non
+    lascia alcuna citazione, la risposta diventa il rifiuto gia' previsto —
+    `reconcile` lo riconosce e chiude a BASSA: nessuno stato nuovo."""
     try:
         # P3.5 / Hop 2: l'LLM vede evidenza + children combinati in fondo
         combined_ev = (state.get("evidence") or []) + (state.get("children_evidence") or [])
         out = deps.synthesize(state["query"], combined_ev)
-        return {"answer": out, "citations": extract_citations(out),
-                "audit": _audit(state, "synthesis: risposta generata")}
+        checked = verify_citations(out, [e._asdict() for e in combined_ev])
+        if not checked.dropped:
+            return {"answer": out, "citations": checked.kept,
+                    "audit": _audit(state, "synthesis: risposta generata")}
+        audit = _audit(state, "synthesis: risposta generata") + [
+            f"guardia citazioni: {len(checked.dropped)} scartata/e perche' la "
+            f"pagina non e' fra quelle recuperate: {checked.dropped}"]
+        if checked.kept:
+            return {"answer": checked.text, "citations": checked.kept,
+                    "audit": audit}
+        return {"answer": REFUSAL, "citations": [],
+                "audit": audit + ["guardia citazioni: nessuna fonte verificabile "
+                                  "-> rifiuto (fail-closed)"]}
     except Exception as exc:  # fail-closed: Ollama giu'/timeout
         return {"system_error": True, "level": "BASSA",
                 "audit": _audit(state, f"Sistema non disponibile (synthesis): {exc}")}

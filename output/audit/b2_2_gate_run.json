@@ -33,10 +33,10 @@
     }
   },
   "run": {
-    "generated_at": "2026-08-18T18:01:05",
+    "generated_at": "2026-08-18T22:43:19",
     "dataset": "data/golden/golden_v1.jsonl",
     "n_queries": 42,
-    "elapsed_s": 1214.8
+    "elapsed_s": 1309.5
   },
   "results": {
     "C001": {
@@ -49,7 +49,7 @@
       },
       "runs": [
         {
-          "latency": 10.64056921005249,
+          "latency": 10.156827926635742,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -80,7 +80,7 @@
       },
       "runs": [
         {
-          "latency": 2.5646369457244873,
+          "latency": 4.3118860721588135,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -111,7 +111,7 @@
       },
       "runs": [
         {
-          "latency": 1.6509268283843994,
+          "latency": 1.887665033340454,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -143,7 +143,7 @@
       },
       "runs": [
         {
-          "latency": 1.5560579299926758,
+          "latency": 1.6449189186096191,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -174,7 +174,7 @@
       },
       "runs": [
         {
-          "latency": 2.4042608737945557,
+          "latency": 3.0869550704956055,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -205,7 +205,7 @@
       },
       "runs": [
         {
-          "latency": 1.5353999137878418,
+          "latency": 1.7337260246276855,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -236,7 +236,7 @@
       },
       "runs": [
         {
-          "latency": 1.7576513290405273,
+          "latency": 1.8422610759735107,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -267,7 +267,7 @@
       },
       "runs": [
         {
-          "latency": 1.3983922004699707,
+          "latency": 1.493530035018921,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -298,7 +298,7 @@
       },
       "runs": [
         {
-          "latency": 1.9032509326934814,
+          "latency": 2.031158685684204,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -329,7 +329,7 @@
       },
       "runs": [
         {
-          "latency": 1.7365100383758545,
+          "latency": 1.9136161804199219,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -360,7 +360,7 @@
       },
       "runs": [
         {
-          "latency": 1.9668209552764893,
+          "latency": 2.0958077907562256,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -391,7 +391,7 @@
       },
       "runs": [
         {
-          "latency": 1.9009149074554443,
+          "latency": 2.028182029724121,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -422,7 +422,7 @@
       },
       "runs": [
         {
-          "latency": 1.9860312938690186,
+          "latency": 1.9718010425567627,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -453,7 +453,7 @@
       },
       "runs": [
         {
-          "latency": 1.7470390796661377,
+          "latency": 1.8922147750854492,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -484,7 +484,7 @@
       },
       "runs": [
         {
-          "latency": 1.803987979888916,
+          "latency": 1.8759801387786865,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -516,7 +516,7 @@
       },
       "runs": [
         {
-          "latency": 123.82215189933777,
+          "latency": 127.60191607475281,
           "final_level": "BASSA",
           "hit": false,
           "status": "MISS",
@@ -542,7 +542,7 @@
       },
       "runs": [
         {
-          "latency": 65.92018413543701,
+          "latency": 70.3404290676117,
           "final_level": "MEDIA",
           "hit": true,
           "status": "PASS",
@@ -581,7 +581,7 @@
       },
       "runs": [
         {
-          "latency": 65.36939477920532,
+          "latency": 69.233323097229,
           "final_level": "BASSA",
           "hit": false,
           "status": "MISS",
@@ -607,7 +607,7 @@
       },
       "runs": [
         {
-          "latency": 64.90081977844238,
+          "latency": 69.44357776641846,
           "final_level": "MEDIA",
           "hit": true,
           "status": "PASS",
@@ -646,7 +646,7 @@
       },
       "runs": [
         {
-          "latency": 64.716805934906,
+          "latency": 69.30382513999939,
           "final_level": "MEDIA",
           "hit": true,
           "status": "PASS",
@@ -685,7 +685,7 @@
       },
       "runs": [
         {
-          "latency": 68.08682298660278,
+          "latency": 70.68770384788513,
           "final_level": "BASSA",
           "hit": false,
           "status": "MISS",
@@ -711,7 +711,7 @@
       },
       "runs": [
         {
-          "latency": 70.28639006614685,
+          "latency": 70.37537598609924,
           "final_level": "BASSA",
           "hit": false,
           "status": "MISS",
@@ -737,7 +737,7 @@
       },
       "runs": [
         {
-          "latency": 12.19326901435852,
+          "latency": 12.211020231246948,
           "final_level": "BASSA",
           "hit": false,
           "status": "MISS",
@@ -763,7 +763,7 @@
       },
       "runs": [
         {
-          "latency": 70.90475797653198,
+          "latency": 71.06085300445557,
           "final_level": "BASSA",
           "hit": false,
           "status": "MISS",
@@ -789,7 +789,7 @@
       },
       "runs": [
         {
-          "latency": 69.01090502738953,
+          "latency": 69.25551295280457,
           "final_level": "BASSA",
           "hit": false,
           "status": "MISS",
@@ -815,7 +815,7 @@
       },
       "runs": [
         {
-          "latency": 70.38839292526245,
+          "latency": 70.77681684494019,
           "final_level": "MEDIA",
           "hit": true,
           "status": "PASS",
@@ -854,7 +854,7 @@
       },
       "runs": [
         {
-          "latency": 71.00350594520569,
+          "latency": 70.53444314002991,
           "final_level": "BASSA",
           "hit": false,
           "status": "MISS",
@@ -880,7 +880,7 @@
       },
       "runs": [
         {
-          "latency": 70.58123683929443,
+          "latency": 70.72205686569214,
           "final_level": "MEDIA",
           "hit": true,
           "status": "PASS",
@@ -919,7 +919,7 @@
       },
       "runs": [
         {
-          "latency": 69.81924200057983,
+          "latency": 70.05767512321472,
           "final_level": "MEDIA",
           "hit": false,
           "status": "MISS",
@@ -958,7 +958,7 @@
       },
       "runs": [
         {
-          "latency": 69.23792815208435,
+          "latency": 69.54110407829285,
           "final_level": "MEDIA",
           "hit": true,
           "status": "PASS",
@@ -995,7 +995,7 @@
       },
       "runs": [
         {
-          "latency": 40.124671936035156,
+          "latency": 39.486573696136475,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS",
@@ -1008,7 +1008,7 @@
           ]
         },
         {
-          "latency": 18.862178087234497,
+          "latency": 18.171525955200195,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS",
@@ -1021,7 +1021,7 @@
           ]
         },
         {
-          "latency": 5.793556213378906,
+          "latency": 6.430742979049683,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS",
@@ -1050,7 +1050,7 @@
       },
       "runs": [
         {
-          "latency": 12.98152494430542,
+          "latency": 34.004006147384644,
           "final_level": "MEDIA",
           "hit": true,
           "status": "PASS",
@@ -1059,11 +1059,35 @@
             [
               "Mamoli_Catalogo_Ricambi_2021_IT_EN",
               133
+            ],
+            [
+              "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+              224
+            ],
+            [
+              "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+              224
+            ],
+            [
+              "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+              224
+            ],
+            [
+              "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+              224
+            ],
+            [
+              "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+              224
+            ],
+            [
+              "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+              224
             ]
           ]
         },
         {
-          "latency": 14.665798902511597,
+          "latency": 28.474931001663208,
           "final_level": "MEDIA",
           "hit": true,
           "status": "PASS",
@@ -1071,17 +1095,53 @@
           "real_citations": [
             [
               "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+              224
+            ],
+            [
+              "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+              224
+            ],
+            [
+              "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+              224
+            ],
+            [
+              "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+              224
+            ],
+            [
+              "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+              224
+            ],
+            [
+              "Mamoli_Catalogo_Ricambi_2021_IT_EN",
               133
             ]
           ]
         },
         {
-          "latency": 7.052013874053955,
+          "latency": 22.772657871246338,
           "final_level": "MEDIA",
           "hit": true,
           "status": "PASS",
           "citation_ok": true,
           "real_citations": [
+            [
+              "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+              224
+            ],
+            [
+              "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+              224
+            ],
+            [
+              "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+              224
+            ],
+            [
+              "Mamoli_Catalogo_Ricambi_2021_IT_EN",
+              224
+            ],
             [
               "Mamoli_Catalogo_Ricambi_2021_IT_EN",
               133
@@ -1105,7 +1165,7 @@
       },
       "runs": [
         {
-          "latency": 14.059786796569824,
+          "latency": 22.141807079315186,
           "final_level": "BASSA",
           "hit": false,
           "status": "MISS",
@@ -1113,7 +1173,7 @@
           "real_citations": []
         },
         {
-          "latency": 5.679965019226074,
+          "latency": 7.100327253341675,
           "final_level": "BASSA",
           "hit": false,
           "status": "MISS",
@@ -1121,7 +1181,7 @@
           "real_citations": []
         },
         {
-          "latency": 4.0606489181518555,
+          "latency": 10.721700191497803,
           "final_level": "BASSA",
           "hit": false,
           "status": "MISS",
@@ -1142,7 +1202,7 @@
       "expected": {},
       "runs": [
         {
-          "latency": 7.011147737503052,
+          "latency": 8.356871843338013,
           "final_level": "BASSA",
           "hit": true,
           "status": "PASS",
@@ -1167,7 +1227,7 @@
       },
       "runs": [
         {
-          "latency": 1.9473176002502441,
+          "latency": 2.0259571075439453,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -1198,7 +1258,7 @@
       },
       "runs": [
         {
-          "latency": 1.8021221160888672,
+          "latency": 1.8827238082885742,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -1229,7 +1289,7 @@
       },
       "runs": [
         {
-          "latency": 2.083962917327881,
+          "latency": 1.6183428764343262,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -1260,7 +1320,7 @@
       },
       "runs": [
         {
-          "latency": 1.8991072177886963,
+          "latency": 1.9179749488830566,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -1291,7 +1351,7 @@
       },
       "runs": [
         {
-          "latency": 1.9165928363800049,
+          "latency": 1.8603811264038086,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -1322,7 +1382,7 @@
       },
       "runs": [
         {
-          "latency": 2.134124994277954,
+          "latency": 2.447978973388672,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -1353,7 +1413,7 @@
       },
       "runs": [
         {
-          "latency": 0.1216590404510498,
+          "latency": 0.09293317794799805,
           "final_level": "BASSA",
           "hit": true,
           "status": "PASS",
@@ -1378,7 +1438,7 @@
       },
       "runs": [
         {
-          "latency": 9.592507123947144,
+          "latency": 8.610812902450562,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",

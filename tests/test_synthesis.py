@@ -13,6 +13,7 @@ from src.retrieval.synthesis import (
     extract_citations,
     format_evidence_xml,
     strip_citations,
+    synthesize,
 )
 
 ROW = {"type": "table_row", "doc": "rotax_912_914_IPC", "page": 22, "lang": "EN",
@@ -93,3 +94,94 @@ class TestPrompt:
     def test_system_ha_regole_e_rifiuto(self):
         assert REFUSAL in SYSTEM_SYNTHESIS
         assert "<evidenza>" in SYSTEM_SYNTHESIS  # ancora il grounding ai tag
+
+
+class TestFormatoCitazioneObbligatorio:
+    """Invariante di formato: il prompt puo' cambiare, il parser no.
+
+    Il nodo di sintesi ricava le citazioni SOLO con `_CITE` (doc, pag. N con N
+    numerico). Una citazione che nomina il foglio Excel al posto del numero di
+    pagina NON viene riconosciuta: le citazioni diventano 0 e la risposta
+    ricade a BASSA. Questi test impediscono che il prompt torni a suggerire
+    quella forma.
+    """
+
+    def test_nome_foglio_non_e_una_citazione_valida(self):
+        t = ("La guarnizione e' a listino "
+             "(Electrolux_Distinta_Ricambi.xlsx, foglio PARTS LIST - SPANISH).")
+        assert extract_citations(t) == []
+
+    def test_parola_foglio_al_posto_del_numero_non_passa(self):
+        assert extract_citations("(listino_ricambi.xlsx, pag. Sheet1)") == []
+        assert extract_citations("(listino_ricambi.xlsx, foglio 3)") == []
+
+    def test_forma_obbligatoria_con_pagina_numerica_passa(self):
+        # anche pag. 0 (tipico dei fogli di calcolo) e' una citazione valida
+        t = ("Aluminum handle, quantita 1; codice non indicato in questa fonte "
+             "(DeliTools_SpareParts_List.xlsx, pag. 0).")
+        assert extract_citations(t) == [("DeliTools_SpareParts_List.xlsx", 0)]
+
+    def test_esempi_del_prompt_sono_parsabili_dal_parser(self):
+        # ogni citazione-esempio scritta nel system prompt deve essere
+        # riconosciuta: un esempio non parsabile insegnerebbe al modello una
+        # forma che azzera le citazioni.
+        esempi = extract_citations(SYSTEM_SYNTHESIS)
+        assert ("rotax_912_914_IPC", 22) in esempi
+        assert ("listino_ricambi.xlsx", 0) in esempi
+
+    def test_prompt_impone_pagina_numerica_e_vieta_il_foglio(self):
+        assert "(nome_documento, pag. N)" in SYSTEM_SYNTHESIS
+        assert "foglio" in SYSTEM_SYNTHESIS  # il caso Excel e' trattato esplicitamente
+
+    def test_prompt_distingue_evidenza_assente_da_dato_mancante(self):
+        # non deve tornare a far coincidere "manca il codice" con "rifiuta"
+        assert "QUANDO NON rifiutare" in SYSTEM_SYNTHESIS
+
+    def test_prompt_lega_N_all_attributo_pag(self):
+        # N non e' "un numero qualsiasi": e' il valore dell'attributo pag del
+        # <documento> usato. L'enfasi generica ("e' SEMPRE un numero") ha fatto
+        # scegliere il CODICE RICAMBIO come pagina (gate C_EN_03).
+        assert "attributo pag" in SYSTEM_SYNTHESIS
+        assert "SEMPRE un numero" not in SYSTEM_SYNTHESIS
+
+    def test_prompt_vieta_il_codice_al_posto_della_pagina(self):
+        assert "NON sono numeri di pagina" in SYSTEM_SYNTHESIS
+        for parola in ("codice ricambio", "prezzo", "quantita", "posizione"):
+            assert parola in SYSTEM_SYNTHESIS
+
+
+class _FakeLLM:
+    """LLM finto: nessuna rete, registra il system prompt ricevuto."""
+
+    def __init__(self, out: str):
+        self.out = out
+        self.seen: list[tuple[str, str]] = []
+
+    def generate(self, system: str, user: str) -> str:
+        self.seen.append((system, user))
+        return self.out
+
+
+class TestRifiutoRestaBassa:
+    def test_synthesize_passa_il_system_prompt_e_ritorna_il_testo(self):
+        llm = _FakeLLM(REFUSAL)
+        out = synthesize(llm, "che codice ha lo spinotto?", [ROW])
+        assert out == REFUSAL
+        assert llm.seen[0][0] == SYSTEM_SYNTHESIS
+        assert "<domanda>" in llm.seen[0][1]
+
+    def test_refusal_non_produce_citazioni(self):
+        assert extract_citations(REFUSAL) == []
+
+    def test_refusal_ricade_a_bassa_in_reconcile(self):
+        from src.graph.pipeline import reconcile
+        r = reconcile({"level": "MEDIA", "answer": REFUSAL, "citations": []})
+        assert r["final_level"] == "BASSA" and r["final_answer"] == REFUSAL
+
+    def test_risposta_parziale_citata_resta_media(self):
+        from src.graph.pipeline import reconcile
+        ans = ("Aluminum handle, quantita 1; codice non indicato in questa fonte "
+               "(DeliTools_SpareParts_List.xlsx, pag. 0).")
+        r = reconcile({"level": "MEDIA", "answer": ans,
+                       "citations": extract_citations(ans)})
+        assert r["final_level"] == "MEDIA" and r["final_answer"] == ans
