@@ -7,7 +7,23 @@ falsi join sulle parole legittime.
 
 from __future__ import annotations
 
-from src.ingestion.embedding import dense_text, point_id, repair_desc, sparse_text
+import sys
+import tempfile
+import types
+from pathlib import Path
+
+from src.ingestion.embedding import (
+    BM25_LANGUAGE,
+    FASTEMBED_CACHE_ENV,
+    SPARSE_MODEL,
+    dense_text,
+    fastembed_cache_dir,
+    get_sparse_model,
+    is_under_system_temp,
+    point_id,
+    repair_desc,
+    sparse_text,
+)
 
 CHUNK = {
     "chunk_id": "MAMOLI_P060_IT/t01/r005/single",
@@ -87,3 +103,55 @@ class TestPointId:
         assert a == point_id("MAMOLI_P231_IT/t01/r002/left")
         assert a != point_id("MAMOLI_P231_IT/t01/r002/right")
         assert len(a) == 36  # uuid canonico
+
+
+class TestFastembedCacheDir:
+    """La cache fastembed NON deve mai finire nella temp del SO.
+
+    Regressione protetta: `get_sparse_model()` chiamava `SparseTextEmbedding`
+    senza `cache_dir`; fastembed ripiegava su `tempfile.gettempdir()`, macOS
+    svuotava la directory e — con `HF_HUB_OFFLINE=1` — il modello non era piu'
+    ricaricabile: ramo narrativo e ibrido rispondevano BASSA a vuoto.
+    """
+
+    def test_default_non_cade_nella_temp_di_sistema(self, monkeypatch):
+        monkeypatch.delenv(FASTEMBED_CACHE_ENV, raising=False)
+        path = fastembed_cache_dir()
+        assert not is_under_system_temp(path), f"cache volatile: {path}"
+        assert path.is_absolute() and "~" not in str(path)
+        assert path.is_dir()
+
+    def test_riconosce_le_directory_volatili(self):
+        assert is_under_system_temp(Path(tempfile.gettempdir()) / "fastembed_cache")
+        assert is_under_system_temp(Path("/tmp/fastembed_cache"))
+        assert is_under_system_temp(Path("/var/folders/7t/xxx/T/fastembed_cache"))
+        assert not is_under_system_temp(Path.home() / ".cache" / "fastembed")
+
+    def test_override_via_env(self, monkeypatch, tmp_path):
+        target = tmp_path / "cache_fastembed"
+        monkeypatch.setenv(FASTEMBED_CACHE_ENV, str(target))
+        path = fastembed_cache_dir()
+        assert path == target and path.is_dir()  # creata se manca
+
+    def test_get_sparse_model_passa_sempre_cache_dir(self, monkeypatch):
+        """Il bug era un kwarg mancante: qui si prova che viene passato."""
+        visto: dict = {}
+
+        class _FakeSparse:
+            def __init__(self, model, **kwargs):
+                visto["model"] = model
+                visto.update(kwargs)
+
+        fake = types.ModuleType("fastembed")
+        fake.SparseTextEmbedding = _FakeSparse  # type: ignore[attr-defined]
+        monkeypatch.setitem(sys.modules, "fastembed", fake)
+        get_sparse_model.cache_clear()
+        try:
+            get_sparse_model()
+        finally:
+            get_sparse_model.cache_clear()  # mai lasciare lo stub in cache
+
+        assert visto["model"] == SPARSE_MODEL
+        assert visto["language"] == BM25_LANGUAGE
+        assert "cache_dir" in visto, "cache_dir non passato: la temp tornerebbe in gioco"
+        assert not is_under_system_temp(Path(visto["cache_dir"]))

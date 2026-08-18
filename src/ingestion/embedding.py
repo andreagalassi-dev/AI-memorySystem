@@ -18,9 +18,12 @@ e' progettato per term-frequency BM25.
 
 from __future__ import annotations
 
+import os
 import re
+import tempfile
 import uuid
 from functools import lru_cache
+from pathlib import Path
 
 # --- costanti condivise indice/query (P2.3 ingestion, P2.4 retrieval) -----------
 COLLECTION = "aike_chunks"
@@ -32,6 +35,41 @@ SPARSE_MODEL = "Qdrant/bm25"
 # Stemmer BM25: unico e condiviso tra indicizzazione e query (i codici non
 # passano dallo stemmer). Gestione multi-lingua fine: decisione a P2.4 sui numeri.
 BM25_LANGUAGE = "italian"
+
+# --- cache dei modelli fastembed: MAI nella temp di sistema ---------------------
+# Se si chiama SparseTextEmbedding senza `cache_dir`, fastembed ripiega su
+# `tempfile.gettempdir()/fastembed_cache` -> su macOS `/var/folders/<...>/T/`,
+# che il SO svuota periodicamente (e su Linux `/tmp`, svuotato al reboot).
+# Quando la cache viene svuotata il modello sparisce, e siccome il progetto gira
+# air-gapped per scelta (`HF_HUB_OFFLINE=1`/`TRANSFORMERS_OFFLINE=1` in `.env`)
+# fastembed non puo' riscaricarlo: solleva errore invece di ripararsi. Effetto
+# osservato: `embed_sparse_query()` esplode, il ramo NARRATIVO e l'IBRIDO
+# rispondono `BASSA` con testo vuoto — un guasto totale e SILENZIOSO.
+# Percio' la cache sta in una directory persistente sotto la home, creata se
+# manca. Override con AIKE_FASTEMBED_CACHE (deve restare fuori dalla temp).
+FASTEMBED_CACHE_ENV = "AIKE_FASTEMBED_CACHE"
+FASTEMBED_CACHE_DEFAULT = "~/.cache/fastembed"
+
+
+def fastembed_cache_dir() -> Path:
+    """Directory persistente dei modelli fastembed (creata se manca)."""
+    raw = os.getenv(FASTEMBED_CACHE_ENV) or FASTEMBED_CACHE_DEFAULT
+    path = Path(raw).expanduser()
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def is_under_system_temp(path: Path) -> bool:
+    """True se `path` cade nella temp del SO (cache volatile: vedi sopra)."""
+    resolved = Path(path).expanduser().resolve()
+    candidates = {Path(tempfile.gettempdir()), Path("/tmp"), Path("/var/folders")}
+    for base in candidates:
+        try:
+            resolved.relative_to(Path(base).resolve())
+            return True
+        except (ValueError, OSError):
+            continue
+    return False
 
 # ------------------------------------------------------------------- text-prep
 
@@ -103,7 +141,9 @@ def get_dense_model():
 def get_sparse_model():
     from fastembed import SparseTextEmbedding
 
-    return SparseTextEmbedding(SPARSE_MODEL, language=BM25_LANGUAGE)
+    return SparseTextEmbedding(
+        SPARSE_MODEL, language=BM25_LANGUAGE, cache_dir=str(fastembed_cache_dir())
+    )
 
 
 def embed_dense(texts: list[str], batch_size: int = 32) -> list[list[float]]:
