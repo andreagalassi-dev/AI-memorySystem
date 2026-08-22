@@ -127,8 +127,19 @@ def effective_config(deps: Any | None = None) -> dict:
     except Exception:
         DEFAULT_VISUAL_COLLECTION = None
 
+    from src.retrieval.rerank import RERANK_TOPK_DEFAULT, RERANK_TOPK_ENV, rerank_topk
+
+    topk = rerank_topk()
+    topk_raw = os.getenv(RERANK_TOPK_ENV)
+    topk_reason = (f"env {RERANK_TOPK_ENV}={topk_raw!r}" if topk_raw is not None
+                   else f"env {RERANK_TOPK_ENV} assente (default {RERANK_TOPK_DEFAULT})")
+
     return {
         "env_file": env_file,
+        # Pool RRF dato al cross-encoder TESTUALE. Cambiarlo cambia sia la
+        # qualita' sia la latenza (il cross-encoder gira su ogni candidato):
+        # un audit che non lo dichiara non e' confrontabile con gli altri.
+        "rerank_topk": {"value": topk, "reason": topk_reason},
         "visual_rerank": {"enabled": rerank_on, "reason": rerank_why},
         "visual_score_floor": floor,
         "visual_score_floor_source": floor_source,
@@ -174,6 +185,7 @@ def format_config_banner(cfg: dict) -> str:
         "CONFIGURAZIONE EFFETTIVA DEL RUN",
         "=" * 72,
         f"  .env caricato        : {cfg.get('env_file') or 'NESSUNO'}",
+        f"  rerank_topk (testo)  : {cfg['rerank_topk']['value']}  [{cfg['rerank_topk']['reason']}]",
         f"  reranker visivo      : {'ON' if rr['enabled'] else 'OFF'}  [{rr['reason']}]",
         f"  visual_score_floor   : {floor_txt}  ({cfg.get('visual_score_floor_source')})",
     ]

@@ -11,10 +11,53 @@ il cross-encoder puo' solo peggiorarle e costa latenza).
 
 from __future__ import annotations
 
+import os
 from functools import lru_cache
 
 RERANK_MODEL = "BAAI/bge-reranker-v2-m3"
-RERANK_TOPK = 20
+
+#: Profondita' del pool RRF che arriva al cross-encoder TESTUALE (non il
+#: reranker visivo, che ha le sue AIKE_VISUAL_*). Il default resta 20: e' il
+#: valore con cui sono stati presi tutti i riferimenti di qualita' in
+#: `output/eval/`, e cambiarlo cambia la misura.
+RERANK_TOPK_DEFAULT = 20
+
+#: Nome della variabile d'ambiente che lo sovrascrive (convenzione AIKE_*).
+RERANK_TOPK_ENV = "AIKE_RERANK_TOPK"
+
+
+def rerank_topk() -> int:
+    """Pool RRF da dare al cross-encoder, letto dall'ambiente AD OGNI CHIAMATA.
+
+    Perche' pigro e non una costante calcolata all'import: `.env` viene caricato
+    da `src/common/run_config.load_runtime_env()`, che gira DOPO l'import di
+    parecchi moduli. Una costante fotografata all'import leggerebbe un ambiente
+    non ancora popolato e misurerebbe una configurazione che non esiste — lo
+    stesso errore documentato in `src/common/run_config.py`.
+
+    Valore assente, non numerico o <= 0 -> `RERANK_TOPK_DEFAULT`: un pool rotto
+    deve degradare al riferimento noto, non a zero candidati.
+    """
+    raw = os.getenv(RERANK_TOPK_ENV)
+    if raw is None:
+        return RERANK_TOPK_DEFAULT
+    try:
+        value = int(raw.strip())
+    except (AttributeError, ValueError):
+        return RERANK_TOPK_DEFAULT
+    return value if value > 0 else RERANK_TOPK_DEFAULT
+
+
+def __getattr__(name: str):
+    """`RERANK_TOPK` resta leggibile come attributo di modulo, ma e' calcolato.
+
+    Serve perche' i sette punti che fanno `from src.retrieval.rerank import
+    RERANK_TOPK` (fra cui gli script di misura, che NON vanno modificati) si
+    trovino sotto l'interruttore senza che nessuno di essi cambi una riga.
+    """
+    if name == "RERANK_TOPK":
+        return rerank_topk()
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 @lru_cache(maxsize=1)

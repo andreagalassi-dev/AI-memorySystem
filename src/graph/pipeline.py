@@ -716,7 +716,7 @@ def build_default_deps(role: Role, *, llm=None, visual_search=None) -> Deps:
     from src.backend.clients.qdrant_client import get_qdrant_client
     from src.retrieval.catalog import get_pg_catalog, make_catalog_lookup
     from src.retrieval.confidence import CALIBRATED_V1
-    from src.retrieval.rerank import RERANK_TOPK, _reranker
+    from src.retrieval.rerank import _reranker, rerank_topk
     from src.retrieval.search import access_filter, search
     from src.retrieval.synthesis import synthesize as _synth
 
@@ -776,7 +776,7 @@ def build_default_deps(role: Role, *, llm=None, visual_search=None) -> Deps:
             # (l'espansione debito §2 entra solo nel canale sparse via search;
             #  il reranker resta sulla query originale)
             import torch
-            base = search(qc, query, "routed", limit=RERANK_TOPK, query_filter=vf,
+            base = search(qc, query, "routed", limit=rerank_topk(), query_filter=vf,
                           extra_terms=extra_terms)
             if not base:
                 return [], []

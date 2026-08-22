@@ -112,12 +112,12 @@ def search(client: QdrantClient, query: str, strategy: str, limit: int = 10,
         return search(client, query, "rrf", limit, query_filter=query_filter,
                       extra_terms=extra_terms)
     if strategy == "routed_rr":
-        from src.retrieval.rerank import RERANK_TOPK, rerank
+        from src.retrieval.rerank import rerank, rerank_topk
 
         route = classify_query(query)
         if route.query_type == "code":
             return search(client, query, "routed", limit, query_filter=query_filter)
-        base = search(client, query, "routed", limit=RERANK_TOPK,
+        base = search(client, query, "routed", limit=rerank_topk(),
                       query_filter=query_filter, extra_terms=extra_terms)
         # reranker sulla query ORIGINALE: l'espansione serve al recall dei
         # candidati, il punteggio resta sulla domanda vera dell'utente
