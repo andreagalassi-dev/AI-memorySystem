@@ -17,10 +17,27 @@ from functools import lru_cache
 RERANK_MODEL = "BAAI/bge-reranker-v2-m3"
 
 #: Profondita' del pool RRF che arriva al cross-encoder TESTUALE (non il
-#: reranker visivo, che ha le sue AIKE_VISUAL_*). Il default resta 20: e' il
-#: valore con cui sono stati presi tutti i riferimenti di qualita' in
-#: `output/eval/`, e cambiarlo cambia la misura.
-RERANK_TOPK_DEFAULT = 20
+#: reranker visivo, che ha le sue AIKE_VISUAL_*).
+#:
+#: Default 50 dal 22/08, MISURATO. A 20 il cross-encoder — che esiste apposta
+#: per riordinare bene — vedeva venti candidati, mentre 22 bersagli del metro
+#: narrativo stanno fra la posizione 11 e la 165 e nove di essi proprio fra la
+#: 11 e la 20: appena oltre il bordo.
+#:   - recupero (deterministico): bersagli nelle evidenze finali 24/56 -> 30/56,
+#:     IT 10/31 -> 16/31;
+#:   - e2e sulle 8 query in cui il pool cambia qualcosa: bersaglio citato 0/7
+#:     -> 4/7 sui guadagni, 1/1 -> 0/1 sulla perdita = **+3 netto**, con
+#:     **zero ALTA sbagliate**. Tre dei quattro recuperi (Q035, Q038, Q045)
+#:     erano errori CONFIDENTI: citavano la pagina sbagliata, ora la giusta;
+#:   - golden gate a 50: 22 PASS_ALTA / 10 PASS / 10 MISS, 0 WRONG_ALTA,
+#:     **zero item cambiati** campo per campo vs il riferimento a68a780.
+#:
+#: Costo: il cross-encoder isolato passa da 0.93s a 2.61s (2.8x), ma e2e la
+#: latenza mediana NON peggiora (18.9s a 50 contro 20.1s a 20): a dominare e'
+#: la generazione, e +1.7s ci si perde dentro. Non si sale a 100: li' il costo
+#: e' 9.2x (8.56s) per soli 5 bersagli in piu' — quattro volte il prezzo per
+#: bersaglio guadagnato.
+RERANK_TOPK_DEFAULT = 50
 
 #: Nome della variabile d'ambiente che lo sovrascrive (convenzione AIKE_*).
 RERANK_TOPK_ENV = "AIKE_RERANK_TOPK"

@@ -34,8 +34,9 @@ def _env_pulito(monkeypatch):
 
 class TestLetturaEnv:
     def test_default_venti_se_assente(self):
-        """Il riferimento resta 20: tutti gli audit in output/eval/ sono a 20."""
-        assert rr.rerank_topk() == rr.RERANK_TOPK_DEFAULT == 20
+        """Default 50 dal 22/08: misurato +3 risposte nette e 0 ALTA sbagliate,
+        gate identico. Gli audit precedenti a quella data sono a 20."""
+        assert rr.rerank_topk() == rr.RERANK_TOPK_DEFAULT == 50
 
     @pytest.mark.parametrize("raw,atteso", [("50", 50), ("100", 100), (" 35 ", 35)])
     def test_valore_valido_vince(self, monkeypatch, raw, atteso):
@@ -47,12 +48,12 @@ class TestLetturaEnv:
         """Un pool a zero candidati sarebbe un rifiuto sistematico silenzioso:
         meglio tornare al riferimento noto."""
         monkeypatch.setenv(rr.RERANK_TOPK_ENV, raw)
-        assert rr.rerank_topk() == 20
+        assert rr.rerank_topk() == 50
 
     def test_attributo_di_modulo_segue_lambiente(self, monkeypatch):
         """I punti che fanno `from src.retrieval.rerank import RERANK_TOPK`
         (inclusi gli script di misura) devono vedere il valore aggiornato."""
-        assert rr.RERANK_TOPK == 20
+        assert rr.RERANK_TOPK == 50
         monkeypatch.setenv(rr.RERANK_TOPK_ENV, "70")
         assert rr.RERANK_TOPK == 70
         from src.retrieval.rerank import RERANK_TOPK
@@ -87,7 +88,7 @@ def _spia_search(monkeypatch) -> list[tuple[str, int]]:
 class TestPercorsiReali:
     """I due usi reali, non un oggetto costruito a mano."""
 
-    @pytest.mark.parametrize("env,atteso", [(None, 20), ("50", 50)])
+    @pytest.mark.parametrize("env,atteso", [(None, 50), ("20", 20)])
     def test_retrieve_di_produzione_usa_il_pool_configurato(self, monkeypatch, env, atteso):
         """`src/graph/pipeline.py` — la `deps.retrieve` che usano UI, gate e metro."""
         if env is not None:
@@ -102,7 +103,7 @@ class TestPercorsiReali:
         assert ("routed", atteso) in visti, f"limit visti: {visti}"
         assert ev == []
 
-    @pytest.mark.parametrize("env,atteso", [(None, 20), ("50", 50)])
+    @pytest.mark.parametrize("env,atteso", [(None, 50), ("20", 20)])
     def test_strategia_routed_rr_usa_il_pool_configurato(self, monkeypatch, env, atteso):
         """`src/retrieval/search.py` — l'altro punto d'uso, quello degli script."""
         if env is not None:
