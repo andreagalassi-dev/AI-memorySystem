@@ -1,8 +1,10 @@
 """P2.3 — Test della text-prep per il dual-indexing (pure functions, zero modelli).
 
-Verifica il contratto: l'embedder non vede metadati; denso = solo desc riparata;
-sparse = pos + codice atomico + desc riparata; riparazione deterministica senza
-falsi join sulle parole legittime.
+Verifica il contratto: denso = identita' del documento + desc riparata (MAI
+pagina/codice/prezzo); sparse = pos + codice (frammenti + forma incollata) + desc riparata (MAI
+l'identita'); riparazione deterministica senza falsi join sulle parole
+legittime. L'identita' nel denso e l'atomicita' del codice sono coperte a
+fondo, con i numeri che le motivano, in tests/test_index_identity_atomic.py.
 """
 
 from __future__ import annotations
@@ -66,12 +68,18 @@ class TestRepairDesc:
 
 
 class TestDenseText:
-    def test_solo_desc_riparata(self):
-        assert dense_text(CHUNK) == "vite m5/m5 screw"
+    def test_identita_documento_piu_desc_riparata(self):
+        # l'identita' del documento e' entrata nel denso: senza, l'utente che
+        # nomina il documento non poteva raggiungerlo (misure in
+        # tests/test_index_identity_atomic.py)
+        assert dense_text(CHUNK) == \
+            "mamoli catalogo ricambi 2021 it en: vite m5/m5 screw"
 
-    def test_niente_metadati_ne_codice(self):
+    def test_niente_metadati_di_riga_ne_codice(self):
+        # l'identita' del DOCUMENTO e' ammessa; i metadati della RIGA no,
+        # e la PAGINA in particolare e' misurata come dannosa
         t = dense_text(CHUNK)
-        for vietato in ("14R", "14r", "1B", "pagina", "Mamoli", "20,00", "50"):
+        for vietato in ("14R", "14r", "1B", "pagina", "60", "20,00", "50"):
             assert vietato not in t
 
     def test_senza_desc_nessun_vettore_denso(self):
@@ -80,14 +88,23 @@ class TestDenseText:
 
 class TestSparseText:
     def test_pos_codice_desc(self):
+        # '14R' non ha separatori: la forma incollata coincide col codice e non
+        # viene aggiunta (raddoppierebbe la sua term frequency)
         assert sparse_text(CHUNK) == "1B 14R vite m5/m5 screw"
 
-    def test_codice_atomico_presente(self):
+    def test_codice_presente(self):
         assert "14R" in sparse_text(CHUNK).split()
+
+    def test_codice_con_separatori_aggiunge_la_forma_incollata(self):
+        # e' li' che sta l'atomicita': il termine incollato distingue i
+        # 'quasi giusti' senza togliere i frammenti (vedi
+        # tests/test_index_identity_atomic.py)
+        assert sparse_text({**CHUNK, "code": "14M-40"}).split()[1:3] == \
+            ["14M-40", "14m40"]
 
     def test_esclusi_qty_prezzo_e_citazione(self):
         t = sparse_text(CHUNK)
-        for vietato in ("50", "20,00", "pagina", "Mamoli", "tabella"):
+        for vietato in ("50", "20,00", "pagina", "Mamoli", "mamoli", "tabella"):
             assert vietato not in t
 
     def test_senza_desc_resta_pos_e_codice(self):

@@ -10,10 +10,22 @@ Separazione netta, per contratto:
     P2.4 riusera' gli stessi embedder e la stessa text-prep per le query.
 
 Scelta sparse = BM25 (fastembed Qdrant/bm25), NON lo sparse learned di BGE-M3:
-BM25 tiene il codice ricambio come token ATOMICO (match tutto-o-niente), mentre
 i subword XLM-R farebbero scorare alto i codici "quasi giusti" — la classe di
 errore vietata dal progetto. Il modifier IDF della collezione (validato in P2.1)
 e' progettato per term-frequency BM25.
+
+ATTENZIONE — qui c'era un'AFFERMAZIONE FALSA, corretta ora: questa docstring
+diceva che "BM25 tiene il codice come token ATOMICO". Non e' vero e non lo e'
+mai stato: `SimpleTokenizer` di fastembed sostituisce ogni carattere non-`\w`
+con uno spazio, quindi `14M-40` entrava nell'indice come DUE termini e `14M-50`
+ne condivideva UNO. Sull'indice reale 16108 codici distinti su 40111 (40.2%)
+contengono un separatore: era un generatore latente di "quasi giusti".
+Oggi il codice entra nell'indice in ENTRAMBE le forme (frammenti + forma
+incollata da `atomic_code()`): il termine incollato e' esclusivo del codice
+esatto ed e' il segnale ad alto IDF che distingue i "quasi giusti", mentre i
+frammenti restano perche' servono al chunk giusto per battere il rumore
+(vedi `sparse_text`: toglierli ha causato una regressione misurata).
+Difesa cablata in tests/test_index_identity_atomic.py::TestCodiceAtomico.
 """
 
 from __future__ import annotations
@@ -106,19 +118,154 @@ def repair_desc(desc: str | None) -> str | None:
     return re.sub(r"\s+", " ", s).lower().strip() or None
 
 
-def dense_text(chunk: dict) -> str | None:
-    """Input del canale SEMANTICO: solo la descrizione riparata.
+# --- identita' del documento (canale DENSO) ------------------------------------
+# Estensioni da togliere dallo stem: 218 chunk reali hanno il doc con estensione
+# ('Mamoli_..._IT_EN.pdf', 'Electrolux_Distinta_Ricambi.xlsx'). Senza questo,
+# 'pdf'/'xlsx' diventano token presenti SOLO in quei documenti: rumore che
+# discrimina per motivi sbagliati.
+_DOC_EXT = (".pdf", ".xlsx", ".xls", ".csv", ".docx", ".doc")
 
-    Niente codice (subword-rumore: dei codici si occupa BM25), niente
-    pos/qty/prezzo/filename. Senza descrizione -> None: il punto non avra' il
-    vettore denso e restera' recuperabile dal canale lessicale.
+
+def doc_identity(chunk: dict) -> str | None:
+    """Identita' leggibile del documento, dal suo stem: 'westermann_kehrmaschine'
+    -> 'westermann kehrmaschine'.
+
+    Sorgente = `doc` (presente su TUTTI i 199447 punti), non `doc_stem` (nullo
+    su 32973 punti della vecchia ingestion). Nessuna lettura da Postgres: la
+    marca sta gia' dentro lo stem in tutti i 119 documenti del corpus, e una
+    dipendenza dal registro renderebbe la text-prep non piu' pura/testabile.
     """
-    return repair_desc(chunk.get("desc"))
+    raw = chunk.get("doc") or chunk.get("doc_stem")
+    if not raw:
+        return None
+    low = str(raw)
+    for ext in _DOC_EXT:
+        if low.lower().endswith(ext):
+            low = low[: -len(ext)]
+            break
+    return re.sub(r"\s+", " ", low.replace("_", " ")).lower().strip() or None
+
+
+def dense_text(chunk: dict) -> str | None:
+    """Input del canale SEMANTICO: identita' del documento + descrizione riparata.
+
+    L'IDENTITA' e' la riparazione principale di questo canale. Prima c'era solo
+    la descrizione della riga: l'utente che scrive "spazzatrice Westermann" non
+    poteva raggiungere `westermann_kehrmaschine`, perche' in TUTTO quel
+    documento i token 'westermann'/'kehrmaschine' non comparivano mai nel testo
+    indicizzato (23 documenti = 114050 chunk = 74.6% dell'indice hanno identita'
+    assente o quasi). Misurato con BGE-M3 reale (2114 chunk, 7 query):
+      - query che centrano il documento giusto: 3/7 -> 7/7, tutte a rango 1;
+      - separazione fra documenti: 0.106 -> 0.264 (raddoppia);
+      - discriminazione DENTRO il documento: MRR 0.692 -> 0.727,
+        top-1 52.7% -> 60.7% su 150 prove (migliora, non peggiora).
+
+    NIENTE PAGINA: misurato, aggiungerla al denso PEGGIORA. Niente codice
+    (subword-rumore: dei codici si occupa BM25), niente pos/qty/prezzo.
+
+    Senza descrizione -> None, invariato: 13125 chunk avrebbero un denso fatto
+    della SOLA identita', identico per tutto il documento — un attrattore che
+    sommergerebbe le righe vere.
+    """
+    desc = repair_desc(chunk.get("desc"))
+    if not desc:
+        return None
+    ident = doc_identity(chunk)
+    return f"{ident}: {desc}" if ident else desc
+
+
+# --- codice atomico (canale LESSICALE) -----------------------------------------
+_NOT_ALNUM = re.compile(r"[^0-9a-z]+")
+# Un token di query e' "codice" se ha una cifra e un separatore -/. ma NESSUNA
+# virgola: sul corpus reale nessuno dei 40111 codici contiene una virgola,
+# mentre i prezzi sono tutti in formato europeo ('20,00', '1.234,50'). La
+# virgola e' quindi il discriminante esatto fra codice e prezzo.
+_QUERY_CODEY = re.compile(r"^(?=[^,]*$)(?=.*\d)(?=.*[-/.]).+$")
+_STRIP_PUNCT = "?!;:()[]{}\"'«»"
+
+
+def atomic_code(code: str | None) -> str | None:
+    """Il codice come UN SOLO termine BM25: 'HD3-ES-1C/20' -> 'hd3es1c20'.
+
+    Motivo: `SimpleTokenizer` di BM25 spezza su ogni non-`\w`, quindi
+    'HD3-ES-1C/20' e 'HD3-ES-0C/20' condividevano 3 termini su 4 — un
+    generatore di "quasi giusti". Con l'incollaggio ne condividono ZERO.
+
+    Sicurezza dell'incollaggio, verificata sui 40111 codici distinti reali:
+    produce solo 19 collisioni, e 18 sono lo STESSO ricambio scritto in due
+    modi ('18111-67JG3' / '1811167JG3', 'CS-12' / 'CS12'): unirli e' un
+    guadagno, non una perdita. Nessuna coppia di ricambi DIVERSI collide.
+    """
+    if not code:
+        return None
+    return _NOT_ALNUM.sub("", str(code).lower()) or None
+
+
+def sparse_query_text(query: str) -> str:
+    """Prepara una QUERY per il canale lessicale aggiungendo la forma incollata
+    dei token che sono codici. ADDITIVA per contratto: i termini originali
+    restano, quindi la stessa funzione continua a funzionare identica contro un
+    indice con i codici ancora frantumati (un termine mai visto contribuisce 0
+    al punteggio BM25 di ogni documento).
+
+    E' l'unico punto in cui la preparazione del testo tocca una query: NON usa
+    `dense_text`/`sparse_text` (che aggiungono l'identita' del DOCUMENTO e
+    contaminerebbero la domanda dell'utente). Guardia cablata in
+    tests/test_index_identity_atomic.py::TestTextPrepMaiAQueryTime.
+    """
+    if not query:
+        return query
+    extra: list[str] = []
+    seen: set[str] = set()
+    for tok in query.split():
+        bare = tok.strip(_STRIP_PUNCT)
+        if not bare or not _QUERY_CODEY.match(bare):
+            continue
+        glued = atomic_code(bare)
+        if glued and len(glued) >= 4 and glued != bare.lower() and glued not in seen:
+            seen.add(glued)
+            extra.append(glued)
+    return f"{query} {' '.join(extra)}" if extra else query
 
 
 def sparse_text(chunk: dict) -> str:
-    """Input del canale LESSICALE: pos + codice atomico + descrizione riparata."""
-    parts = [chunk.get("pos"), chunk["code"], repair_desc(chunk.get("desc"))]
+    """Input del canale LESSICALE: pos + codice (frammenti E forma incollata)
+    + descrizione riparata.
+
+    ADDITIVO, simmetrico a `sparse_query_text`. Una prima versione metteva SOLO
+    la forma incollata, per ottenere che due codici "quasi giusti" non
+    condividessero NESSUN termine. Era troppo forte, e ha prodotto una
+    regressione REALE, misurata sul golden set: C004 ("codice M125A-08-80")
+    passava da rango 1 a NESSUN risultato. Catena causale:
+      - il chunk giusto, ridotto al solo 'm125a0880', condivideva con la query
+        1 SOLO termine (contro i 4 di prima);
+      - i chunk zuppa-di-numeri ('Item Part No. Description Qty. | 1 2 3')
+        continuavano invece a farsi colpire piu' volte dai frammenti '08'/'80'
+        della query, e vincevano 26.55 contro 15.996.
+    Togliere i frammenti al DOCUMENTO ha disarmato il chunk giusto lasciando
+    armato il rumore. Con entrambe le forme: termini in comune con la query
+    4 invece di 1, e C004 torna a rango 1.
+
+    L'atomicita' che serve NON si perde. Non serve che i frammenti spariscano,
+    serve che esista un termine che DISCRIMINA: '14M-40' e '14M-50' condividono
+    1 termine su 3 ('14m'), ma il termine incollato ('14m40' / '14m50') e'
+    esclusivo di ciascuno, ed essendo rarissimo e' quello ad alto IDF che decide
+    il ranking. Vedi tests/test_index_identity_atomic.py::TestCodiceAtomico.
+
+    NIENTE identita' del documento qui: nello sparse gonfierebbe la term
+    frequency di 'westermann' su ogni chunk del documento, spostando l'IDF
+    della collezione senza aggiungere informazione. L'identita' e' un fatto
+    semantico e sta nel denso.
+    """
+    code = chunk.get("code")
+    glued = atomic_code(code)
+    parts = [chunk.get("pos"), code]
+    # la forma incollata si aggiunge solo se dice qualcosa di nuovo: per i
+    # 24003 codici gia' senza separatori ripeterla raddoppierebbe la term
+    # frequency rispetto agli altri, falsando il confronto fra codici.
+    if glued and code and glued != str(code).lower():
+        parts.append(glued)
+    parts.append(repair_desc(chunk.get("desc")))
     return " ".join(p for p in parts if p)
 
 
@@ -137,12 +284,16 @@ def get_dense_model():
     return BGEM3FlagModel(DENSE_MODEL, use_fp16=False)
 
 
-@lru_cache(maxsize=1)
-def get_sparse_model():
+@lru_cache(maxsize=4)
+def get_sparse_model(language: str | None = None):
+    """Modello BM25. `language` sceglie SOLO lo stemmer/stopword; il default
+    resta `BM25_LANGUAGE` (invariato) — il parametro serve a misurare in A/B
+    lo stemmer su un indice parallelo senza toccare la produzione."""
     from fastembed import SparseTextEmbedding
 
     return SparseTextEmbedding(
-        SPARSE_MODEL, language=BM25_LANGUAGE, cache_dir=str(fastembed_cache_dir())
+        SPARSE_MODEL, language=language or BM25_LANGUAGE,
+        cache_dir=str(fastembed_cache_dir())
     )
 
 
@@ -151,11 +302,11 @@ def embed_dense(texts: list[str], batch_size: int = 32) -> list[list[float]]:
     return [v.tolist() for v in out["dense_vecs"]]
 
 
-def embed_sparse_docs(texts: list[str]):
+def embed_sparse_docs(texts: list[str], language: str | None = None):
     """Embedding sparse lato documento (term frequencies; l'IDF lo applica Qdrant)."""
-    return list(get_sparse_model().embed(texts))
+    return list(get_sparse_model(language).embed(texts))
 
 
-def embed_sparse_query(text: str):
+def embed_sparse_query(text: str, language: str | None = None):
     """Embedding sparse lato query (stessa tokenizzazione/stemmer dell'indice)."""
-    return list(get_sparse_model().query_embed(text))[0]
+    return list(get_sparse_model(language).query_embed(text))[0]

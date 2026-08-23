@@ -16,6 +16,7 @@ from src.ingestion.embedding import (
     SPARSE_NAME,
     embed_dense,
     embed_sparse_query,
+    sparse_query_text,
 )
 from src.common.roles import Role
 from src.retrieval.router import classify_query
@@ -27,7 +28,19 @@ STRATEGIES = ("dense", "sparse", "rrf", "routed")
 
 
 def _sparse_vec(query: str) -> models.SparseVector:
-    q = embed_sparse_query(query)
+    """Vettore BM25 della query, con la forma INCOLLATA dei codici aggiunta
+    (`sparse_query_text`): e' il lato query dell'atomicita' del codice.
+
+    ADDITIVA: i termini originali restano, quindi contro un indice con i codici
+    ancora frantumati il comportamento e' identico (un termine assente dalla
+    collezione ha term-frequency 0 su ogni documento e contribuisce 0 al
+    punteggio). Contro un indice con i codici atomici, e' il termine che rende
+    il ricambio raggiungibile.
+
+    NB: qui NON si usa `sparse_text`/`dense_text` dell'ingestion — quelle
+    aggiungono l'identita' del DOCUMENTO e non devono mai vedere una query.
+    """
+    q = embed_sparse_query(sparse_query_text(query))
     return models.SparseVector(indices=q.indices.tolist(), values=q.values.tolist())
 
 
@@ -64,7 +77,10 @@ def search(client: QdrantClient, query: str, strategy: str, limit: int = 10,
     dense resta sulla query originale; 'code'/'mixed'/sparse-diretta li
     IGNORANO (mai inquinare la ricerca esatta dei codici).
     """
-    sparse_text = (f"{query} {' '.join(extra_terms)}" if extra_terms else query)
+    # nome esplicito: NON e' la `sparse_text` di ingestion (quella vede un chunk,
+    # non una query, e aggiunge l'identita' del documento). Qui e' solo la query
+    # piu' i termini di espansione.
+    sparse_query = (f"{query} {' '.join(extra_terms)}" if extra_terms else query)
     if strategy == "sparse":
         return client.query_points(
             COLLECTION, query=_sparse_vec(query), using=SPARSE_NAME,
@@ -80,7 +96,7 @@ def search(client: QdrantClient, query: str, strategy: str, limit: int = 10,
                 models.Prefetch(query=embed_dense([query])[0],
                                 using=DENSE_NAME, limit=limit * 2,
                                 filter=query_filter),
-                models.Prefetch(query=_sparse_vec(sparse_text),
+                models.Prefetch(query=_sparse_vec(sparse_query),
                                 using=SPARSE_NAME, limit=limit * 2,
                                 filter=query_filter),
             ],
