@@ -740,7 +740,34 @@ def build_default_deps(role: Role, *, llm=None, visual_search=None) -> Deps:
                         p.get("version_status"), p.get("doc_version"),
                         p.get("is_assembly", False))
 
-    def _apply_hop2(ev_list: list[Evidence]) -> tuple[list[Evidence], list[Evidence]]:
+    def _apply_hop2(ev_list: list[Evidence],
+                    access: models.Filter) -> tuple[list[Evidence], list[Evidence]]:
+        """Hop 1 (group by codice) + Hop 2 (figli dell'assieme), scope del grafo.
+
+        ATTENZIONE — questa e' la SECONDA copia della stessa regola: l'altra e'
+        `src.retrieval.search.apply_hop2`, usata dagli script e da `bom.py`.
+        Esistono separate perche' quel percorso lavora su `ScoredPoint` di
+        Qdrant mentre qui si lavora su `Evidence` gia' convertite, con lo score
+        del reranker; ma la REGOLA di sicurezza e' una sola. Una divergenza fra
+        le due e' un bug, non una scelta: chi tocca l'una guardi l'altra.
+
+        P4.5/A6 — i figli si recuperano in AND fra `parent_id` e il filtro
+        d'accesso gia' calcolato da `_retrieve` (`access`), mai col solo
+        `parent_id`: un ruolo non deve ricevere componenti riservati a un altro
+        ruolo. Il filtro NON viene riscritto a mano ma esteso con `model_copy`
+        (stesso pattern di `registry/revalidation.py`), cosi' un futuro
+        irrigidimento di `access_filter` arriva qui da solo invece di essere
+        silenziosamente perso.
+
+        Sul `version_status`: i figli EREDITANO lo scope di versione del padre,
+        cioe' l'intero `access`, non il solo ruolo. Il grafo interroga scope
+        diversi in fallback (`current`, poi `superseded`/`deleted`) e ogni
+        risposta si costruisce su UNO scope: pescare i figli fuori da quello
+        significherebbe presentare componenti obsoleti dentro una distinta data
+        per corrente (o viceversa), senza che l'avviso di obsolescenza — deciso
+        sul padre — si applichi a loro. Fra le due semantiche questa e' anche la
+        piu' restrittiva, quindi la scelta prudente a parita' di dubbio.
+        """
         seen = set()
         grouped = []
         for e in ev_list:
@@ -751,8 +778,10 @@ def build_default_deps(role: Role, *, llm=None, visual_search=None) -> Deps:
         
         children = []
         if grouped and grouped[0].is_assembly and grouped[0].code:
-            cf = models.Filter(must=[models.FieldCondition(
-                key="parent_id", match=models.MatchValue(value=grouped[0].code))])
+            cf = access.model_copy(update={"must": list(access.must or []) + [
+                models.FieldCondition(
+                    key="parent_id",
+                    match=models.MatchValue(value=grouped[0].code))]})
             records, _ = qc.scroll("aike_chunks", scroll_filter=cf, limit=100)
             for r in records:
                 # children inherit score of parent for Context presentation, but are kept separate
@@ -771,7 +800,7 @@ def build_default_deps(role: Role, *, llm=None, visual_search=None) -> Deps:
             route = classify_query(query)
             if route.query_type == "code":
                 hits = search(qc, query, "routed", limit=10, query_filter=vf)
-                return _apply_hop2([_to_ev(h, h.score) for h in hits])
+                return _apply_hop2([_to_ev(h, h.score) for h in hits], vf)
             # natural/mixed: reranker SIGMOID come score di produzione (P3.2 §3)
             # (l'espansione debito §2 entra solo nel canale sparse via search;
             #  il reranker resta sulla query originale)
@@ -791,7 +820,7 @@ def build_default_deps(role: Role, *, llm=None, visual_search=None) -> Deps:
             if not isinstance(probs, list):
                 probs = [probs]
             ranked = sorted(zip(probs, base), key=lambda t: -t[0])
-            return _apply_hop2([_to_ev(h, s) for s, h in ranked[:10]])
+            return _apply_hop2([_to_ev(h, s) for s, h in ranked[:10]], vf)
 
         return retrieve
 
