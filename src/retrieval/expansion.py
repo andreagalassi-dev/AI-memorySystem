@@ -22,6 +22,13 @@ ma R@1 resta fermo: il collo di bottiglia a valle e' il RERANKER, che non
 porta in cima i candidati recuperati (es. W003 arriva a rank 2). TODO futuro:
 lavorare sul ranking (fine-tuning reranker o segnale lessicale nel riordino).
 Regressione singola nota: W046 (DE 'Dichtring'->O-Ring, 10->None).
+  AGGIORNAMENTO 22/08 — quella nota e' SUPERATA dalla misura: oggi
+  l'espansione AIUTA W046 (canale sparse None->137, fuso 283->183). Il
+  danno da espansione esiste ancora, ma su un ALTRO item: W048 (DE), dove
+  gli 8 termini aggiunti diluiscono l'unico segnale utile e il bersaglio
+  passa da rango 873 (fuso 1600, senza espansione) a NESSUNO. Morale
+  operativa: l'espansione non si adotta ne' si scarta in blocco, si misura
+  per item.
 """
 
 from __future__ import annotations
