@@ -79,7 +79,13 @@ def test_config_e_serializzabile_e_ha_i_campi_obbligatori(monkeypatch):
     assert round_trip["visual_rerank"]["enabled"] is True
     assert round_trip["llm"]["brain_model"]
     assert round_trip["llm"]["ollama_host"]
-    assert round_trip["qdrant"]["collections"]["text"] == "aike_chunks"
+    # Contro la COSTANTE, non contro una stringa: l'invariante da difendere e'
+    # "l'audit dichiara la collezione REALMENTE in uso", non "si chiama cosi'".
+    # Fissare il nome faceva fallire il test allo scambio d'indice del 24/08
+    # (aike_chunks -> aike_chunks_v2), che e' un cambiamento legittimo: il test
+    # segnalava un rumore invece del difetto che deve sorvegliare.
+    from src.ingestion.embedding import COLLECTION as TEXT_COLLECTION
+    assert round_trip["qdrant"]["collections"]["text"] == TEXT_COLLECTION
     assert round_trip["qdrant"]["collections"]["visual"] == "aike_pages_visual"
 
 

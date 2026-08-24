@@ -50,7 +50,7 @@ from src.ingestion.codes import canonical
 logger = logging.getLogger(__name__)
 
 DEFAULT_SCHEMA = "estrazione"
-DEFAULT_COLLECTION = "aike_chunks"
+DEFAULT_COLLECTION = "aike_chunks_v2"
 # Postgres giu' non deve rallentare il guardrail: connect breve, e dopo un fallimento
 # il ramo SSOT resta spento per un po' invece di ritentare (e stallare) a ogni token.
 CONNECT_TIMEOUT_S = 3

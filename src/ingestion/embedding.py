@@ -38,7 +38,14 @@ from functools import lru_cache
 from pathlib import Path
 
 # --- costanti condivise indice/query (P2.3 ingestion, P2.4 retrieval) -----------
-COLLECTION = "aike_chunks"
+# Indice testuale in uso. Passato a `_v2` il 24/08 dopo la riparazione del
+# contenuto indicizzato (identita' del documento nel denso + codici atomici nello
+# sparse): R@10 del metro narrativo 0.536 -> 0.625, golden gate IDENTICO alla
+# produzione (22 PASS_ALTA / 10 PASS / 10 MISS, 0 WRONG_ALTA, zero item cambiati)
+# e ramo `code` 22/22. Lo scambio e' una COSTANTE e non una manipolazione dei
+# dati proprio per questo: `aike_chunks` resta intatta ed e' il rollback, che
+# costa una riga.
+COLLECTION = "aike_chunks_v2"
 DENSE_NAME = "dense"
 DENSE_MODEL = "BAAI/bge-m3"
 DENSE_DIM = 1024
