@@ -1,0 +1,18 @@
+{
+  "dataset_version": "v1.1",
+  "generated_at": "2026-08-24T21:01:29.628970+00:00",
+  "out": "/Users/AndreaGalassi/Documents/AI/AI-memorySystem/data/eval/eval_narrative_v1_1.jsonl",
+  "n_kept": 50,
+  "n_excluded": 16,
+  "n_dedup_dropped": 7,
+  "previous_dataset": {
+    "path": "/Users/AndreaGalassi/Documents/AI/AI-memorySystem/data/eval/eval_narrative_v1.jsonl",
+    "status": "storico, NON rigenerato/toccato da questa versione dello script; i numeri misurati su di esso (es. 12/56, 18/56, R@10 0.625) vanno letti SOLO contro quel file (56 item kept), non contro questo"
+  },
+  "changes_from_v1": {
+    "dedup_query_duplicate": "7 coppie di righe con testo query identico collassate; vince la riga piu' recente nell'ordine SOURCES (eval_set_v1 supera eval_set_v0)",
+    "reversed_case_fixed": "'aeratore 24x1 di ricambio': prima Q035 (v0, expected stretto) restava nel set kept mentre C007 (v1, expected ALLARGATO, la correzione) finiva in _excluded per collisione di codice; ora vince C007 e, risultando non risolvibile in modo sicuro, la query esce dal set kept invece di restarci con un target stale",
+    "descriptive_twins": "aggiunto (solo informativo, non tocca `targets`) il campo descriptive_twins_outside_target/n_descriptive_twins per gli item a documento unico risolti via codice"
+  },
+  "warning": "Il denominatore e' cambiato: ogni percentuale storica va riletta contro il file su cui e' stata misurata."
+}

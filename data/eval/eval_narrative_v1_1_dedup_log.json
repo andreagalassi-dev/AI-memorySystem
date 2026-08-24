@@ -1,0 +1,86 @@
+[
+  {
+    "query": "soffione della doccia per il miscelatore Pico cromato",
+    "kept": {
+      "set": "eval_set_v1",
+      "qa_id": "C005"
+    },
+    "dropped": {
+      "set": "eval_set_v0",
+      "qa_id": "Q025"
+    },
+    "reason": "query duplicata (stesso testo esatto in due fonti); vince l'ultima nell'ordine SOURCES (v1 supera v0)"
+  },
+  {
+    "query": "mi serve un movimento ceramico di ricambio",
+    "kept": {
+      "set": "eval_set_v1",
+      "qa_id": "C006"
+    },
+    "dropped": {
+      "set": "eval_set_v0",
+      "qa_id": "Q033"
+    },
+    "reason": "query duplicata (stesso testo esatto in due fonti); vince l'ultima nell'ordine SOURCES (v1 supera v0)"
+  },
+  {
+    "query": "aeratore 24x1 di ricambio",
+    "kept": {
+      "set": "eval_set_v1",
+      "qa_id": "C007"
+    },
+    "dropped": {
+      "set": "eval_set_v0",
+      "qa_id": "Q035"
+    },
+    "reason": "query duplicata (stesso testo esatto in due fonti); vince l'ultima nell'ordine SOURCES (v1 supera v0)"
+  },
+  {
+    "query": "pair of replacement handles for the mixer",
+    "kept": {
+      "set": "eval_set_v1",
+      "qa_id": "C008"
+    },
+    "dropped": {
+      "set": "eval_set_v0",
+      "qa_id": "Q041"
+    },
+    "reason": "query duplicata (stesso testo esatto in due fonti); vince l'ultima nell'ordine SOURCES (v1 supera v0)"
+  },
+  {
+    "query": "junta hermética de la puerta del congelador",
+    "kept": {
+      "set": "eval_set_v1",
+      "qa_id": "C009"
+    },
+    "dropped": {
+      "set": "eval_set_v0",
+      "qa_id": "Q051"
+    },
+    "reason": "query duplicata (stesso testo esatto in due fonti); vince l'ultima nell'ordine SOURCES (v1 supera v0)"
+  },
+  {
+    "query": "termómetro de repuesto",
+    "kept": {
+      "set": "eval_set_v1",
+      "qa_id": "C010"
+    },
+    "dropped": {
+      "set": "eval_set_v0",
+      "qa_id": "Q052"
+    },
+    "reason": "query duplicata (stesso testo esatto in due fonti); vince l'ultima nell'ordine SOURCES (v1 supera v0)"
+  },
+  {
+    "query": "cesto interior para el congelador",
+    "kept": {
+      "set": "eval_set_v1",
+      "qa_id": "C011"
+    },
+    "dropped": {
+      "set": "eval_set_v0",
+      "qa_id": "Q053"
+    },
+    "reason": "query duplicata (stesso testo esatto in due fonti); vince l'ultima nell'ordine SOURCES (v1 supera v0)"
+  }
+]
