@@ -19,7 +19,11 @@ from qdrant_client import models
 import src.retrieval.search as S
 from src.common.roles import Role
 
-COLLECTION = "aike_chunks"
+# Dalla COSTANTE, non una stringa: l'invariante e' "i figli si leggono dalla
+# collezione IN USO". Fissare il nome faceva fallire questo test allo scambio
+# d'indice del 24/08, cioe' segnalava un cambiamento legittimo invece del
+# difetto che deve sorvegliare (il filtro di ruolo sui figli).
+from src.ingestion.embedding import COLLECTION
 
 # Padre assieme visibile ANCHE al commerciale; figli riservati al solo tecnico.
 PARENT = {"code": "KIT-1", "is_assembly": True, "doc": "d", "page": 1,

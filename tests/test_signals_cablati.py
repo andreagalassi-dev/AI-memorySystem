@@ -58,22 +58,24 @@ from src.retrieval.confidence import Signals, Thresholds, confidence_level
 # si toglie la voce. Aggiungerne una e' una scelta, non una dimenticanza.
 
 CAMPI_NON_CABLATI_NOTI = {
-    "hop2_warning": (
-        "DIFETTO NOTO, non ancora riparato — vedi F7 in memoria. "
-        "`confidence_level` ha `if s.hop2_warning: -> MEDIA`, ma il grafo non "
-        "popola mai il campo: il warning nasce solo in `search.apply_hop2`, che "
-        "in produzione non viene chiamata (il grafo ha la sua `_apply_hop2`). "
-        "Bersaglio reale misurato: 210 assiemi, ~6 su 68 campionati senza figli. "
-        "Cablarlo E' un cambio di comportamento (riduce la copertura ALTA): lo "
-        "decide il reviewer con una misura, non questo test."
-    ),
+    # RIPARATO il 23/08: `hop2_warning` non e' piu' qui. Il grafo lo calcola in
+    # `pipeline._hop2_warning` (retrieval + entrambi i fallback) e lo passa a
+    # `confidence_node`; la prova che spara NEL GRAFO e' in
+    # tests/test_hop2_warning_cablato.py. Misura del cambio di comportamento:
+    # 6 codici assieme su 68 (8 chunk su 210) passano da ALTA a MEDIA.
     "is_generic_code": (
-        "DIFETTO NOTO, non ancora riparato — vedi F7 in memoria. Doppio guasto: "
-        "(1) il grafo non popola il campo; (2) anche cablandolo NON sparerebbe, "
-        "perche' il segnale confronta `code_normalized_by == 'generic'` mentre "
-        "nel corpus quel valore non esiste (su 199447 chunk i valori reali sono "
-        "'default' e None): la stringa e' sbagliata. Riparare = cambio di "
-        "comportamento, lo decide il reviewer con una misura."
+        "DIFETTO NOTO, NON si ripara cablandolo — misurato il 23/08. Guasti: "
+        "(1) il grafo non popola il campo; (2) il segnale confronta "
+        "`code_normalized_by == 'generic'`, ma 'generic' e' un profilo di "
+        "brands.json che NESSUN glob di `doc_map` raggiunge (mai stato un "
+        "rinomino: `default` si chiama cosi' dal primo commit, 52cf0ba; "
+        "'generic' fu aggiunto ACCANTO in 1e926d4 e mai cablato); (3) il vero "
+        "guasto: nel corpus il profilo di ripiego e' l'UNICO che esiste — su "
+        "199607 chunk, 125771 hanno 'default' e ZERO hanno mamoli/electrolux/"
+        "delitools. Sostituire la stringa con 'default' non accenderebbe una "
+        "guardia, spegnerebbe ALTA: misurato su 200 query-codice reali, 80 "
+        "delle 97 ALTA (82%) scenderebbero a MEDIA. Serve prima un segnale che "
+        "DISCRIMINI (i profili brand non sono applicati a nessun documento)."
     ),
 }
 
@@ -87,13 +89,20 @@ CAMPI_COSTANTI_AL_CALLSITE = {
         "(BLOCK -> BASSA, VERIFY -> MEDIA)."
     ),
     "agreement": (
-        "DA DECIDERE (candidato 4o caso della stessa classe, segnalato al "
-        "reviewer). `fusion_node` gira DOPO confidence e per decisione misurata "
-        "in P3.3 l'accordo NON promuove MEDIA->ALTA: passare None qui e' "
-        "coerente. Ma nessuno ricalcola il livello dopo fusion, quindi la "
-        "clausola `s.agreement != 'disagree'` del ramo ALTA e' di fatto morta a "
-        "questo callsite. Cablarla e' un cambio di comportamento: serve una "
-        "misura, non una correzione al volo."
+        "DA DECIDERE (4o caso della stessa classe, in mano al reviewer). E' "
+        "morto a TRE strati, non a uno: (1) `fusion_node` gira DOPO confidence "
+        "e nessuno ricalcola il livello, quindi la clausola "
+        "`s.agreement != 'disagree'` del ramo ALTA non puo' scattare; (2) "
+        "`fusion_node` si auto-esclude su `state['level'] != 'MEDIA'`, quindi "
+        "un item ALTA non viene nemmeno sondato; (3) VERIFICATO il 23/08: "
+        "`Deps.cross_probe` non e' passato dall'UNICA costruzione di Deps di "
+        "produzione (pipeline.py, `build_default_deps`) e nel repo compare "
+        "valorizzato solo in tests/test_graph.py -> in produzione e' sempre "
+        "None e `fusion_node` esce subito con agreement=None. L'intero canale "
+        "di accordo testo-visione e' spento. La NON-promozione fu una scelta "
+        "misurata (P3.3, falsi-ALTA); la non-demozione no. Accenderlo richiede "
+        "prima cablare cross_probe e misurare col canale visivo: cambio di "
+        "comportamento, decide il reviewer."
     ),
 }
 

@@ -83,6 +83,8 @@ class GraphState(TypedDict, total=False):
     margin: float
     has_evidence: bool
     unreliable: bool
+    # Hop 2 — "Assembly_Has_No_Children": distinta base vuota (vedi _hop2_warning)
+    hop2_warning: str | None
     level: str
     agreement: str | None
     answer: str | None
@@ -184,11 +186,48 @@ def _retrieve_with_terms(fn: Callable, state: GraphState) -> tuple[list[Evidence
     return fn(state["query"], terms) if terms else fn(state["query"])
 
 
+HOP2_NO_CHILDREN = "Assembly_Has_No_Children"
+
+
+def _hop2_warning(ev: list[Evidence], children: list[Evidence]) -> str | None:
+    """Hop 2 — l'assieme di cui non abbiamo recuperato NESSUN componente.
+
+    `confidence_level` legge `Signals.hop2_warning` e declassa a MEDIA: una
+    distinta base vuota non e' una risposta certa. Fino al 23/08 il campo lo
+    valorizzava solo `src.retrieval.search.apply_hop2`, che in produzione non
+    viene chiamata (il grafo ha la sua `_apply_hop2`): la guardia esisteva,
+    era testata, ed era MORTA — stessa classe di `singleton` (92eb955) e della
+    falla RBAC (7b5d1ff).
+
+    L'avviso si DERIVA da cio' che il grafo ha gia' in stato invece di essere
+    restituito da `_apply_hop2`: cosi' non c'e' un terzo posto in cui la regola
+    puo' divergere (ce ne sono gia' due, vedi il monito in `_apply_hop2`), e il
+    contratto di `Deps.retrieve` — una coppia (evidenza, figli) — resta quello
+    che tutti i chiamanti e i test conoscono.
+
+    Le due condizioni ricalcano esattamente `search.apply_hop2`: si avvisa solo
+    se il TOP hit e' un assieme CON codice (senza codice i figli non si cercano
+    nemmeno, quindi "zero figli" non e' un'informazione) e i figli sono zero.
+
+    Bersaglio misurato sul corpus (aike_chunks_v2, 23/08): 210 chunk assieme ->
+    68 codici distinti, 6 senza figli -> 6 query-codice passano da ALTA a MEDIA.
+    """
+    if not ev:
+        return None
+    top = ev[0]
+    if not (top.is_assembly and top.code):
+        return None
+    return HOP2_NO_CHILDREN if not children else None
+
+
 def retrieval_node(state: GraphState, deps: Deps) -> dict:
     try:
         ev, children = _retrieve_with_terms(deps.retrieve, state)
-        return {"evidence": ev, "children_evidence": children, 
-                "audit": _audit(state, f"retrieval: {len(ev)} hit, {len(children)} children")}
+        warning = _hop2_warning(ev, children)
+        return {"evidence": ev, "children_evidence": children,
+                "hop2_warning": warning,
+                "audit": _audit(state, f"retrieval: {len(ev)} hit, {len(children)} children"
+                                       + (f" — {warning}" if warning else ""))}
     except Exception as exc:  # fail-closed: Qdrant giu'/timeout
         return {"system_error": True, "level": "BASSA",
                 "audit": _audit(state, f"Sistema non disponibile (retrieval): {exc}")}
@@ -400,8 +439,13 @@ def confidence_node(state: GraphState, deps: Deps) -> dict:
     # produce margine 1.0 per convenzione (compute_margin, 1 hit -> 1.0), non
     # per separazione misurata. Esenzione VOLUTA per la rotta 'code', dove il
     # guardrail deterministico valida gia' il codice.
+    # Hop 2 — `hop2_warning` arriva dal nodo di retrieval (o dal fallback che ha
+    # sovrascritto l'evidenza): un assieme la cui distinta base e' vuota non puo'
+    # uscire ALTA. Prima del 23/08 questo campo NON veniva passato e la regola
+    # `if s.hop2_warning -> MEDIA` di confidence_level era morta.
     rep = confidence_level(
         Signals("PASS", has_ev, margin, unreliable, agreement=None,
+                hop2_warning=state.get("hop2_warning"),
                 singleton=(len(grouped) <= 1), is_code=is_code),
         deps.thresholds)
     return {"margin": margin, "has_evidence": has_ev, "unreliable": unreliable,
@@ -479,8 +523,13 @@ def fallback_superseded_node(state: GraphState, deps: Deps) -> dict:
         ev, children = _retrieve_with_terms(deps.retrieve_superseded, state)
         # L'avviso "SOSTITUITA" ha senso SOLO se il fallback ha trovato evidenza:
         # su risultato vuoto si scende comunque a rifiuto, senza avvisare di nulla.
-        return {"evidence": ev, "children_evidence": children, "obsolete_warning": bool(ev), "fallback_superseded_done": True,
-                "audit": _audit(state, f"fallback su SOSTITUITO: {len(ev)} hit, {len(children)} children")}
+        # Hop 2: l'avviso si RICALCOLA sull'evidenza nuova (che sovrascrive la
+        # precedente): confidence gira di nuovo, e deve vedere questo scope.
+        warning = _hop2_warning(ev, children)
+        return {"evidence": ev, "children_evidence": children, "obsolete_warning": bool(ev),
+                "fallback_superseded_done": True, "hop2_warning": warning,
+                "audit": _audit(state, f"fallback su SOSTITUITO: {len(ev)} hit, {len(children)} children"
+                                       + (f" — {warning}" if warning else ""))}
     except Exception as exc:
         return {"system_error": True, "level": "BASSA", "fallback_superseded_done": True,
                 "audit": _audit(state, f"Sistema non disponibile (fallback_superseded): {exc}")}
@@ -492,8 +541,11 @@ def fallback_deleted_node(state: GraphState, deps: Deps) -> dict:
         ev, children = _retrieve_with_terms(deps.retrieve_deleted, state)
         # L'avviso "ELIMINATO" ha senso SOLO se il fallback ha trovato evidenza:
         # su risultato vuoto la risposta è un rifiuto puro, senza avviso spurio.
-        return {"evidence": ev, "children_evidence": children, "deleted_warning": bool(ev), "fallback_deleted_done": True,
-                "audit": _audit(state, f"fallback su ELIMINATO: {len(ev)} hit, {len(children)} children")}
+        warning = _hop2_warning(ev, children)  # Hop 2: ricalcolato sul nuovo scope
+        return {"evidence": ev, "children_evidence": children, "deleted_warning": bool(ev),
+                "fallback_deleted_done": True, "hop2_warning": warning,
+                "audit": _audit(state, f"fallback su ELIMINATO: {len(ev)} hit, {len(children)} children"
+                                       + (f" — {warning}" if warning else ""))}
     except Exception as exc:
         return {"system_error": True, "level": "BASSA", "fallback_deleted_done": True,
                 "audit": _audit(state, f"Sistema non disponibile (fallback_deleted): {exc}")}
@@ -782,7 +834,14 @@ def build_default_deps(role: Role, *, llm=None, visual_search=None) -> Deps:
                 models.FieldCondition(
                     key="parent_id",
                     match=models.MatchValue(value=grouped[0].code))]})
-            records, _ = qc.scroll("aike_chunks", scroll_filter=cf, limit=100)
+            # COLLECTION, non il nome scritto a mano: dopo la promozione
+            # dell'indice riparato (541ccb2) la costante vale `aike_chunks_v2` e
+            # un nome fisso qui avrebbe letto i figli dalla collezione VECCHIA.
+            # Oggi non farebbe danno (payload identici) ma il giorno che quella
+            # viene droppata Hop 2 smetterebbe di trovare figli, e con la guardia
+            # `hop2_warning` ora viva OGNI assieme diventerebbe MEDIA.
+            from src.ingestion.embedding import COLLECTION as _CHUNKS
+            records, _ = qc.scroll(_CHUNKS, scroll_filter=cf, limit=100)
             for r in records:
                 # children inherit score of parent for Context presentation, but are kept separate
                 children.append(_to_ev(models.ScoredPoint(
