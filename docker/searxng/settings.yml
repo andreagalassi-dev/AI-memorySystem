@@ -1,0 +1,56 @@
+# SearXNG — metamotore auto-ospitato per la ricerca online (epica H).
+#
+# PERCHE' AUTO-OSPITATO: nessuna API a pagamento (nessuna chiave da comprare) e
+# nessuna dipendenza da un endpoint di terzi che puo' cambiare o bloccarci
+# (DuckDuckGo diretto risponde CAPTCHA). SearXNG aggrega piu' motori e ci
+# restituisce JSON strutturato: titolo, url, snippet, motore, punteggio.
+#
+# QUESTO FILE E' MONTATO READ-ONLY nel container (vedi docker-compose.yml).
+# Il segreto NON sta qui: arriva dalla variabile d'ambiente SEARXNG_SECRET, che
+# SearXNG mappa su server.secret_key. Niente segreti nel repo (CLAUDE.md).
+#
+# `use_default_settings: true` eredita l'elenco completo dei motori dall'immagine:
+# qui sotto sovrascriviamo SOLO cio' che ci serve.
+use_default_settings: true
+
+general:
+  instance_name: "aike-web"
+  # Istanza privata di servizio: niente link di donazione/contatto, niente metriche.
+  donation_url: false
+  contact_url: false
+  enable_metrics: false
+
+search:
+  # IL PUNTO CHIAVE: senza "json" in formats l'endpoint /search?format=json
+  # risponde 403 e l'adapter non puo' leggere nulla.
+  formats:
+    - html
+    - json
+  safe_search: 0
+  autocomplete: ""
+  default_lang: ""
+
+server:
+  bind_address: "0.0.0.0"
+  port: 8080
+  # Sovrascritto a runtime da $SEARXNG_SECRET (settings_loader di SearXNG).
+  secret_key: ""
+  # GET esplicito: l'adapter interroga /search?q=...&format=json in GET.
+  # Il default dell'immagine e' POST e farebbe rispondere 405.
+  method: "GET"
+  # Istanza locale, raggiungibile solo sulla rete aike_net e su 127.0.0.1:
+  # il limiter (anti-bot) bloccherebbe le nostre chiamate senza cookie/JS.
+  limiter: false
+  public_instance: false
+  image_proxy: false
+
+outgoing:
+  # Un tetto ai tempi: se i motori a monte sono lenti, il ramo web deve
+  # arrendersi in fretta e lasciare che il sistema dica "non lo so".
+  request_timeout: 5.0
+  max_request_timeout: 10.0
+  pool_connections: 10
+  pool_maxsize: 10
+
+ui:
+  static_use_hash: true

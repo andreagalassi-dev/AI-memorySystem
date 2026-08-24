@@ -132,6 +132,48 @@ services:
       retries: 3
       start_period: 15s
 
+  searxng:
+    # Epica H — ricerca online. Metamotore auto-ospitato: nessuna API a pagamento,
+    # nessuna chiave nel repo, nessun endpoint di terzi che puo' bloccarci.
+    #
+    # OPZIONALE PER COSTRUZIONE: sta dietro il profilo "web", quindi un normale
+    # `docker compose up` NON lo avvia. Installazione air-gapped = servizio assente
+    # = il ramo web resta spento e il sistema si comporta ESATTAMENTE come prima
+    # (l'adapter fallisce chiuso, non inventa). Per accenderlo:
+    #     SEARXNG_SECRET=... docker compose --profile web up -d searxng
+    # Per spegnerlo:  docker compose stop searxng && docker compose rm -f searxng
+    # ATTENZIONE, INCIDENTE REALE: `docker compose --profile web down` NON
+    # spegne solo questo — abbatte TUTTO il progetto. Eseguito per errore il
+    # 24/08 ha rimosso postgres e qdrant e interrotto un'ingestion in corso.
+    # I named volume hanno salvato i dati a riposo (169567 righe e 21 collezioni
+    # ritrovate intatte), ma una scrittura IN VOLO si perde lo stesso.
+    # REGOLA: sui comandi docker nomina SEMPRE il servizio. postgres e qdrant
+    # sono infrastruttura condivisa fra piu' agenti/sessioni: mai `down`,
+    # `up -d` o `restart` nudi.
+    profiles: ["web"]
+    image: searxng/searxng:2026.8.22-9fea41204
+    container_name: aike_searxng
+    environment:
+      # Il segreto arriva dall'ambiente (.env non committato), MAI dal file di
+      # configurazione montato: SearXNG lo mappa su server.secret_key.
+      SEARXNG_SECRET: ${SEARXNG_SECRET:-}
+      SEARXNG_BASE_URL: ${SEARXNG_BASE_URL:-http://localhost:8888/}
+    ports:
+      # Solo loopback: l'istanza non e' esposta fuori dalla macchina.
+      - "127.0.0.1:8888:8080"
+    volumes:
+      # Read-only: la configurazione e' del repo, il container non la riscrive.
+      - ./docker/searxng/settings.yml:/etc/searxng/settings.yml:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:8080/healthz || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - aike_net
+    restart: unless-stopped
+
 networks:
   aike_net:
     driver: bridge
