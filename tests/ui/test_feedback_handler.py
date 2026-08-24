@@ -59,3 +59,106 @@ def test_save_feedback_ui_error(monkeypatch, caplog):
     assert fb_id is None
     assert "Errore DB durante il salvataggio del feedback" in caplog.text
     assert "Connessione persa simulata" in caplog.text
+
+
+def test_save_feedback_ui_provenienza_web(monkeypatch):
+    """Epica H: la provenienza calcolata dalla UI deve arrivare intatta a
+    insert_feedback (record, non solo grafica) — vedi chainlit_app.py."""
+    captured = {}
+
+    def fake_insert_feedback(conn, **kwargs):
+        captured.update(kwargs)
+        return 42
+
+    class FakeConn:
+        def __enter__(self):
+            return self
+        def __exit__(self, *a):
+            return False
+
+    monkeypatch.setattr("src.ui.feedback_handler.get_pg_conn", lambda: FakeConn())
+    monkeypatch.setattr("src.ui.feedback_handler.insert_feedback", fake_insert_feedback)
+
+    fb_id = save_feedback_ui(
+        utente="test",
+        ruolo="tecnico",
+        query="q",
+        risposta="r (dal web)",
+        final_level="WEB",
+        citazioni=None,
+        contesto=None,
+        verdetto="conferma",
+        provenienza="web",
+    )
+
+    assert fb_id == 42
+    assert captured["provenienza"] == "web"
+
+
+def test_save_feedback_ui_citazioni_miste_corpus_e_web(monkeypatch):
+    """Epica H: 'citazioni' puo' contenere sia coppie (doc,page) sia URL web
+    (stringa) — lo spacchettamento cieco romperebbe su una stringa. Verifica
+    che entrambe le forme sopravvivano nel record, senza eccezioni."""
+    captured = {}
+
+    def fake_insert_feedback(conn, **kwargs):
+        captured.update(kwargs)
+        return 7
+
+    class FakeConn:
+        def __enter__(self):
+            return self
+        def __exit__(self, *a):
+            return False
+
+    monkeypatch.setattr("src.ui.feedback_handler.get_pg_conn", lambda: FakeConn())
+    monkeypatch.setattr("src.ui.feedback_handler.insert_feedback", fake_insert_feedback)
+
+    fb_id = save_feedback_ui(
+        utente="test",
+        ruolo="tecnico",
+        query="q",
+        risposta="r",
+        final_level="WEB",
+        citazioni=[("doc1", 3), "https://example.com/pezzo"],
+        contesto=None,
+        verdetto="conferma",
+        provenienza="misto",
+    )
+
+    assert fb_id == 7
+    assert captured["citazioni"] == [
+        {"doc": "doc1", "page": 3},
+        {"url": "https://example.com/pezzo"},
+    ]
+
+
+def test_save_feedback_ui_provenienza_default_corpus(monkeypatch):
+    """Chi non specifica provenienza (chiamanti pre-esistenti) resta 'corpus'."""
+    captured = {}
+
+    def fake_insert_feedback(conn, **kwargs):
+        captured.update(kwargs)
+        return 1
+
+    class FakeConn:
+        def __enter__(self):
+            return self
+        def __exit__(self, *a):
+            return False
+
+    monkeypatch.setattr("src.ui.feedback_handler.get_pg_conn", lambda: FakeConn())
+    monkeypatch.setattr("src.ui.feedback_handler.insert_feedback", fake_insert_feedback)
+
+    save_feedback_ui(
+        utente="test",
+        ruolo="tecnico",
+        query="q",
+        risposta="r",
+        final_level="ALTA",
+        citazioni=None,
+        contesto=None,
+        verdetto="conferma",
+    )
+
+    assert captured["provenienza"] == "corpus"

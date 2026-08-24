@@ -33,8 +33,104 @@ if db_url:
 LEVEL_EMOJI = {
     "ALTA": "🟢 ALTA",
     "MEDIA": "🟡 MEDIA",
-    "BASSA": "🔴 BASSA"
+    "BASSA": "🔴 BASSA",
+    # Epica H, cablata in parallelo su src/retrieval/confidence.py (Level.WEB
+    # = "WEB", letto in sola lettura per allinearsi al contratto reale — non
+    # tocchiamo quel file). Voce esplicita cosi' la cascata web non cade nel
+    # fallback generico di render_level(): un'etichetta sua, mai confondibile
+    # con ALTA/MEDIA/BASSA.
+    "WEB": "🌐 WEB (non verificata)",
 }
+
+# --- Provenienza della risposta (Epica H: cascata web) -----------------------
+#
+# Il grafo (src/graph/pipeline.py) sta per guadagnare un ramo web, cablato da
+# un altro agente NELLO STESSO momento: qui non lo tocchiamo. Ma l'interfaccia
+# deve gia' distinguere in modo inequivocabile una risposta da catalogo da una
+# presa online, e sopravvivere a un `final_level` NUOVO che ancora non
+# conosciamo (distinto da ALTA/MEDIA/BASSA per le risposte web).
+#
+# Il segnale piu' forte non costa niente ed e' gia' nella FORMA del dato che
+# `answer()` restituisce: una citazione corpus e' la coppia (doc_stem, page)
+# usata ovunque nel sistema (vedi il loop qui sotto, e coerente con
+# `citations: list[tuple[str, int]]` in pipeline.py); una citazione web e' un
+# URL (stringa) o un mapping con almeno 'url' (stessa forma di
+# `sanitized_sources` in src/retrieval/web_evidence.py — letta qui solo per
+# duck-typing, questo modulo non importa quel file). Classificare sulla FORMA
+# invece che sul nome di un campo non ancora deciso e' cio' che ci rende
+# tolleranti al contratto che arrivera'.
+
+WEB_WARNING = (
+    "\n\n⚠️ **Attenzione — fonte web non verificata.** Questa risposta (o parte di "
+    "essa) viene da una ricerca online, non dal catalogo interno: la correttezza "
+    "NON è garantita dal guardrail codici/prezzi. Verificare prima di usarla "
+    "operativamente (es. per prezzi o codici ricambio)."
+)
+
+
+def _is_web_citation(c) -> bool:
+    """True se la citazione è una fonte web (URL o mapping con 'url'),
+    False se è una citazione corpus (doc_stem, page) — il caso di oggi."""
+    if isinstance(c, str):
+        return True
+    if isinstance(c, dict):
+        return "url" in c
+    return False
+
+
+def classify_citations(citations):
+    """Separa le citazioni in (corpus, web), mantenendo l'ordine originale.
+
+    Robusto a citations=None; una forma sconosciuta (né stringa/URL né
+    mapping con 'url') resta trattata come corpus — è il comportamento di
+    oggi (coppia doc,page) e non va rotto da un valore inatteso."""
+    corpus, web = [], []
+    for c in (citations or []):
+        (web if _is_web_citation(c) else corpus).append(c)
+    return corpus, web
+
+
+def render_level(level: str | None) -> str:
+    """Etichetta leggibile del livello di confidenza.
+
+    Tollerante per costruzione a un livello NUOVO non ancora nella mappa
+    (la cascata web ne introdurrà uno, distinto da ALTA/MEDIA/BASSA): non
+    sparisce e non resta vuoto, esce con un'icona neutra + il testo grezzo —
+    mai un'etichetta vuota a schermo."""
+    if not level:
+        return "❔ N/D"
+    return LEVEL_EMOJI.get(level, f"❔ {level}")
+
+
+def web_citation_link(c) -> "tuple[str, str] | None":
+    """Estrae (etichetta, url) da una citazione web. None se non ricavabile."""
+    if isinstance(c, str):
+        return (c, c)
+    if isinstance(c, dict):
+        url = c.get("url")
+        if not url:
+            return None
+        return (str(c.get("title") or url), str(url))
+    return None
+
+
+def provenance_summary(corpus_citations, web_citations) -> "tuple[str, str]":
+    """Ritorna (etichetta_visuale, chiave_compatta).
+
+    La chiave compatta è quella che finisce nel record di feedback (vedi
+    on_message/on_feedback): deve sopravvivere alla promozione memoria
+    (Epica F.2b, futura) — se la provenienza vivesse solo nella grafica si
+    perderebbe proprio lì, e una risposta presa da internet potrebbe salire
+    in memoria aziendale senza che nessuno sappia più da dove viene."""
+    has_corpus = bool(corpus_citations)
+    has_web = bool(web_citations)
+    if has_web and has_corpus:
+        return "📄🌐 Catalogo interno + Web (parte NON verificata)", "misto"
+    if has_web:
+        return "🌐 Web — fonte esterna, correttezza NON verificata", "web"
+    if has_corpus:
+        return "📄 Catalogo interno", "corpus"
+    return "— nessuna fonte citata", "nessuna"
 
 @cl.password_auth_callback
 def auth_callback(username: str, password: str) -> User | None:
@@ -98,22 +194,40 @@ async def on_message(msg: cl.Message):
         
         final_answer = res.get("final_answer", "")
         final_level = res.get("final_level", "")
-        citations = res.get("citations", [])
-        
-        display_level = LEVEL_EMOJI.get(final_level, final_level)
-        
+        citations = res.get("citations", []) or []
+
+        # Provenienza (Epica H): separa corpus (doc,page) da web (URL) sulla
+        # FORMA della citazione, non su un nome di campo — vedi commento sopra
+        # LEVEL_EMOJI. Una risposta dal corpus porta SEMPRE la miniatura della
+        # pagina; una dal web mai, e porta invece un link + avviso.
+        #
+        # `web_node` (src/graph/pipeline.py, letto in sola lettura) lascia
+        # `citations` VUOTA per una risposta web e mette gli URL in
+        # `web_citations` (chiave separata nello stato del grafo, che
+        # `answer()` restituisce intatto). classify_citations() resta comunque
+        # la difesa: se in futuro una citazione web finisse anche dentro
+        # `citations`, la riconoscerebbe lo stesso dalla forma.
+        corpus_citations, web_from_citations = classify_citations(citations)
+        web_citations = list(web_from_citations)
+        for w in (res.get("web_citations") or []):
+            if w not in web_citations:
+                web_citations.append(w)
+        prov_label, prov_key = provenance_summary(corpus_citations, web_citations)
+
+        display_level = render_level(final_level)
+
         # Pagine renderizzate (max 8 dedup)
         elements = []
         actions = []
         seen = set()
-        
-        main_citation = citations[0] if citations else None
+
+        main_citation = corpus_citations[0] if corpus_citations else None
         cit_text_lines = []
-        
-        for doc, page in citations:
+
+        for doc, page in corpus_citations:
             if (doc, page) not in seen:
                 seen.add((doc, page))
-                
+
                 # Ottieni PNG
                 png_path = ensure_page_render(doc, page)
                 if png_path:
@@ -134,16 +248,32 @@ async def on_message(msg: cl.Message):
                             cl.Image(path=str(png_path), name=element_name, display="side")
                         )
                         cit_text_lines.append(f"- Vedi: {element_name}")
-                
+
                 if len(seen) >= 8:
                     break
-        
+
+        # Fonti web: MAI una miniatura di pagina, solo link cliccabile +
+        # segnalazione esplicita "non verificata" accanto a ciascuna fonte —
+        # cosi' non si confonde nemmeno a un'occhiata distratta con "Vedi:".
+        for c in web_citations:
+            link = web_citation_link(c)
+            if link is None:
+                continue
+            label, url = link
+            cit_text_lines.append(f"- 🌐 [{label}]({url}) — _fonte web, non verificata_")
+
         cit_text = ""
         if cit_text_lines:
             cit_text = "\n\n**Citazioni:**\n" + "\n".join(cit_text_lines)
-            
-        content = f"**Livello di confidenza:** {display_level}\n\n**Risposta:**\n{final_answer}{cit_text}"
-        
+
+        content = (
+            f"**Livello di confidenza:** {display_level}\n"
+            f"**Provenienza:** {prov_label}\n\n"
+            f"**Risposta:**\n{final_answer}{cit_text}"
+        )
+        if web_citations:
+            content += WEB_WARNING
+
         actions.extend([
             cl.Action(name="feedback", payload={"verdetto": "conferma"}, label="✓ Conferma"),
             cl.Action(name="feedback", payload={"verdetto": "correggi"}, label="✎ Correggi"),
@@ -181,7 +311,15 @@ async def on_message(msg: cl.Message):
             "query": msg.content,
             "risposta": final_answer,
             "final_level": final_level,
-            "citazioni": citations,
+            # Corpus + web insieme: `citations` da sola per una risposta web è
+            # vuota (vedi sopra), e salvare solo quella perderebbe gli URL nel
+            # record di feedback — esattamente il rischio del punto 3.
+            "citazioni": corpus_citations + web_citations,
+            # Provenienza (Epica H): serve nel RECORD, non solo a schermo — vedi
+            # provenance_summary() sopra. Senza questo campo, la promozione
+            # feedback->memoria (F.2b) non saprebbe piu' distinguere una
+            # risposta da catalogo da una presa online.
+            "provenienza": prov_key,
             "contesto": {
                 "audit": res.get("audit", []),
                 "evidence": ev_list
@@ -242,7 +380,8 @@ async def on_feedback(action: cl.Action):
         citazioni=state["citazioni"],
         contesto=state["contesto"],
         verdetto=verdetto,
-        correzione=correzione
+        correzione=correzione,
+        provenienza=state.get("provenienza", "corpus")
     )
 
     # Rimuovi i pulsanti per evitare feedback multipli

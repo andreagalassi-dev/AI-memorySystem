@@ -69,3 +69,43 @@ class TestFeedbackSchema:
             correzione=None,
         )
         assert res_id > 0
+
+    def test_provenienza_default_corpus(self, conn: psycopg.Connection):
+        """Chi non passa provenienza (chiamanti esistenti) resta 'corpus':
+        la colonna e' additiva, non deve rompere niente a monte."""
+        init_schema(conn)
+        res_id = insert_feedback(
+            conn,
+            utente="user@example.com",
+            ruolo="tecnico",
+            query="Q",
+            risposta="R",
+            final_level="ALTA",
+            citazioni=[{"doc": "doc1", "page": 1}],
+            contesto={},
+            verdetto="conferma",
+            correzione=None,
+        )
+        row = conn.execute("SELECT provenienza FROM feedback WHERE id = %s", (res_id,)).fetchone()
+        assert row == ("corpus",)
+
+    def test_provenienza_web_round_trip(self, conn: psycopg.Connection):
+        """Epica H: una risposta presa dal web deve salvare provenienza='web'
+        nel RECORD (non solo mostrarlo a schermo) — e' cio' che la promozione
+        feedback->memoria (F.2b, futura) legge per non perdere la fonte."""
+        init_schema(conn)
+        res_id = insert_feedback(
+            conn,
+            utente="user@example.com",
+            ruolo="tecnico",
+            query="Q",
+            risposta="R (trovata online)",
+            final_level="WEB",
+            citazioni=[{"url": "https://example.com/pezzo"}],
+            contesto={},
+            verdetto="conferma",
+            correzione=None,
+            provenienza="web",
+        )
+        row = conn.execute("SELECT provenienza FROM feedback WHERE id = %s", (res_id,)).fetchone()
+        assert row == ("web",)

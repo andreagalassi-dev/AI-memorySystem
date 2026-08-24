@@ -32,19 +32,27 @@ def insert_feedback(
     citazioni: list[dict[str, Any]] | None,
     contesto: dict[str, Any] | None,
     verdetto: str,
-    correzione: str | None
+    correzione: str | None,
+    provenienza: str = "corpus"
 ) -> int:
     """Inserisce un nuovo record di feedback nel database.
-    
+
+    `provenienza` (Epica H, colonna con default 'corpus' per compatibilita'
+    con le righe/chiamate esistenti): 'corpus' | 'web' | 'misto' | 'nessuna'.
+    Deve stare nel RECORD e non solo nella grafica dell'interfaccia, perche'
+    la promozione feedback->memoria (F.2b) legge da qui: se si perdesse a
+    schermo, una risposta presa da internet potrebbe salire in memoria
+    aziendale senza che nessuno sappia piu' da dove viene.
+
     Ritorna l'id assegnato.
     """
     row = conn.execute(
         """
         INSERT INTO feedback (
             utente, ruolo, query, risposta, final_level,
-            citazioni, contesto, verdetto, correzione
+            citazioni, contesto, verdetto, correzione, provenienza
         )
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         RETURNING id
         """,
         (
@@ -57,6 +65,7 @@ def insert_feedback(
             json.dumps(contesto) if contesto is not None else None,
             verdetto,
             correzione,
+            provenienza,
         )
     ).fetchone()
     conn.commit()
