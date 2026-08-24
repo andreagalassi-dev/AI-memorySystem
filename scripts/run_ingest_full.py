@@ -7,7 +7,8 @@ un run interrotto riprende da dove si era fermato saltando cio' che e' gia' fatt
 RIPARTIBILITA' PER-RAMO (non per-documento). La pipeline ha TRE rami indipendenti
 con TRE fonti di verita' distinte:
     structured -> Postgres estrazione.righe_listino
-    narrative  -> Qdrant aike_chunks         (payload `doc`)
+    narrative  -> Qdrant aike_chunks_v2      (payload `doc`; nome NON hardcodato,
+                                              viene da embedding.COLLECTION)
     visual     -> Qdrant aike_pages_visual   (payload `doc`)
 La copertura si legge ramo per ramo: un documento e' pending se gli manca
 ALMENO UNO dei rami richiesti (--branches), e di quel documento si esegue SOLO
@@ -36,6 +37,7 @@ import glob
 import json
 import sys
 import time
+from collections.abc import Callable
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -129,8 +131,34 @@ def select_branches(branches: dict, selected: set[str]) -> dict:
 
 
 def doc_pages(census: dict[str, int], stem: str) -> int:
-    """Numero pagine di uno stem dal census; 0 se non censito."""
+    """Pagine di uno stem SECONDO IL CENSUS; 0 = "non censito", non "vuoto"."""
     return int(census.get(stem, 0))
+
+
+def resolve_pages(
+    stems: list[str],
+    census: dict[str, int],
+    page_counter: Callable[[str], int],
+) -> dict[str, int]:
+    """{stem: pagine} con il census come fonte primaria e il PDF REALE come
+    fallback per gli stem non censiti.
+
+    `b1_census_coverage.json` copre solo i documenti gia' indicizzati: per tutti
+    gli altri `doc_pages` vale 0, e 0 veniva poi letto come "piccolo". E' la
+    condizione di TUTTI e 28 i documenti mai entrati in coda, fra cui sei
+    "mostri" (fino a 456 pagine): senza questo fallback `--exclude-giants` --
+    che e' il DEFAULT -- non escludeva nulla di loro.
+
+    `page_counter` NON viene chiamato per gli stem gia' censiti: il census resta
+    la fonte primaria e non si riaprono PDF per nulla.
+    """
+    out: dict[str, int] = {}
+    for stem in stems:
+        n = doc_pages(census, stem)
+        if n <= 0:
+            n = int(page_counter(stem))
+        out[stem] = n
+    return out
 
 
 def partition_giants(
@@ -139,12 +167,21 @@ def partition_giants(
     """Divide stems in (normali <= threshold, giganti > threshold).
 
     Soglia INCLUSIVA per i normali: pages == threshold -> normale.
-    Uno stem senza census (doc_pages 0) e' normale.
+
+    FAIL-CLOSED: uno stem di cui NON si conosce il numero di pagine (assente
+    dalla mappa, 0 o negativo) finisce fra i GIGANTI, non fra i normali. Prima
+    valeva il contrario, e siccome il census non copre i documenti non ancora
+    indicizzati il default `--exclude-giants` non escludeva proprio quelli che
+    doveva escludere: un run "prudente" avrebbe macinato un catalogo da 456
+    pagine. Meglio saltare un documento di troppo che ingerirne uno enorme
+    credendolo piccolo. Normalmente qui le pagine arrivano gia' risolte da
+    `resolve_pages`, quindi questo ramo scatta solo su PDF illeggibili.
     """
     normali: list[str] = []
     giganti: list[str] = []
     for s in stems:
-        if doc_pages(pages, s) > threshold:
+        n = int(pages.get(s, 0))
+        if n <= 0 or n > threshold:
             giganti.append(s)
         else:
             normali.append(s)
@@ -170,6 +207,26 @@ def load_census() -> dict[str, int]:
         return {}
     data = json.loads(CENSUS_PATH.read_text())
     return {row["stem"]: int(row["pages"]) for row in data}
+
+
+def pdf_page_count(path: str | None) -> int:
+    """Pagine REALI di un PDF. 0 se il path manca o il file non e' leggibile.
+
+    Lo 0 non e' un valore innocuo: `partition_giants` lo tratta come "pagine
+    sconosciute" e manda lo stem fra i giganti (fail-closed)."""
+    if not path:
+        return 0
+    try:
+        import fitz
+
+        doc = fitz.open(path)
+        try:
+            return int(doc.page_count)
+        finally:
+            doc.close()
+    except Exception as exc:  # noqa: BLE001 -- un PDF rotto non ferma la conta
+        print(f"WARN pagine reali {path}: {exc}", file=sys.stderr, flush=True)
+        return 0
 
 
 def _qdrant_docs(qc, collection: str) -> set[str]:
@@ -427,9 +484,11 @@ def main(argv: list[str] | None = None) -> int:
         s: (set(branches_selected) if args.force else missing[s]) for s in todo
     }
 
-    # partizione giganti/normali
+    # partizione giganti/normali: pagine dal census, fallback al PDF reale
     census = load_census()
-    normali, giganti = partition_giants(todo, census, args.giant_threshold)
+    pages = resolve_pages(todo, census, lambda st: pdf_page_count(corpus.get(st)))
+    non_censiti = [st for st in todo if doc_pages(census, st) <= 0]
+    normali, giganti = partition_giants(todo, pages, args.giant_threshold)
 
     if args.only_giants:
         selected = giganti
@@ -447,10 +506,13 @@ def main(argv: list[str] | None = None) -> int:
               f"completi={len(fully_covered)} force={args.force} todo={len(todo)} "
               f"normali={len(normali)} giganti={len(giganti)}")
         print(f"[dry-run] rami richiesti={sorted(branches_selected)}")
+        if non_censiti:
+            print(f"[dry-run] {len(non_censiti)} stem non nel census: pagine "
+                  f"lette dal PDF reale (fallback)")
         print(f"[dry-run] processerebbe {len(selected)} documenti ({kind}):")
         for s in selected:
             rami = ",".join(sorted(plan.get(s, branches_selected)))
-            print(f"  {s}  ({doc_pages(census, s)} pag)  rami_mancanti={rami}")
+            print(f"  {s}  ({pages.get(s, 0)} pag)  rami_mancanti={rami}")
         print("[dry-run] NESSUNA scrittura eseguita.")
         return 0
 

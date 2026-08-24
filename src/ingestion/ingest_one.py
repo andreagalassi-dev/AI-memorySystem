@@ -108,12 +108,38 @@ def ensure_collection(qc, collection: str = COLLECTION) -> None:
 
 
 def delete_document_points(qc, collection: str, doc_stem: str) -> int:
-    """Cancella da Qdrant TUTTI i punti di un `doc_stem` (B3, anti-orfani).
+    """Cancella da Qdrant TUTTI i punti di un documento (B3, anti-orfani).
 
-    Filtra SOLO su `doc_stem`: gli altri documenti non vengono mai toccati.
+    Filtra su `doc` OPPURE `doc_stem`, e non e' pignoleria: misurato
+    sull'indice vivo il 24/08, la chiave `doc_stem` NON copre il corpus.
+
+        aike_pages_visual   con doc_stem:      0/10385   <- no-op TOTALE
+        aike_pages_visual   con doc:       10385/10385
+        aike_chunks_v2      con doc_stem: 166474/199447  <- ne mancano 32973
+        aike_chunks_v2      con doc:      199447/199447
+
+    Cioe': sul ramo VISIVO questa funzione non cancellava mai nulla, in nessun
+    caso, senza dire niente; e sul narrativo lasciava indietro il 16.5% dei
+    punti (quelli di generazione precedente). `doc` copre il 100% di entrambe le
+    collezioni.
+
+    Perche' era latente e non ha ancora fatto danno: oggi la funzione e' chiamata
+    solo sul ramo narrativo come idempotenza del re-ingest, e gli id sono `uuid5`
+    deterministici, quindi un re-ingest che produce le stesse chiavi SOVRASCRIVE.
+    Il danno si manifesta quando l'insieme delle chiavi si RESTRINGE (meno
+    pagine, ri-chunking diverso): i punti vecchi sopravvivono con
+    `version_status='current'` e restano cercabili — "sbagliato in silenzio".
+    E scatta subito, al 100%, appena qualcuno la usa per un rollback visivo,
+    che e' la cosa naturale da fare.
+
+    L'OR sulle due chiavi copre entrambe le generazioni senza dipendere da un
+    backfill del payload. Gli altri documenti non vengono comunque mai toccati:
+    entrambe le condizioni sono sullo stesso valore.
     """
-    flt = models.Filter(must=[models.FieldCondition(
-        key="doc_stem", match=models.MatchValue(value=doc_stem))])
+    flt = models.Filter(should=[
+        models.FieldCondition(key="doc", match=models.MatchValue(value=doc_stem)),
+        models.FieldCondition(key="doc_stem", match=models.MatchValue(value=doc_stem)),
+    ])
     before = qc.count(collection, exact=True, count_filter=flt).count
     qc.delete(collection, points_selector=models.FilterSelector(filter=flt), wait=True)
     return before

@@ -10,6 +10,8 @@ from scripts.run_ingest_full import (
     branch_coverage,
     filter_by_coverage,
     partition_giants,
+    pdf_page_count,
+    resolve_pages,
     pending,
     pending_branches,
     resolve_branches,
@@ -49,11 +51,58 @@ def test_partition_giants_soglia_inclusiva():
     assert giganti == ["b"]
 
 
-def test_partition_giants_stem_senza_census_e_normale():
-    # doc_pages default 0 -> non gigante.
+def test_partition_giants_pagine_sconosciute_e_gigante_fail_closed():
+    """REGRESSIONE: pagine sconosciute NON sono "piccolo".
+
+    Il census copre solo i documenti gia' indicizzati; per gli altri il conteggio
+    valeva 0 e 0 finiva fra i normali, cioe' dentro il default `--exclude-giants`.
+    Ora l'ignoto e' fail-closed: va fra i giganti."""
     normali, giganti = partition_giants(["q"], {}, 100)
-    assert normali == ["q"]
-    assert giganti == []
+    assert normali == []
+    assert giganti == ["q"]
+
+    # 0 esplicito e valori negativi: stessa sorte.
+    assert partition_giants(["a", "b"], {"a": 0, "b": -1}, 100) == ([], ["a", "b"])
+
+
+def test_resolve_pages_fallback_su_stem_assente_dal_census():
+    """IL CASO DEI 28: stem assente dal census -> pagine lette dal PDF reale.
+
+    Senza fallback `bgr` pesava 0 pagine ed entrava fra i "normali" di un run
+    prudente; con il fallback pesa 456 ed e' correttamente un gigante."""
+    reale = {"bgr": 456, "sew": 4}
+    pages = resolve_pages(["bgr", "sew"], {}, lambda st: reale[st])
+    assert pages == {"bgr": 456, "sew": 4}
+
+    normali, giganti = partition_giants(["bgr", "sew"], pages, 100)
+    assert normali == ["sew"]
+    assert giganti == ["bgr"]
+
+
+def test_resolve_pages_il_census_ha_la_precedenza_e_non_apre_pdf():
+    """Lo stem censito usa il census; il fallback non viene nemmeno chiamato."""
+    chiamate: list[str] = []
+
+    def counter(stem: str) -> int:
+        chiamate.append(stem)
+        return 999
+
+    pages = resolve_pages(["x", "y"], {"x": 30}, counter)
+    assert pages == {"x": 30, "y": 999}
+    assert chiamate == ["y"]  # mai chiamato per "x"
+
+
+def test_resolve_pages_pdf_illeggibile_resta_sconosciuto_e_finisce_fra_i_giganti():
+    """Se nemmeno il PDF si legge, il conteggio resta 0 e il fail-closed scatta."""
+    pages = resolve_pages(["rotto"], {}, lambda st: 0)
+    assert pages == {"rotto": 0}
+    assert partition_giants(["rotto"], pages, 100) == ([], ["rotto"])
+
+
+def test_pdf_page_count_path_mancante_o_illeggibile_ritorna_zero():
+    assert pdf_page_count(None) == 0
+    assert pdf_page_count("") == 0
+    assert pdf_page_count("/percorso/che/non/esiste_xyz.pdf") == 0
 
 
 # ---------------------------------------------------------------------------
