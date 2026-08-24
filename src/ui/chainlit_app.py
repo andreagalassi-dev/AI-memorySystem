@@ -16,6 +16,25 @@ from src.serving.session_deps import get_deps  # noqa: E402
 from src.ui.page_render import ensure_page_render  # noqa: E402
 from src.ui.feedback_handler import save_feedback_ui  # noqa: E402
 
+# --- Memoria long-term (Epica F.2c) ------------------------------------------
+#
+# Si importa SOLO `recall_validated`, MAI `MemoryStore`. Non e' pignoleria:
+# `MemoryStore.recall` applica un pre-filtro RBAC sulla RIGA DI FEEDBACK, non
+# sull'EVIDENZA — un binding 'aziendale'+'approved' e' visibile a chiunque
+# anche quando cita un documento riservato ai tecnici. `recall_validated` e' lo
+# stesso recall PIU' il `RevalidationGate`, che ri-verifica l'evidenza viva col
+# ruolo di SESSIONE. Usare il magazzino nudo da qui sarebbe esattamente il leak
+# che il cancello esiste per impedire (c'e' un test che vieta quell'import).
+from src.registry.revalidation import recall_validated  # noqa: E402
+from src.backend.clients.postgres_client import get_pg_conn  # noqa: E402
+from src.backend.clients.qdrant_client import get_qdrant_client  # noqa: E402
+from src.ui.memory_card import (  # noqa: E402
+    level_allows_card,
+    render_memory_section,
+    should_show_card,
+    card_action_label,
+)
+
 load_dotenv()
 
 import chainlit.data as cl_data  # noqa: E402
@@ -132,6 +151,86 @@ def provenance_summary(corpus_citations, web_citations) -> "tuple[str, str]":
         return "📄 Catalogo interno", "corpus"
     return "— nessuna fonte citata", "nessuna"
 
+# --- Memoria long-term: la CARD di suggerimento (Epica F.2c) -----------------
+#
+# LA LEGGE DI QUESTO PUNTO, e il motivo per cui il codice qui sotto e' fatto
+# cosi': **la memoria non tocca MAI la query**. Una versione precedente (pivot
+# dell'11/08) lasciava che un binding confermato estendesse la domanda
+# dell'utente, e un exploit provato end-to-end mostro' un ricordo sul RADIATORE
+# che faceva rispondere ALTA col prezzo del pezzo sbagliato a una domanda sul
+# CARBURATORE. Da allora la memoria vive FUORI dal percorso della query.
+#
+# Tre proprieta' STRUTTURALI, non tre guardie da ricordarsi di cablare:
+#   1. il recall avviene DOPO `answer()`, con la risposta gia' calcolata:
+#      non c'e' nessun momento in cui un ricordo possa influenzarla;
+#   2. il testo del ricordo non entra ne' nella query ne' nei turni salvati in
+#      sessione (che al giro dopo alimentano il riformulatore): finisce solo
+#      nel testo del messaggio e nel payload di un pulsante;
+#   3. il click su quel pulsante non e' una scorciatoia: chiama
+#      `handle_question`, lo STESSO ingresso di un messaggio digitato.
+
+MEMORY_ACTION = "memory_suggest"
+
+# Quanti hint chiedere al cancello e quante card mostrare. Si chiede piu' di
+# quanto si mostri perche' il cancello ne scarta: chiedere 1 solo significa,
+# nella pratica, non mostrare quasi mai nulla. Due card al massimo: con una
+# sola si sceglie arbitrariamente fra candidati vicini (il difetto noto del
+# selettore, vedi `tests/test_memory_policy_adversarial.py`, B.3), con molte la
+# card smette di essere un suggerimento e diventa un secondo elenco da leggere.
+MEMORY_RECALL_LIMIT = 5
+MEMORY_MAX_CARDS = 2
+
+
+def memory_suggestions(query: str, role: str, utente: str,
+                       final_level: str | None) -> list:
+    """Gli hint da PROPORRE accanto a questa risposta. Non solleva mai.
+
+    Fail-closed in ogni ramo: qualunque dubbio -> nessun suggerimento. Il costo
+    di una lista vuota e' una card in meno; il costo di un suggerimento
+    sbagliato o non autorizzato e' il principio del progetto.
+
+    Il gate di livello e' valutato PER PRIMO, prima di aprire una connessione:
+    su una risposta ALTA la memoria non viene proprio interrogata, quindi non
+    esiste alcun percorso lungo il quale un ricordo possa finirle accanto.
+    """
+    if not level_allows_card(final_level):
+        return []
+    try:
+        # Ruolo di SESSIONE, tipizzato. `recall_validated` rifiuta una stringa
+        # con TypeError apposta: un ruolo non valido non deve poter degradare
+        # a un default permissivo. Qui degrada a "nessuna card".
+        role_enum = parse_role(role)
+    except Exception as exc:
+        print(f"[memory-card] ruolo di sessione non valido ({exc}): nessuna card")
+        return []
+
+    try:
+        with get_pg_conn() as conn:
+            hints = recall_validated(
+                conn, get_qdrant_client(), role=role_enum, utente=utente,
+                query=query, limit=MEMORY_RECALL_LIMIT)
+    except Exception as exc:
+        # Stessa promessa del cancello: la memoria non rompe mai una risposta.
+        print(f"[memory-card] recall fallito ({type(exc).__name__}: {exc}): "
+              "nessuna card")
+        return []
+
+    out = []
+    normalizzata = (query or "").strip().casefold()
+    for h in hints or []:
+        testo = getattr(h, "query", None)
+        if not isinstance(testo, str) or not testo.strip():
+            continue
+        # Ri-suggerire la domanda appena fatta e' rumore puro: l'utente l'ha
+        # gia' scritta e la risposta e' quella che sta leggendo.
+        if testo.strip().casefold() == normalizzata:
+            continue
+        out.append(h)
+        if len(out) >= MEMORY_MAX_CARDS:
+            break
+    return out
+
+
 @cl.password_auth_callback
 def auth_callback(username: str, password: str) -> User | None:
     users_env = os.environ.get("AIKE_UI_USERS", "")
@@ -172,6 +271,21 @@ async def on_chat_resume(thread: dict):
     cl.user_session.set("conv_turns", [])
 @cl.on_message
 async def on_message(msg: cl.Message):
+    """Un messaggio DIGITATO. Unico compito: consegnare il testo verbatim
+    all'ingresso unico delle domande."""
+    await handle_question(msg.content)
+
+
+async def handle_question(question: str):
+    """L'UNICO ingresso di una domanda, qualunque sia la sua origine.
+
+    Ci passano sia il testo digitato (`on_message`) sia il testo di una card di
+    memoria cliccata (`on_memory_suggest`). Deve restare uno solo: due percorsi
+    paralleli sarebbero due insiemi di difese da tenere allineati a mano, ed e'
+    esattamente cosi' che in questo progetto sono nate le guardie morte. Un
+    click vale un turno utente perche' esegue QUESTO codice, non una sua copia
+    ridotta.
+    """
     user = cl.user_session.get("user")
     if not user:
         await cl.Message(content="Utente non autenticato.").send()
@@ -190,7 +304,7 @@ async def on_message(msg: cl.Message):
 
     try:
         # Chiama graph pipeline in thread separato
-        res = await asyncio.to_thread(answer, msg.content, role, deps=get_deps(role), context=ctx)
+        res = await asyncio.to_thread(answer, question, role, deps=get_deps(role), context=ctx)
         
         final_answer = res.get("final_answer", "")
         final_level = res.get("final_level", "")
@@ -274,6 +388,32 @@ async def on_message(msg: cl.Message):
         if web_citations:
             content += WEB_WARNING
 
+        # --- Memoria long-term: la card di suggerimento (Epica F.2c) ---------
+        #
+        # Qui, e non prima: la risposta e' gia' stata calcolata e scritta. La
+        # memoria non puo' averla toccata, e questo e' un fatto della STRUTTURA
+        # del codice, non una guardia che qualcuno deve ricordarsi di cablare.
+        # In sede separata dalla risposta e dalle citazioni, con un'icona che
+        # non appartiene a nessun'altra sezione: e' un suggerimento, e deve
+        # essere impossibile scambiarlo per una risposta.
+        mem_hints = await asyncio.to_thread(
+            memory_suggestions, question, role, user.identifier, final_level)
+        if should_show_card(final_level, mem_hints):
+            sezione = render_memory_section(mem_hints)
+            if sezione:
+                content += sezione
+                for h in mem_hints:
+                    # Nel payload viaggia il TESTO della domanda suggerita.
+                    # Al click quel testo vale esattamente quanto un testo
+                    # DIGITATO — nessun privilegio, nessuna corsia
+                    # preferenziale — quindi un payload manomesso dal client
+                    # non e' un'escalation: e' una normale domanda utente.
+                    # `hint_id` viaggia solo per l'audit.
+                    actions.append(cl.Action(
+                        name=MEMORY_ACTION,
+                        payload={"text": h.query, "hint_id": h.hint_id},
+                        label=card_action_label(h)))
+
         actions.extend([
             cl.Action(name="feedback", payload={"verdetto": "conferma"}, label="✓ Conferma"),
             cl.Action(name="feedback", payload={"verdetto": "correggi"}, label="✎ Correggi"),
@@ -308,7 +448,7 @@ async def on_message(msg: cl.Message):
 
         # Salva lo stato per il feedback (chiave: ID del messaggio di risposta)
         interaction_state = {
-            "query": msg.content,
+            "query": question,
             "risposta": final_answer,
             "final_level": final_level,
             # Corpus + web insieme: `citations` da sola per una risposta web è
@@ -331,7 +471,7 @@ async def on_message(msg: cl.Message):
 
         # Aggiorna la cronologia conversazionale (F.1b): utente + assistente
         conv_turns = cl.user_session.get("conv_turns", [])
-        conv_turns.append({"role": "user", "content": msg.content})
+        conv_turns.append({"role": "user", "content": question})
         conv_turns.append({
             "role": "assistant",
             "content": res.get("final_answer", ""),
@@ -343,6 +483,49 @@ async def on_message(msg: cl.Message):
 
     except Exception as e:
         await cl.Message(content=f"Errore durante l'elaborazione: {e}", parent_id=None).send()
+
+
+@cl.action_callback(MEMORY_ACTION)
+async def on_memory_suggest(action: cl.Action):
+    """Click su una card: la domanda suggerita viene RIFATTA come turno utente.
+
+    Tre cose, in quest'ordine, e nessuna e' cosmetica:
+
+      1. il testo si prende dal payload e si usa VERBATIM. Non si concatena
+         alla domanda precedente, non si fonde col contesto, non si "arricchisce"
+         in nessun modo: un suggerimento concatenato sarebbe la memoria che
+         estende la query sotto un altro nome, cioe' precisamente cio' che il
+         pivot dell'11/08 vieta;
+      2. si stampa un'ECO come messaggio UTENTE. L'utente deve vedere scritto
+         cio' che ha appena chiesto: e' la differenza fra "la memoria ha deciso
+         per me" e "l'ho chiesto io, e lo leggo";
+      3. si chiama `handle_question`, cioe' lo stesso ingresso di un messaggio
+         digitato. Nessuna scorciatoia: riformulazione, RBAC, guardrail codici
+         e soglie di confidenza vengono rieseguiti tutti, da capo.
+    """
+    user = cl.user_session.get("user")
+    if not user:
+        return
+
+    payload = getattr(action, "payload", None) or {}
+    testo = payload.get("text")
+    if not isinstance(testo, str) or not testo.strip():
+        await cl.Message(content="Suggerimento non più disponibile.").send()
+        return
+    testo = testo.strip()
+
+    # Eco come turno UTENTE. Se il tipo di messaggio non fosse disponibile
+    # (deriva dell'API Chainlit), si degrada a un messaggio normale: meglio
+    # un'eco meno riconoscibile che nessuna eco, perche' l'utente resterebbe
+    # senza traccia scritta di cio' che e' stato chiesto per suo conto.
+    try:
+        eco = cl.Message(content=testo, type="user_message")
+    except Exception:
+        eco = cl.Message(content=f"↩️ {testo}")
+    eco.parent_id = None
+    await eco.send()
+
+    await handle_question(testo)
 
 
 @cl.action_callback("feedback")

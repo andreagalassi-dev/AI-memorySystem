@@ -693,43 +693,42 @@ def test_accepted_canonical_collapses_distinct_graphies(qa, qb, collapsed):
 
 
 # =============================================================================
-# PARTE C — TODO ESEGUIBILI per F.2c / F.2d (codice di produzione inesistente)
+# PARTE C — ex TODO ESEGUIBILI per F.2c / F.2d, ora ATTIVI
+#
+# Erano tre `@pytest.mark.skip` che descrivevano le trappole del renderer prima
+# che il renderer esistesse. Il renderer ora esiste (`src/ui/memory_card.py`) e
+# ha il suo consumatore (`src/ui/chainlit_app.py`), quindi gli skip sono
+# caduti. Restano QUI, oltre che nella suite dedicata
+# (`tests/ui/test_memory_card.py`), perche' sono le tre trappole che questa
+# suite aveva PREVISTO: se un domani qualcuno smontasse la card, e' giusto che
+# a protestare sia anche il file che difende il pivot.
 # =============================================================================
 
-@pytest.mark.skip(reason=(
-    "F.2d — il renderer della card non esiste ancora. Trappola da coprire "
-    "quando esistera': `MemoryHint.created_at` non e' validato da nessuno "
-    "(dataclass nuda, nessun __post_init__). La versione pre-pivot faceva "
-    "`created_at.date()` senza guardia e un `created_at` str/date faceva "
-    "esplodere l'intera risposta. La stessa riga tornera' nel renderer, che "
-    "deve mostrare la data del binding: li' un hint anomalo deve degradare a "
-    "'data ignota', MAI sollevare."))
 @pytest.mark.parametrize("created", ["2026-01-15", date(2026, 1, 15), None, 0])
-def test_todo_f2d_card_renderer_must_not_raise_on_bad_created_at(created):
-    from src.ui.memory_card import render_memory_card  # type: ignore
+def test_f2d_card_renderer_must_not_raise_on_bad_created_at(created):
+    """`MemoryHint.created_at` non e' validato da nessuno (dataclass nuda,
+    nessun `__post_init__`). La versione pre-pivot faceva `created_at.date()`
+    senza guardia e un `created_at` str/date faceva esplodere l'intera
+    risposta. Nel renderer un hint anomalo degrada a 'data ignota', mai
+    solleva."""
+    from src.ui.memory_card import render_memory_card
     assert render_memory_card(_hint("pompa ABC124", created=created))
 
 
-@pytest.mark.skip(reason=(
-    "F.2c — la card non esiste ancora. Quando esistera': `hint.query` e' testo "
-    "scritto dall'utente e salvato su DB, e post-pivot finisce SULLO SCHERMO. "
-    "L'injection cambia bersaglio (non piu' il prompt, ma il rendering): "
-    "markdown/HTML nella card Chainlit, e il click che inserisce il testo "
-    "VERBATIM come turno utente. Il renderer deve trattare `hint.query` come "
-    "dato, non come markup."))
-def test_todo_f2c_card_must_escape_hint_text():
-    from src.ui.memory_card import render_memory_card  # type: ignore
+def test_f2c_card_must_escape_hint_text():
+    """`hint.query` e' testo scritto dall'utente e salvato su DB, e post-pivot
+    finisce SULLO SCHERMO. L'injection cambia bersaglio (non piu' il prompt, ma
+    il rendering): il renderer tratta quel testo come dato, non come markup."""
+    from src.ui.memory_card import render_memory_card
     out = render_memory_card(_hint("[clicca qui](javascript:alert(1)) ABC124"))
     assert "javascript:" not in out
 
 
-@pytest.mark.skip(reason=(
-    "F.2c — la card non esiste ancora. Quando esistera': la card va mostrata "
-    "SOLO se `final_level` e' BASSA/MEDIA (decisione del reviewer). Su una "
-    "risposta ALTA un suggerimento e' rumore che invita a rimettere in "
-    "discussione una risposta gia' fondata sull'evidenza."))
 @pytest.mark.parametrize("level, expected", [
     ("ALTA", False), ("MEDIA", True), ("BASSA", True)])
-def test_todo_f2c_card_shown_only_on_low_confidence(level, expected):
-    from src.ui.memory_card import should_show_card  # type: ignore
+def test_f2c_card_shown_only_on_low_confidence(level, expected):
+    """La card va mostrata SOLO se `final_level` e' BASSA/MEDIA (decisione del
+    reviewer). Su una risposta ALTA un suggerimento e' rumore che invita a
+    rimettere in discussione una risposta gia' fondata sull'evidenza."""
+    from src.ui.memory_card import should_show_card
     assert should_show_card(level, [_hint("pompa ABC124")]) is expected
