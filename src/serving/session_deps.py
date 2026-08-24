@@ -117,6 +117,29 @@ def _page_judge_mode() -> str:
     return JUDGE_MODE_REORDER if _page_reorder_enabled() else JUDGE_MODE_REFUSE
 
 
+def _web_cascade_enabled() -> bool:
+    """Epica H — interruttore della cascata web. DEFAULT OFF, e non per timidezza.
+
+    AIKE_WEB_CASCADE = "1"/"true" -> accesa. Assente o altro -> SPENTA.
+
+    La ragione del default sta tutta in una frase: **ogni misura esistente in
+    questo repo e' stata presa col web spento**. Il golden gate, le baseline
+    per-lingua, i numeri di recall, il conteggio dei WRONG_ALTA: tutti
+    fotografano un sistema che, quando il corpus non sa, dice "non lo so".
+    Accendere la cascata di default sposterebbe il metro sotto i piedi del
+    metro — gli item che oggi sono rifiuti diventerebbero risposte WEB, e
+    nessuno saprebbe piu' se un confronto fra due run misura il codice o
+    l'interruttore. Chi accende, accende apposta, e l'audit lo scrive
+    (`run_config.effective_config`).
+
+    Interruttore SEPARATO da `AIKE_WEB_SEARCH` (che sceglie il MOTORE:
+    off/searxng/frozen) perche' sono due decisioni diverse: "esiste un motore
+    raggiungibile" e "il grafo puo' usarlo per rispondere". Servono entrambe:
+    con il motore spento questa resta una dichiarazione d'intenti innocua.
+    """
+    return os.getenv("AIKE_WEB_CASCADE", "0").strip().lower() in ("1", "true")
+
+
 _LLM_EXECUTOR = concurrent.futures.ThreadPoolExecutor(max_workers=1, thread_name_prefix="LLMProxy")
 
 _INIT_LOCK = threading.Lock()
@@ -225,7 +248,27 @@ def get_deps(role: str) -> Deps:
         
     _LLM_EXECUTOR.submit(_init_shared_singletons).result()
     
-    deps = build_default_deps(validated, llm=_llm, visual_search=_visual_search)
+    # Epica H — motore di ricerca online: costruito SOLO se la cascata e'
+    # accesa E il motore e' configurato. Fail-safe come gli altri rami: se la
+    # cassetta manca o l'URL e' storto si degrada a None (nessun ramo web),
+    # mai un crash all'avvio della sessione.
+    web_search = None
+    if _web_cascade_enabled():
+        try:
+            from src.retrieval.websearch import build_web_search_from_env
+            web_search = build_web_search_from_env()
+        except Exception as e:
+            logger.warning("Cascata web degradata: %s (%s). Ramo web spento.",
+                           type(e).__name__, e)
+            web_search = None
+        logger.info("cascata web: %s (motore=%s)",
+                    "ON" if web_search is not None else "OFF (nessun motore)",
+                    type(web_search).__name__ if web_search else None)
+    else:
+        logger.info("cascata web: OFF (AIKE_WEB_CASCADE non attivo)")
+
+    deps = build_default_deps(validated, llm=_llm, visual_search=_visual_search,
+                              web_search=web_search)
     
     # Fase 2a — soglia di sicurezza sul ramo visivo, ATTIVA solo col reranker (i suoi
     # score sono la scala su cui e' tarata). Reranker spento -> None -> nessun gate.

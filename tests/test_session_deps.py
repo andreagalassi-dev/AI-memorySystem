@@ -160,7 +160,9 @@ def test_inference_is_serialized_and_affinity(monkeypatch):
     fake_llm = FakeLLMWithAffinityAndFallback()
     monkeypatch.setattr(sd, "_llm", fake_llm)
     
-    def mock_build_default(*args, llm=None, visual_search=None):
+    # `**_` : il doppio non deve rompersi ogni volta che il wiring reale
+    # guadagna un ramo opzionale (epica H: web_search).
+    def mock_build_default(*args, llm=None, visual_search=None, **_):
         from src.retrieval.confidence import Thresholds
         from src.graph.pipeline import Deps
         return Deps(
@@ -213,7 +215,9 @@ def test_retrieve_is_locked_callable(monkeypatch):
     import src.serving.session_deps as sd
     sd._CACHE.clear()
     
-    def mock_build_default(*args, llm=None, visual_search=None):
+    # `**_` : il doppio non deve rompersi ogni volta che il wiring reale
+    # guadagna un ramo opzionale (epica H: web_search).
+    def mock_build_default(*args, llm=None, visual_search=None, **_):
         from src.retrieval.confidence import Thresholds
         from src.graph.pipeline import Deps
         return Deps(

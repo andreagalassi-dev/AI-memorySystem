@@ -45,10 +45,28 @@ def has_citation(citations, expected_doc, expected_page=None):
     return False
 
 def get_level_rank(level):
+    """Ordinamento dei livelli, usato SOLO per confrontare due run.
+
+    Epica H — WEB sta FRA BASSA e MEDIA, e le due disuguaglianze dicono cose
+    diverse, entrambe volute:
+      - WEB > BASSA: un item che prima era un rifiuto e ora ha una risposta web
+        verificata NON e' una regressione. E' l'unico guadagno che la cascata
+        puo' portare, e va lasciato passare.
+      - WEB < MEDIA: perdere una risposta ANCORATA ai documenti del cliente e
+        rimpiazzarla con una pagina di internet E' una regressione, e il gate
+        deve gridarlo. Strutturalmente non puo' accadere (la cascata parte solo
+        sul rifiuto puro, vedi `corpus_exhausted`), ma il metro non deve fidarsi
+        della struttura: deve misurarla.
+    I numeri sono cambiati tutti perche' serviva un gradino in mezzo; sono
+    interni al confronto (le baseline salvano la STRINGA del livello, e i ranghi
+    si ricalcolano al volo da entrambi i lati), quindi nessun audit invecchia.
+    """
     level = (level or "").upper()
     if level == "ALTA":
-        return 3
+        return 4
     if level == "MEDIA":
+        return 3
+    if level == "WEB":
         return 2
     if level in ("BASSA", "REFUSAL"):
         return 1

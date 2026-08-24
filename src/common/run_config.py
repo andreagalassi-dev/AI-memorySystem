@@ -127,6 +127,36 @@ def effective_config(deps: Any | None = None) -> dict:
     except Exception:
         DEFAULT_VISUAL_COLLECTION = None
 
+    # Epica H — la cascata web. Dichiararla non e' pignoleria: e' l'unico modo
+    # perche' un audit resti interpretabile. Tutte le misure prese finora
+    # esistono in un mondo in cui il corpus che non sa produce un rifiuto; con
+    # la cascata accesa quegli stessi item possono uscire a livello WEB, e due
+    # run senza questo campo diventerebbero silenziosamente inconfrontabili.
+    # Come per il pavimento visivo si distingue il VOLUTO dall'OSSERVATO:
+    # `enabled` e' l'intenzione scritta nell'env, `wired` e' il motore che c'e'
+    # davvero nelle deps del run (l'env puo' dire ON e la cassetta essere
+    # assente: allora il ramo web non esiste, e l'audit deve dirlo).
+    from src.retrieval.websearch import WEB_SEARCH_ENABLED_ENV
+    from src.serving.session_deps import _web_cascade_enabled
+
+    cascade_on = _web_cascade_enabled()
+    raw_cascade = os.getenv("AIKE_WEB_CASCADE")
+    raw_engine = os.getenv(WEB_SEARCH_ENABLED_ENV)
+    cascade_reason = (f"env AIKE_WEB_CASCADE={raw_cascade!r}" if raw_cascade is not None
+                      else "env AIKE_WEB_CASCADE assente (default OFF: le misure "
+                           "del repo sono tutte a web spento)")
+    cascade_reason += (f", {WEB_SEARCH_ENABLED_ENV}={raw_engine!r}" if raw_engine is not None
+                       else f", {WEB_SEARCH_ENABLED_ENV} assente (motore off)")
+    if deps is not None:
+        engine = getattr(deps, "web_search", None)
+        cascade_wired = engine is not None
+        cascade_engine = type(engine).__name__ if engine is not None else None
+        cascade_source = "osservato"
+    else:
+        cascade_wired = None
+        cascade_engine = None
+        cascade_source = "previsto"
+
     from src.retrieval.rerank import RERANK_TOPK_DEFAULT, RERANK_TOPK_ENV, rerank_topk
 
     topk = rerank_topk()
@@ -148,6 +178,11 @@ def effective_config(deps: Any | None = None) -> dict:
         # hanno poteri diversi e un audit che li confonde mente. `veto` puo'
         # TOGLIERE una risposta, `reorder` puo' solo cambiare quale pagina sta
         # in cima. Vanno letti separatamente.
+        # `enabled` = l'intenzione (env), `wired` = il motore davvero presente
+        # nelle deps del run. Se differiscono, comanda `wired`.
+        "web_cascade": {"enabled": cascade_on, "wired": cascade_wired,
+                        "engine": cascade_engine, "source": cascade_source,
+                        "reason": cascade_reason},
         "visual_page_judge": {"enabled": judge_on, "mode": judge_mode,
                               "veto": judge_mode == JUDGE_MODE_REFUSE and judge_on,
                               "reorder": judge_mode == JUDGE_MODE_REORDER and judge_on,
@@ -198,6 +233,17 @@ def format_config_banner(cfg: dict) -> str:
         lines.append(
             f"  giudice pagina       : {'ON' if pj['enabled'] else 'OFF'}"
             f"  modalita'={modo}  [{pj['reason']}] ({pj['source']})"
+        )
+    wc = cfg.get("web_cascade")
+    if wc is not None:
+        # Va letto come il pavimento visivo: cio' che conta e' se il ramo
+        # ESISTE nel run, non cosa dice l'env.
+        stato = "ON" if wc.get("wired") else ("richiesta ma SENZA MOTORE"
+                                              if wc.get("enabled") and wc.get("wired") is False
+                                              else "OFF")
+        lines.append(
+            f"  cascata web          : {stato}"
+            f"  motore={wc.get('engine')}  [{wc['reason']}] ({wc.get('source')})"
         )
     if cfg.get("visual_search_available") is not None:
         lines.append(

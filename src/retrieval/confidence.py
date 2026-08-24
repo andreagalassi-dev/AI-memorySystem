@@ -20,6 +20,28 @@ class Level(Enum):
     ALTA = "ALTA"
     MEDIA = "MEDIA"
     BASSA = "BASSA"
+    # Epica H — livello della risposta trovata SUL WEB, fuori dal corpus.
+    #
+    # Perche' un livello SUO e non uno dei tre esistenti.
+    #   ALTA e' impossibile: il margine che la produce e' calibrato sugli score
+    #   contro il NOSTRO indice (tau_hi=0.90, ALTA precision 1.0) e su una
+    #   pagina di terzi non esiste ne' quello score ne' quella calibrazione. In
+    #   piu' il gate tratta un WRONG_ALTA come fallimento duro: appendere il web
+    #   ad ALTA significherebbe mettere a rischio l'unica proprieta' misurata
+    #   che il prodotto ha.
+    #   MEDIA sarebbe peggio, perche' MENTIREBBE: oggi MEDIA vuol dire
+    #   "verifica consigliata su una risposta ANCORATA ai tuoi documenti"
+    #   (guardrail a VERIFY, evidenza OCR, distinta base vuota...). Una risposta
+    #   web non e' ancorata a niente di nostro; chiamarla MEDIA la renderebbe
+    #   indistinguibile da una risposta a catalogo proprio nel campo che
+    #   l'utente usa per decidere quanto fidarsi.
+    # Quindi: una quarta etichetta, che non si puo' confondere con nessuna
+    # delle tre e che nessun codice pre-esistente sa produrre.
+    #
+    # `confidence_level` NON la restituisce mai: il motore dei segnali lavora
+    # sull'evidenza del corpus e non ha nulla da dire sul web. La assegna solo
+    # `web_node` (src/graph/pipeline.py), dopo che le sue guardie sono passate.
+    WEB = "WEB"
 
 
 @dataclass
