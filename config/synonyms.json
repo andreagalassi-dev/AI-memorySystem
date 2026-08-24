@@ -660,6 +660,208 @@
           "table"
         ]
       }
+    },
+    "nero": {
+      "note": "nero/scuro -> black/schwarz (finitura scura)",
+      "terms": {
+        "IT": [
+          "nero",
+          "nera",
+          "scuro",
+          "scura"
+        ],
+        "EN": [
+          "black"
+        ],
+        "DE": [
+          "schwarz"
+        ]
+      }
+    },
+    "zincato": {
+      "note": "zincato/zincata -> zinc/verzinkt (finitura metallica)",
+      "terms": {
+        "IT": [
+          "zincato",
+          "zincata",
+          "zinco",
+          "zinc"
+        ],
+        "EN": [
+          "zinc plated",
+          "galvanized"
+        ],
+        "DE": [
+          "verzinkt"
+        ]
+      }
+    },
+    "piastra-riscaldante": {
+      "note": "piatto/piastra riscaldante -> heating plate (NARR-Q050: rank None -> 1)",
+      "terms": {
+        "IT": [
+          "piastra riscaldante",
+          "piatto riscaldante",
+          "piastra di riscaldamento"
+        ],
+        "EN": [
+          "heating plate",
+          "hot plate",
+          "heater plate"
+        ],
+        "DE": [
+          "heizplatte",
+          "warmhalteplatte"
+        ]
+      }
+    },
+    "spina-elettrica": {
+      "note": "presa/spina di corrente -> plug/socket/stecker; nel corpus la riga dice SPINA",
+      "terms": {
+        "IT": [
+          "spina",
+          "presa",
+          "presa di corrente",
+          "spina elettrica"
+        ],
+        "EN": [
+          "plug",
+          "socket",
+          "power plug"
+        ],
+        "DE": [
+          "stecker",
+          "steckdose"
+        ]
+      }
+    },
+    "paese-australia": {
+      "note": "spina AU (NARR-W005: rank None -> 2) | la sigla sta PRIMA di proposito: l'ordine del seed e' l'ordine di espansione, e sotto il cap MAX_TERMS deve sopravvivere la forma che usa il CORPUS (la sigla), non quella che usa l'utente (il nome del paese)",
+      "terms": {
+        "*": [
+          "au"
+        ],
+        "IT": [
+          "australiana",
+          "australiano",
+          "australia"
+        ],
+        "EN": [
+          "australian",
+          "australia"
+        ],
+        "DE": [
+          "australien",
+          "australisch"
+        ]
+      }
+    },
+    "paese-regno-unito": {
+      "note": "spina UK | la sigla sta PRIMA di proposito: l'ordine del seed e' l'ordine di espansione, e sotto il cap MAX_TERMS deve sopravvivere la forma che usa il CORPUS (la sigla), non quella che usa l'utente (il nome del paese)",
+      "terms": {
+        "*": [
+          "uk",
+          "gb"
+        ],
+        "IT": [
+          "inglese",
+          "britannica",
+          "britannico",
+          "regno unito",
+          "inghilterra"
+        ],
+        "EN": [
+          "british",
+          "united kingdom"
+        ],
+        "DE": [
+          "england",
+          "englisch",
+          "britisch"
+        ]
+      }
+    },
+    "paese-cina": {
+      "note": "spina CN | la sigla sta PRIMA di proposito: l'ordine del seed e' l'ordine di espansione, e sotto il cap MAX_TERMS deve sopravvivere la forma che usa il CORPUS (la sigla), non quella che usa l'utente (il nome del paese)",
+      "terms": {
+        "*": [
+          "cn"
+        ],
+        "IT": [
+          "cinese",
+          "cina"
+        ],
+        "EN": [
+          "chinese",
+          "china"
+        ],
+        "DE": [
+          "china",
+          "chinesisch"
+        ]
+      }
+    },
+    "paese-giappone": {
+      "note": "spina JP | la sigla sta PRIMA di proposito: l'ordine del seed e' l'ordine di espansione, e sotto il cap MAX_TERMS deve sopravvivere la forma che usa il CORPUS (la sigla), non quella che usa l'utente (il nome del paese)",
+      "terms": {
+        "*": [
+          "jp"
+        ],
+        "IT": [
+          "giapponese",
+          "giappone"
+        ],
+        "EN": [
+          "japanese",
+          "japan"
+        ],
+        "DE": [
+          "japan",
+          "japanisch"
+        ]
+      }
+    },
+    "paese-stati-uniti": {
+      "note": "spina USA | la sigla sta PRIMA di proposito: l'ordine del seed e' l'ordine di espansione, e sotto il cap MAX_TERMS deve sopravvivere la forma che usa il CORPUS (la sigla), non quella che usa l'utente (il nome del paese)",
+      "terms": {
+        "*": [
+          "usa"
+        ],
+        "IT": [
+          "americana",
+          "americano",
+          "statunitense",
+          "stati uniti"
+        ],
+        "EN": [
+          "american",
+          "united states"
+        ],
+        "DE": [
+          "amerikanisch"
+        ]
+      }
+    },
+    "paese-germania-schuko": {
+      "note": "spina SCHUKO (Schutzkontakt, standard DE/EU) | la sigla sta PRIMA di proposito: l'ordine del seed e' l'ordine di espansione, e sotto il cap MAX_TERMS deve sopravvivere la forma che usa il CORPUS (la sigla), non quella che usa l'utente (il nome del paese)",
+      "terms": {
+        "*": [
+          "schuko"
+        ],
+        "IT": [
+          "tedesca",
+          "tedesco",
+          "germania"
+        ],
+        "EN": [
+          "german",
+          "germany"
+        ],
+        "DE": [
+          "deutschland",
+          "deutsch"
+        ]
+      }
     }
   }
 }

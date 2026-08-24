@@ -29,6 +29,43 @@ Regressione singola nota: W046 (DE 'Dichtring'->O-Ring, 10->None).
   passa da rango 873 (fuso 1600, senza espansione) a NESSUNO. Morale
   operativa: l'espansione non si adotta ne' si scarta in blocco, si misura
   per item.
+  AGGIORNAMENTO 23/08 — anche la nota su W048 e' SUPERATA: dopo la
+  promozione dell'indice riparato (`aike_chunks_v2`, 541ccb2) W048 sta a
+  rank 4 CON gli 8 termini, SENZA termini e con termini composti tedeschi.
+  E' il canale denso a portarlo, e il danno da espansione su quell'item
+  non e' piu' riproducibile. La morale operativa resta: si misura per item.
+
+ORDINE DEI TERMINI = PRIORITA' SOTTO IL CAP (misurato 23/08)
+------------------------------------------------------------
+`load_seed_config` conserva l'ordine del JSON e il round-robin lo usa come
+priorita': il cap MAX_TERMS taglia gli ULTIMI termini di ogni concetto. Su
+NARR-W005 questo e' load-bearing e non e' cosmetica: la sigla 'au' e' il solo
+termine che aggancia la riga giusta, e finche' stava in coda al concetto-paese
+veniva tagliata (rank None); spostata in testa il bersaglio va a rank 2.
+Regola che ne segue: dentro un concetto vanno PRIMA le forme che usa il
+CORPUS, poi quelle che usa l'utente. Cablata in tests/test_expansion.py.
+
+TRE FAMIGLIE VALUTATE E NON ADOTTATE (23/08) — misure, non opinioni
+--------------------------------------------------------------------
+  composti tedeschi  Snowball non scompone: verificato sugli indici sparse che
+                     'Kabel' ∩ 'Stromkabel' = 0 e 'Anschluss' ∩
+                     'Netzanschluss' = 0. Ma la famiglia e' MINUSCOLA: scansione
+                     esaustiva dei 199849 chunk dell'indice -> 7 composti in
+                     *kabel (8 occorrenze totali) e 7 in *anschluss (7). L'unico
+                     item del metro che potrebbe usarla e' W048, che sta a
+                     rank 4 con o senza. Inoltre la testa 'ring' e' una trappola:
+                     e' dominata dall'inglese ('bearing' 402, 'measuring' 92),
+                     quindi una regola per suffisso avvelenerebbe il canale.
+                     Il ponte Kabel<->Stromkabel va fatto in INGESTION (decomposti
+                     nel sparse_text), non a query-time.
+  RAL -> colore      tabella chiusa e legittima, ma ZERO item del metro la
+                     nomina: 'ral' non compare in nessuna delle 56 query. W011
+                     ('telo giallo') e' gia' a rank 2 senza. 200 righe di
+                     dizionario senza un beneficiario misurato sono zavorra.
+  tripolare -> 3G    NON recuperabile col dizionario: il tokenizer BM25 fonde la
+                     sigla con la sezione del cavo ('3Gx1,00' -> UN token
+                     '3gx1'), quindi '3g' non aggancia nulla. Serve toccare la
+                     tokenizzazione, non il dizionario.
 """
 
 from __future__ import annotations
