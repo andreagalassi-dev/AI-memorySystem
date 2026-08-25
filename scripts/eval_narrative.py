@@ -78,7 +78,16 @@ load_runtime_env()
 
 from src.common.run_config import effective_config, format_config_banner  # noqa: E402
 
-SET = ROOT / "data" / "eval" / "eval_narrative_v1.jsonl"
+# Il set DEDUPLICATO (50 item) e' il metro corrente; `eval_narrative_v1.jsonl`
+# (56) resta per rileggere gli audit storici. Perche' il puntatore va spostato e
+# non lasciato al chiamante: i 6 item rimossi erano sproporzionatamente FACILI
+# (5 su 6 erano hit), quindi lo stesso identico codice misurato sui due set da'
+# R@10 0.625 contro 0.600 — una regressione FABBRICATA di 2.5 punti, lo stesso
+# ordine di grandezza degli effetti che stiamo inseguendo. Confrontare numeri
+# presi su set diversi e' l'errore silenzioso peggiore che questo metro possa
+# fare, e il nome del file da' l'unico avviso.
+SET = ROOT / "data" / "eval" / "eval_narrative_v1_1.jsonl"
+SET_STORICO = ROOT / "data" / "eval" / "eval_narrative_v1.jsonl"
 OUT_DIR = ROOT / "output" / "eval"
 KS = (1, 3, 10)
 REFUSAL_LEVELS = {"BASSA", "REFUSAL", "RIFIUTO", ""}

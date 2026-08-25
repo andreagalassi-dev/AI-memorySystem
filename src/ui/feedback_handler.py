@@ -2,7 +2,7 @@ import logging
 from typing import Any
 
 from src.backend.clients.postgres_client import get_pg_conn
-from src.registry.feedback import insert_feedback
+from src.registry.feedback import init_schema, insert_feedback
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +48,16 @@ def save_feedback_ui(
 
     try:
         with get_pg_conn() as conn:
+            # Migrazione idempotente PRIMA dell'insert. Non e' pignoleria: la
+            # colonna `provenienza` (03f385d) era applicata SOLO da
+            # `tests/test_feedback.py`, che si costruisce lo schema da se'. Sul
+            # DB di questa macchina esiste perche' e' stata applicata a mano;
+            # su qualunque altro ambiente il primo feedback sarebbe esploso.
+            # E' alla lettera la lezione dell'epica D gia' pagata una volta:
+            # un test su schema-test NON prova la produzione. `init_schema` e'
+            # idempotente (IF NOT EXISTS ovunque) e questa e' l'unica porta di
+            # scrittura del feedback, quindi e' il posto giusto.
+            init_schema(conn)
             return insert_feedback(
                 conn,
                 utente=utente,

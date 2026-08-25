@@ -78,6 +78,10 @@ def test_save_feedback_ui_provenienza_web(monkeypatch):
 
     monkeypatch.setattr("src.ui.feedback_handler.get_pg_conn", lambda: FakeConn())
     monkeypatch.setattr("src.ui.feedback_handler.insert_feedback", fake_insert_feedback)
+    # la migrazione idempotente e' parte del percorso di scrittura: la si
+    # neutralizza qui perche' la connessione e' finta, non perche' sia
+    # opzionale (senza, un ambiente nuovo non avrebbe la colonna provenienza)
+    monkeypatch.setattr("src.ui.feedback_handler.init_schema", lambda conn: None)
 
     fb_id = save_feedback_ui(
         utente="test",
@@ -113,6 +117,10 @@ def test_save_feedback_ui_citazioni_miste_corpus_e_web(monkeypatch):
 
     monkeypatch.setattr("src.ui.feedback_handler.get_pg_conn", lambda: FakeConn())
     monkeypatch.setattr("src.ui.feedback_handler.insert_feedback", fake_insert_feedback)
+    # la migrazione idempotente e' parte del percorso di scrittura: la si
+    # neutralizza qui perche' la connessione e' finta, non perche' sia
+    # opzionale (senza, un ambiente nuovo non avrebbe la colonna provenienza)
+    monkeypatch.setattr("src.ui.feedback_handler.init_schema", lambda conn: None)
 
     fb_id = save_feedback_ui(
         utente="test",
@@ -149,6 +157,10 @@ def test_save_feedback_ui_provenienza_default_corpus(monkeypatch):
 
     monkeypatch.setattr("src.ui.feedback_handler.get_pg_conn", lambda: FakeConn())
     monkeypatch.setattr("src.ui.feedback_handler.insert_feedback", fake_insert_feedback)
+    # la migrazione idempotente e' parte del percorso di scrittura: la si
+    # neutralizza qui perche' la connessione e' finta, non perche' sia
+    # opzionale (senza, un ambiente nuovo non avrebbe la colonna provenienza)
+    monkeypatch.setattr("src.ui.feedback_handler.init_schema", lambda conn: None)
 
     save_feedback_ui(
         utente="test",

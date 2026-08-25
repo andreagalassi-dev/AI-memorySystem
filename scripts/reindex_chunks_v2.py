@@ -34,6 +34,8 @@ Uso:
 
 from __future__ import annotations
 
+import os
+
 import argparse
 import json
 import sys
@@ -61,7 +63,13 @@ from src.ingestion.embedding import (  # noqa: E402
     sparse_text,
 )
 
-SORGENTE = COLLECTION
+# La sorgente e' l'indice STORICO, non quello in uso: dopo la promozione di v2
+# (541ccb2) `COLLECTION` vale `aike_chunks_v2`, che e' anche una destinazione —
+# la guardia fail-closed scattava e lo strumento che ha COSTRUITO v2 non poteva
+# piu' ricostruirlo. Il payload delle due collezioni e' identico (verificato:
+# stessi 199447 punti, stessi (doc,page,code)), quindi ricostruire dallo storico
+# e' equivalente e non dipende dal proprio output.
+SORGENTE = os.getenv("AIKE_REINDEX_SOURCE", "aike_chunks")
 # destinazione -> lingua dello stemmer BM25
 DESTINAZIONI = {"aike_chunks_v2": "italian", "aike_chunks_v2en": "english"}
 CHECKPOINT = ROOT / "data" / "eval" / "reindex_v2_checkpoint.json"

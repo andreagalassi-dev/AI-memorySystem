@@ -266,8 +266,15 @@ def run_harness(update_baseline=False, limit=None):
     pg_conn = psycopg.connect(pg_uri)
     
     def check_index_fn(c_doc, c_page, c_code):
+        # La COSTANTE, non il nome scritto a mano. Questa closure decide se un
+        # WRONG_ALTA diventa PASS_ALTA: e' l'unico rilevatore di fallimento duro
+        # del prodotto. Con il letterale, `golden_gate_on.py --collection`
+        # ri-legava il RETRIEVAL su una collezione e il GIUDIZIO restava
+        # sull'altra — configurazione mista, e il numero non misurava cio' che
+        # diceva di misurare.
+        from src.ingestion.embedding import COLLECTION as _CHUNKS
         results = qdrant.scroll(
-            collection_name='aike_chunks',
+            collection_name=_CHUNKS,
             scroll_filter=models.Filter(
                 must=[
                     models.FieldCondition(key="doc", match=models.MatchValue(value=c_doc)),

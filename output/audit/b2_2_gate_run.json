@@ -3,7 +3,7 @@
     "env_file": "/Users/AndreaGalassi/Documents/AI/AI-memorySystem/.env",
     "rerank_topk": {
       "value": 50,
-      "reason": "env AIKE_RERANK_TOPK='50'"
+      "reason": "env AIKE_RERANK_TOPK assente (default 50)"
     },
     "visual_rerank": {
       "enabled": true,
@@ -12,6 +12,13 @@
     "visual_score_floor": 0.2,
     "visual_score_floor_source": "osservato",
     "visual_search_available": true,
+    "web_cascade": {
+      "enabled": false,
+      "wired": false,
+      "engine": null,
+      "source": "osservato",
+      "reason": "env AIKE_WEB_CASCADE assente (default OFF: le misure del repo sono tutte a web spento), AIKE_WEB_SEARCH assente (motore off)"
+    },
     "visual_page_judge": {
       "enabled": true,
       "mode": "reorder",
@@ -29,7 +36,7 @@
     "qdrant": {
       "url": "http://localhost:6333",
       "collections": {
-        "text": "aike_chunks",
+        "text": "aike_chunks_v2",
         "visual": "aike_pages_visual"
       }
     },
@@ -40,10 +47,10 @@
     }
   },
   "run": {
-    "generated_at": "2026-08-22T21:36:30",
+    "generated_at": "2026-08-25T01:44:28",
     "dataset": "data/golden/golden_v1.jsonl",
     "n_queries": 42,
-    "elapsed_s": 2719.3
+    "elapsed_s": 3142.8
   },
   "results": {
     "C001": {
@@ -56,7 +63,7 @@
       },
       "runs": [
         {
-          "latency": 11.103376865386963,
+          "latency": 2.380260705947876,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -87,7 +94,7 @@
       },
       "runs": [
         {
-          "latency": 3.5201382637023926,
+          "latency": 3.5460691452026367,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -118,7 +125,7 @@
       },
       "runs": [
         {
-          "latency": 1.8820412158966064,
+          "latency": 1.6065568923950195,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -150,18 +157,18 @@
       },
       "runs": [
         {
-          "latency": 1.4408960342407227,
+          "latency": 1.5192482471466064,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
           "citation_ok": true,
           "real_citations": [
             [
-              "kohler_marine_tp6954",
-              156
+              "kohler_industrial_tp7120",
+              41
             ]
           ],
-          "matched_expected_page": false
+          "matched_expected_page": true
         }
       ],
       "stable": "N/A",
@@ -169,7 +176,7 @@
       "hit": true,
       "status": "PASS_ALTA",
       "citation_ok": true,
-      "matched_expected_page": false
+      "matched_expected_page": true
     },
     "C005": {
       "intent": "code",
@@ -181,7 +188,7 @@
       },
       "runs": [
         {
-          "latency": 2.578481912612915,
+          "latency": 2.6555891036987305,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -212,7 +219,7 @@
       },
       "runs": [
         {
-          "latency": 1.4821949005126953,
+          "latency": 1.630321979522705,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -243,7 +250,7 @@
       },
       "runs": [
         {
-          "latency": 1.7046699523925781,
+          "latency": 1.793708086013794,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -274,7 +281,7 @@
       },
       "runs": [
         {
-          "latency": 1.3785300254821777,
+          "latency": 1.5419719219207764,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -305,7 +312,7 @@
       },
       "runs": [
         {
-          "latency": 1.677649736404419,
+          "latency": 1.848017930984497,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -336,7 +343,7 @@
       },
       "runs": [
         {
-          "latency": 1.8197813034057617,
+          "latency": 1.8143980503082275,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -367,7 +374,7 @@
       },
       "runs": [
         {
-          "latency": 1.7483019828796387,
+          "latency": 1.904738187789917,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -398,7 +405,7 @@
       },
       "runs": [
         {
-          "latency": 1.9083058834075928,
+          "latency": 1.818053960800171,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -429,7 +436,7 @@
       },
       "runs": [
         {
-          "latency": 1.8683099746704102,
+          "latency": 1.9211950302124023,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -460,7 +467,7 @@
       },
       "runs": [
         {
-          "latency": 1.6556389331817627,
+          "latency": 1.6468720436096191,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -491,7 +498,7 @@
       },
       "runs": [
         {
-          "latency": 1.7551419734954834,
+          "latency": 1.861018180847168,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -523,7 +530,7 @@
       },
       "runs": [
         {
-          "latency": 126.26825499534607,
+          "latency": 127.01471900939941,
           "final_level": "BASSA",
           "hit": false,
           "status": "MISS",
@@ -549,7 +556,7 @@
       },
       "runs": [
         {
-          "latency": 105.06131720542908,
+          "latency": 144.6928367614746,
           "final_level": "MEDIA",
           "hit": true,
           "status": "PASS",
@@ -588,7 +595,7 @@
       },
       "runs": [
         {
-          "latency": 86.64065384864807,
+          "latency": 113.50261569023132,
           "final_level": "BASSA",
           "hit": false,
           "status": "MISS",
@@ -614,7 +621,7 @@
       },
       "runs": [
         {
-          "latency": 140.63160300254822,
+          "latency": 152.42756366729736,
           "final_level": "MEDIA",
           "hit": true,
           "status": "PASS",
@@ -653,7 +660,7 @@
       },
       "runs": [
         {
-          "latency": 187.59101605415344,
+          "latency": 202.2964699268341,
           "final_level": "MEDIA",
           "hit": true,
           "status": "PASS",
@@ -692,7 +699,7 @@
       },
       "runs": [
         {
-          "latency": 111.92910695075989,
+          "latency": 127.1185872554779,
           "final_level": "BASSA",
           "hit": false,
           "status": "MISS",
@@ -718,7 +725,7 @@
       },
       "runs": [
         {
-          "latency": 70.89089107513428,
+          "latency": 75.38425803184509,
           "final_level": "BASSA",
           "hit": false,
           "status": "MISS",
@@ -744,7 +751,7 @@
       },
       "runs": [
         {
-          "latency": 15.01176905632019,
+          "latency": 13.773771047592163,
           "final_level": "BASSA",
           "hit": false,
           "status": "MISS",
@@ -770,7 +777,7 @@
       },
       "runs": [
         {
-          "latency": 70.91472315788269,
+          "latency": 72.47701787948608,
           "final_level": "BASSA",
           "hit": false,
           "status": "MISS",
@@ -796,7 +803,7 @@
       },
       "runs": [
         {
-          "latency": 66.50482106208801,
+          "latency": 70.91156816482544,
           "final_level": "BASSA",
           "hit": false,
           "status": "MISS",
@@ -822,7 +829,7 @@
       },
       "runs": [
         {
-          "latency": 90.30607509613037,
+          "latency": 97.8502209186554,
           "final_level": "MEDIA",
           "hit": true,
           "status": "PASS",
@@ -861,7 +868,7 @@
       },
       "runs": [
         {
-          "latency": 100.7827718257904,
+          "latency": 108.62942123413086,
           "final_level": "BASSA",
           "hit": false,
           "status": "MISS",
@@ -887,7 +894,7 @@
       },
       "runs": [
         {
-          "latency": 143.55928111076355,
+          "latency": 145.53553819656372,
           "final_level": "MEDIA",
           "hit": true,
           "status": "PASS",
@@ -926,7 +933,7 @@
       },
       "runs": [
         {
-          "latency": 180.9821639060974,
+          "latency": 197.60269403457642,
           "final_level": "MEDIA",
           "hit": false,
           "status": "MISS",
@@ -965,7 +972,7 @@
       },
       "runs": [
         {
-          "latency": 196.19310998916626,
+          "latency": 202.0489318370819,
           "final_level": "MEDIA",
           "hit": true,
           "status": "PASS",
@@ -1002,7 +1009,7 @@
       },
       "runs": [
         {
-          "latency": 101.70557308197021,
+          "latency": 131.4521930217743,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS",
@@ -1015,7 +1022,7 @@
           ]
         },
         {
-          "latency": 106.42321681976318,
+          "latency": 119.38111400604248,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS",
@@ -1028,7 +1035,7 @@
           ]
         },
         {
-          "latency": 52.75510597229004,
+          "latency": 111.18721103668213,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS",
@@ -1057,7 +1064,7 @@
       },
       "runs": [
         {
-          "latency": 76.70803308486938,
+          "latency": 112.71911311149597,
           "final_level": "MEDIA",
           "hit": true,
           "status": "PASS",
@@ -1070,7 +1077,7 @@
           ]
         },
         {
-          "latency": 87.3271050453186,
+          "latency": 126.00030899047852,
           "final_level": "MEDIA",
           "hit": true,
           "status": "PASS",
@@ -1083,7 +1090,7 @@
           ]
         },
         {
-          "latency": 81.07980108261108,
+          "latency": 131.79411101341248,
           "final_level": "MEDIA",
           "hit": true,
           "status": "PASS",
@@ -1112,7 +1119,7 @@
       },
       "runs": [
         {
-          "latency": 96.2085587978363,
+          "latency": 131.7504768371582,
           "final_level": "BASSA",
           "hit": false,
           "status": "MISS",
@@ -1120,7 +1127,7 @@
           "real_citations": []
         },
         {
-          "latency": 105.67264366149902,
+          "latency": 121.39149713516235,
           "final_level": "BASSA",
           "hit": false,
           "status": "MISS",
@@ -1128,7 +1135,7 @@
           "real_citations": []
         },
         {
-          "latency": 121.7294499874115,
+          "latency": 129.0481390953064,
           "final_level": "BASSA",
           "hit": false,
           "status": "MISS",
@@ -1149,7 +1156,7 @@
       "expected": {},
       "runs": [
         {
-          "latency": 139.4156370162964,
+          "latency": 127.82388091087341,
           "final_level": "BASSA",
           "hit": true,
           "status": "PASS",
@@ -1174,38 +1181,7 @@
       },
       "runs": [
         {
-          "latency": 1.8962581157684326,
-          "final_level": "ALTA",
-          "hit": true,
-          "status": "PASS_ALTA",
-          "citation_ok": true,
-          "real_citations": [
-            [
-              "kbs_gastrotechnik_1717",
-              18
-            ]
-          ],
-          "matched_expected_page": true
-        }
-      ],
-      "stable": "N/A",
-      "final_level": "ALTA",
-      "hit": true,
-      "status": "PASS_ALTA",
-      "citation_ok": true,
-      "matched_expected_page": true
-    },
-    "C_DE_02": {
-      "intent": "code",
-      "lang": "DE",
-      "expected": {
-        "doc": "kbs_gastrotechnik_1717",
-        "page": 17,
-        "code": "70167"
-      },
-      "runs": [
-        {
-          "latency": 1.6929857730865479,
+          "latency": 2.069286823272705,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -1213,7 +1189,7 @@
           "real_citations": [
             [
               "kbs_gastrotechnik_20322006",
-              14
+              15
             ]
           ],
           "matched_expected_page": false
@@ -1226,6 +1202,37 @@
       "citation_ok": true,
       "matched_expected_page": false
     },
+    "C_DE_02": {
+      "intent": "code",
+      "lang": "DE",
+      "expected": {
+        "doc": "kbs_gastrotechnik_1717",
+        "page": 17,
+        "code": "70167"
+      },
+      "runs": [
+        {
+          "latency": 1.6264100074768066,
+          "final_level": "ALTA",
+          "hit": true,
+          "status": "PASS_ALTA",
+          "citation_ok": true,
+          "real_citations": [
+            [
+              "kbs_gastrotechnik_1717",
+              17
+            ]
+          ],
+          "matched_expected_page": true
+        }
+      ],
+      "stable": "N/A",
+      "final_level": "ALTA",
+      "hit": true,
+      "status": "PASS_ALTA",
+      "citation_ok": true,
+      "matched_expected_page": true
+    },
     "C_DE_03": {
       "intent": "code",
       "lang": "DE",
@@ -1236,7 +1243,7 @@
       },
       "runs": [
         {
-          "latency": 1.7185039520263672,
+          "latency": 1.7074620723724365,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -1267,7 +1274,7 @@
       },
       "runs": [
         {
-          "latency": 1.7669131755828857,
+          "latency": 1.8098890781402588,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -1298,7 +1305,7 @@
       },
       "runs": [
         {
-          "latency": 1.7177760601043701,
+          "latency": 1.6596622467041016,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -1306,7 +1313,7 @@
           "real_citations": [
             [
               "crusader_marine_L510008",
-              53
+              51
             ]
           ],
           "matched_expected_page": false
@@ -1329,7 +1336,7 @@
       },
       "runs": [
         {
-          "latency": 1.9036307334899902,
+          "latency": 2.007132053375244,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",
@@ -1360,7 +1367,7 @@
       },
       "runs": [
         {
-          "latency": 0.05880594253540039,
+          "latency": 0.07912015914916992,
           "final_level": "BASSA",
           "hit": true,
           "status": "PASS",
@@ -1385,7 +1392,7 @@
       },
       "runs": [
         {
-          "latency": 8.367906093597412,
+          "latency": 8.234738111495972,
           "final_level": "ALTA",
           "hit": true,
           "status": "PASS_ALTA",

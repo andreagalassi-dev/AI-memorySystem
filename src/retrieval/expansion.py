@@ -70,7 +70,9 @@ TRE FAMIGLIE VALUTATE E NON ADOTTATE (23/08) — misure, non opinioni
 
 from __future__ import annotations
 
+import os
 import re
+import time
 import unicodedata
 from decimal import Decimal
 from functools import lru_cache
@@ -106,9 +108,31 @@ def _load_from_db() -> dict:
             "(docker compose up -d postgres)") from e
 
 
-@lru_cache(maxsize=1)
+#: Ogni quanto la cache del dizionario si considera scaduta. Perche' esiste:
+#: `_index` era `lru_cache` PURA e `reload_synonyms()` non aveva chiamanti di
+#: produzione, quindi un processo avviato prima di un `seed_synonyms.py`
+#: continuava a servire il dizionario VECCHIO per sempre. Misurato il 24/08: i
+#: 10 concetti nuovi erano a DB dalle 21:14 e un'interfaccia gia' aperta non li
+#: avrebbe mai visti. Per la presentazione sarebbe stato il guadagno che non si
+#: vede. 300s e' un compromesso: una query al dizionario ogni 5 minuti, non una
+#: per domanda.
+SYNONYMS_TTL_S = float(os.getenv("AIKE_SYNONYMS_TTL_S", "300"))
+_index_stamp = 0.0
+
+
 def _index() -> dict[str, list[tuple[str, tuple[tuple[str, str], ...]]]]:
-    """term -> lista di (slug, ( (term1, lang1), ... ) )."""
+    """term -> lista di (slug, ( (term1, lang1), ... ) ), con scadenza."""
+    global _index_stamp
+    now = time.monotonic()
+    if now - _index_stamp >= SYNONYMS_TTL_S:
+        _index_cached.cache_clear()
+        _index_stamp = now
+    return _index_cached()
+
+
+@lru_cache(maxsize=1)
+def _index_cached() -> dict[str, list[tuple[str, tuple[tuple[str, str], ...]]]]:
+    """Il calcolo vero, memorizzato fra una scadenza e l'altra."""
     idx: dict[str, list[tuple[str, tuple[tuple[str, str], ...]]]] = {}
     for slug, c in _load_from_db().items():
         terms = tuple((t, lang) for t, lang in c["terms"])
@@ -118,8 +142,10 @@ def _index() -> dict[str, list[tuple[str, tuple[tuple[str, str], ...]]]]:
 
 
 def reload_synonyms() -> None:
-    """Invalida la cache di processo (test, aggiornamenti del dizionario)."""
-    _index.cache_clear()
+    """Invalida SUBITO la cache (test, e seed manuale senza aspettare il TTL)."""
+    global _index_stamp
+    _index_cached.cache_clear()
+    _index_stamp = 0.0
 
 
 def _tokens(text: str) -> list[str]:
