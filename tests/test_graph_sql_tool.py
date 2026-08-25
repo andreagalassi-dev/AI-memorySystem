@@ -135,11 +135,19 @@ from src.ingestion.extraction.load import init_schema, upsert_righe  # noqa: E40
 from src.ingestion.extraction.schema import RigaGrezza, RigaListino  # noqa: E402
 
 PG_SCHEMA = "test_sql_tool"
+DOC_SLUG = "listino_x"
 
 
 def _riga(codice: str, *, prezzo: str, page: int = 1) -> RigaListino:
     return RigaListino.from_grezza(
         RigaGrezza(codice_originale=codice, prezzo=prezzo), doc_stem="listino_x", page=page)
+
+
+# Ruolo con cui i test interrogano. Dal 25/08 il SELECT strutturato filtra
+# per ruolo DENTRO la query (JOIN documents/document_roles): senza una riga di
+# ruolo per `listino_x` questi test misurerebbero il filtro RBAC invece della
+# funzione che vogliono provare.
+RUOLO = "tecnico"
 
 
 @pytest.fixture()
@@ -150,30 +158,75 @@ def pgconn():
         c.commit()
         init_schema(c, schema=PG_SCHEMA)
         upsert_righe(c, [_riga("V0-123", prezzo="12.50")], schema=PG_SCHEMA)
-        yield c
-        c.execute(sql.SQL("DROP SCHEMA IF EXISTS {} CASCADE").format(ident))
+        # `documents`/`document_roles` vivono in `public`, non nello schema
+        # usa-e-getta: vanno creati E RIMOSSI a mano, altrimenti il registro di
+        # produzione resta sporco di un documento finto (e' successo davvero).
+        doc_id = c.execute(
+            "INSERT INTO public.documents (slug, title) VALUES (%s, %s) "
+            "ON CONFLICT (slug) DO UPDATE SET slug = EXCLUDED.slug RETURNING id",
+            (DOC_SLUG, "listino di prova (test)")).fetchone()[0]
+        c.execute("INSERT INTO public.document_roles (document_id, role) "
+                  "VALUES (%s, %s) ON CONFLICT DO NOTHING", (doc_id, RUOLO))
         c.commit()
+        try:
+            yield c
+        finally:
+            # ON DELETE CASCADE porta via anche document_roles
+            c.execute("DELETE FROM public.documents WHERE slug = %s", (DOC_SLUG,))
+            c.execute(sql.SQL("DROP SCHEMA IF EXISTS {} CASCADE").format(ident))
+            c.commit()
 
 
 @needs_pg
 class TestPgSqlExecutor:
     def test_lookup_reale_ritorna_prezzo_e_provenienza(self, pgconn):
         ex = PgSqlExecutor(conninfo(), schema=PG_SCHEMA)
-        rows = lookup(ex, "V0-123", "quanto costa")
+        rows = lookup(ex, "V0-123", "quanto costa", role=RUOLO)
         assert rows == [LookupRow(valore=Decimal("12.50"), doc_stem="listino_x", page=1)]
 
     def test_codice_assente_fail_closed(self, pgconn):
         ex = PgSqlExecutor(conninfo(), schema=PG_SCHEMA)
-        assert lookup(ex, "ZZ-999", "quanto costa") == []
+        assert lookup(ex, "ZZ-999", "quanto costa", role=RUOLO) == []
 
     def test_injection_non_esegue_drop_e_ritorna_vuoto(self, pgconn):
         ex = PgSqlExecutor(conninfo(), schema=PG_SCHEMA)
-        rows = lookup(ex, "0; DROP TABLE righe_listino; --", "prezzo")
+        rows = lookup(ex, "0; DROP TABLE righe_listino; --", "prezzo", role=RUOLO)
         assert rows == []
         # prova regina: la tabella esiste ancora con la sua riga, il DROP non e' passato
         n = pgconn.execute(sql.SQL(
             "SELECT count(*) FROM {}.righe_listino").format(sql.Identifier(PG_SCHEMA))).fetchone()[0]
         assert n == 1
+
+    def test_injection_dal_RUOLO_non_esegue_nulla(self, pgconn):
+        """Il filtro RBAC ha aggiunto un SECONDO dato esterno alla query. Il
+        codice era gia' difeso da `canonical` + `%s`; il ruolo NON passa da
+        `canonical`, quindi qui l'unica difesa e' il placeholder. Va provata,
+        altrimenti la correzione di sicurezza avrebbe aperto una porta nuova."""
+        ex = PgSqlExecutor(conninfo(), schema=PG_SCHEMA)
+        for veleno in ("tecnico'; DROP TABLE public.documents; --",
+                       "' OR '1'='1",
+                       "tecnico' OR dr.role IS NOT NULL --"):
+            rows = ex.run(SqlParams(codice_normalizzato="V0123", campo="prezzo",
+                                    role=veleno))
+            assert rows == [], f"il ruolo {veleno!r} ha ottenuto righe: {rows}"
+        # le tabelle sono tutte ancora al loro posto, e la riga anche
+        n = pgconn.execute(sql.SQL(
+            "SELECT count(*) FROM {}.righe_listino").format(sql.Identifier(PG_SCHEMA))).fetchone()[0]
+        assert n == 1
+        assert pgconn.execute("SELECT count(*) FROM public.documents "
+                              "WHERE slug = %s", (DOC_SLUG,)).fetchone()[0] == 1
+
+    def test_ruolo_diverso_non_vede_la_riga(self, pgconn):
+        """Lo stesso codice, lo stesso DB, un ruolo che non ha il documento:
+        zero righe. E' l'invariante che mancava fino al 25/08."""
+        ex = PgSqlExecutor(conninfo(), schema=PG_SCHEMA)
+        assert lookup(ex, "V0-123", "quanto costa", role="commerciale") == []
+
+    def test_ruolo_vuoto_non_apre_nemmeno_la_connessione(self, pgconn):
+        """Nessun default silenzioso: senza ruolo non si interroga il catalogo."""
+        ex = PgSqlExecutor(conninfo(), schema=PG_SCHEMA)
+        with pytest.raises(ValueError, match="role"):
+            ex.run(SqlParams(codice_normalizzato="V0123", campo="prezzo"))
 
     def test_campo_fuori_whitelist_non_raggiunge_il_db(self, pgconn):
         ex = PgSqlExecutor(conninfo(), schema=PG_SCHEMA)

@@ -61,9 +61,22 @@ _DESC_KEYWORDS = (
 
 # Template parametrizzato: `col` e `schema` sono Identifier whitelisted; il codice e'
 # l'unico dato utente e passa come `%s`. Mai concatenazione.
+# P4.5/A6 — IL FILTRO DI RUOLO E' PARTE DELLA QUERY, non un controllo a valle.
+# SPEC §F.3: "un commerciale non recupera i documenti tecnici". Prima del
+# 25/08 questo SELECT non toccava `document_roles`, e il ramo strutturato
+# scavalcava l'RBAC che Qdrant applica su ogni altro percorso. Exploit
+# riprodotto per intero: un `commerciale` che chiedeva `codice 00000001B007`
+# riceveva "prezzo 92.00 EUR (Mamoli_Catalogo_Ricambi_2021_IT_EN, pag. 224)"
+# a livello **ALTA** — documento tecnico-only, dato piu' sensibile che il
+# sistema tratta, massima confidenza. Ampiezza: 168495 righe su 169567 (99.4%)
+# appartengono a documenti invisibili al commerciale.
+# L'INNER JOIN e' fail-closed per costruzione: un documento senza riga in
+# `document_roles` non e' visibile a nessuno, invece di esserlo a tutti.
 _SELECT = sql.SQL(
     "SELECT {col}, r.doc_stem, r.page, v.version_status, v.ingested_at "
     "FROM {schema}.righe_listino r "
+    "JOIN public.documents d ON d.slug = r.doc_stem "
+    "JOIN public.document_roles dr ON dr.document_id = d.id AND dr.role = %s "
     "LEFT JOIN public.document_versions v ON v.doc_stem = r.doc_stem "
     "WHERE r.codice_normalizzato = %s "
     "ORDER BY r.doc_stem, r.page, {col}"
@@ -76,6 +89,10 @@ class SqlParams:
 
     codice_normalizzato: str
     campo: str
+    #: Ruolo RBAC della sessione. OBBLIGATORIO e senza default: un default
+    #: qui sarebbe una porta aperta silenziosa, ed e' esattamente il modo in
+    #: cui questo ramo ha scavalcato l'RBAC fino al 25/08.
+    role: str = ""
 
 
 @dataclass(frozen=True)
@@ -89,7 +106,7 @@ class LookupRow:
     ingested_at: Any | None = None
 
 
-def extract_params(code_token: str, query: str) -> SqlParams:
+def extract_params(code_token: str, query: str, role: str = "") -> SqlParams:
     """Deriva i parametri sicuri dalla richiesta. Nessun LLM, nessun SQL.
 
     Il codice e' normalizzato con `codes.canonical` (riuso, non reinvento): questo
@@ -102,7 +119,7 @@ def extract_params(code_token: str, query: str) -> SqlParams:
         raise ValueError(
             f"code_token {code_token!r} vuoto dopo normalizzazione: fail-closed, nessuna query")
     campo = _detect_campo(query)
-    return SqlParams(codice_normalizzato=codice, campo=campo)
+    return SqlParams(codice_normalizzato=codice, campo=campo, role=role)
 
 
 def _detect_campo(query: str) -> str:
@@ -173,9 +190,15 @@ class PgSqlExecutor:
 
     def run(self, params: SqlParams) -> list[LookupRow]:
         q = _build_query(params.campo, self.schema)
+        # Prima di aprire la connessione: senza ruolo non esiste una query
+        # legittima da fare, quindi non si tocca nemmeno il DB.
+        if not params.role:
+            raise ValueError(
+                "SqlParams.role vuoto: il ramo strutturato non interroga "
+                "il catalogo senza un ruolo (fail-closed, SPEC §F.3)")
         with psycopg.connect(self.conninfo) as conn:
             with conn.cursor() as cur:
-                cur.execute(q, (params.codice_normalizzato,))
+                cur.execute(q, (params.role, params.codice_normalizzato))
                 return [LookupRow(
                     valore=r[0],
                     doc_stem=r[1],
@@ -185,6 +208,6 @@ class PgSqlExecutor:
                 ) for r in cur.fetchall()]
 
 
-def lookup(executor: SqlExecutor, code_token: str, query: str) -> list[LookupRow]:
+def lookup(executor: SqlExecutor, code_token: str, query: str, role: str = "") -> list[LookupRow]:
     """Tie deterministico usato dal `sql_node`: params sicuri -> executor -> righe."""
-    return executor.run(extract_params(code_token, query))
+    return executor.run(extract_params(code_token, query, role))

@@ -270,7 +270,10 @@ def sql_node(state: GraphState, deps: Deps) -> dict:
     eccezione di rete -> system_error, come `retrieval_node`. Su righe, sintetizza
     l'Evidence (per il guardrail) e alza il livello ad ALTA (lookup esatto sull'SSOT)."""
     try:
-        params = extract_params(state.get("code_token") or "", state["query"])
+        # Il ruolo della SESSIONE viaggia dentro i parametri: il filtro RBAC del
+        # ramo strutturato e' nella query SQL, non un controllo a valle.
+        params = extract_params(state.get("code_token") or "", state["query"],
+                                role=state.get("role") or "")
     except ValueError as exc:
         return {"level": "BASSA",
                 "audit": _audit(state, f"sql: codice non valido ({exc}) -> fallback retrieval")}
@@ -1225,7 +1228,11 @@ def build_default_deps(role: Role, *, llm=None, visual_search=None,
     # Guardrail: un codice esiste a catalogo se e' nella SSOT Postgres OPPURE nella
     # proiezione Qdrant. Senza la SSOT (Postgres giu') resta il solo controllo Qdrant,
     # cioe' il comportamento storico.
-    catalog_lookup = make_catalog_lookup(qc, pg_catalog)
+    # Il `role` della sessione e' OBBLIGATORIO: entrambi i rami del lookup erano
+    # ciechi all'RBAC fino al 25/08, e un codice visibile solo ai tecnici risultava
+    # "a catalogo" anche per un commerciale (98.5% dei codici) — il guardrail
+    # declassava da BLOCK a MEDIA-mostrata. Vedi src/retrieval/catalog.py §3.
+    catalog_lookup = make_catalog_lookup(qc, pg_catalog, role)
 
     if visual_search is None:
         # Fase 1.3 — ramo VISUAL: retrieval PixelRAG reale su `aike_pages_visual`

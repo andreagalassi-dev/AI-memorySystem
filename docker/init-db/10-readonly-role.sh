@@ -36,6 +36,16 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-S
 	-- ... e quelle che l'app (APP_USER) creera' in seguito: SELECT automatico
 	ALTER DEFAULT PRIVILEGES FOR ROLE ${APP_USER} IN SCHEMA ${SCHEMA}
 	  GRANT SELECT ON TABLES TO ${RO_USER};
+
+	-- Lo schema public: serve al FILTRO RBAC del ramo strutturato (SPEC F.3).
+	-- Dal 25/08 il SELECT su `righe_listino` fa JOIN su `documents` e
+	-- `document_roles` per non servire a un ruolo i documenti di un altro:
+	-- senza questi GRANT il ramo fallisce con "permission denied" e il
+	-- sistema, fail-closed, non risponde piu' NEMMENO al ruolo autorizzato.
+	GRANT USAGE ON SCHEMA public TO ${RO_USER};
+	GRANT SELECT ON ALL TABLES IN SCHEMA public TO ${RO_USER};
+	ALTER DEFAULT PRIVILEGES FOR ROLE ${APP_USER} IN SCHEMA public
+	  GRANT SELECT ON TABLES TO ${RO_USER};
 SQL
 
 echo "[init-db] ruolo read-only '${RO_USER}' pronto su schema '${SCHEMA}' (SELECT-only)."

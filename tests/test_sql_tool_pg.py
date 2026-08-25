@@ -60,6 +60,17 @@ def ro_env():
         adm.execute(f"GRANT USAGE ON SCHEMA {PG_SCHEMA} TO {RO_USER}")
         adm.execute(f"GRANT SELECT ON {PG_SCHEMA}.righe_listino TO {RO_USER}")
         adm.execute(f"GRANT SELECT ON public.document_versions TO {RO_USER}")
+        # Dal 25/08 il SELECT strutturato fa JOIN su documents/document_roles
+        # per applicare l'RBAC dentro la query (SPEC F.3). La fixture deve
+        # modellare quella realta': senza il documento e il suo ruolo, il JOIN
+        # non trova nulla e i test misurerebbero un filtro invece della funzione.
+        adm.execute("GRANT SELECT ON public.documents, public.document_roles "
+                    f"TO {RO_USER}")
+        adm.execute("INSERT INTO public.documents (slug, title) VALUES "
+                    "('listino_x', 'listino di prova') ON CONFLICT (slug) DO NOTHING")
+        adm.execute("INSERT INTO public.document_roles (document_id, role) "
+                    "SELECT id, 'tecnico' FROM public.documents WHERE slug='listino_x' "
+                    "ON CONFLICT DO NOTHING")
         adm.commit()
 
         ro = psycopg.connect(_ro_conninfo())
@@ -72,6 +83,10 @@ def ro_env():
             adm.execute(f"DROP OWNED BY {RO_USER}")
             adm.execute(f"DROP ROLE IF EXISTS {RO_USER}")
             adm.execute(sql.SQL("DROP SCHEMA IF EXISTS {} CASCADE").format(ident))
+            # `documents`/`document_roles` stanno in `public`, non nello schema
+            # usa-e-getta: senza questa riga il registro di PRODUZIONE resta
+            # sporco di un documento finto. E' successo davvero (slug id 148).
+            adm.execute("DELETE FROM public.documents WHERE slug = 'listino_x'")
             adm.commit()
 
 
@@ -99,7 +114,8 @@ class TestDefaultDepsWiring:
 class TestRuoloReadOnly:
     def test_select_funziona_col_ruolo_readonly(self, ro_env):
         _adm, _ro, schema = ro_env
-        rows = lookup(PgSqlExecutor(_ro_conninfo(), schema=schema), CODE, "quanto costa")
+        rows = lookup(PgSqlExecutor(_ro_conninfo(), schema=schema), CODE,
+                      "quanto costa", role="tecnico")
         assert len(rows) == 1
         assert rows[0].valore == Decimal("12.50")
         assert rows[0].doc_stem == "listino_x"
@@ -146,7 +162,8 @@ class TestRuoloReadOnly:
         executor = PgSqlExecutor(_ro_conninfo(), schema=schema)
         
         from src.graph.tools.sql_tool import extract_params
-        params = extract_params(CODE, "prezzo")
+        # ruolo OBBLIGATORIO dal 25/08: il filtro RBAC e' nella query SQL
+        params = extract_params(CODE, "prezzo", role="tecnico")
         for _ in range(20):
             executor.run(params)
             
@@ -172,7 +189,8 @@ class TestRuoloReadOnly:
         executor = PgSqlExecutor(_ro_conninfo(), schema=schema)
         
         from src.graph.tools.sql_tool import extract_params
-        params = extract_params(CODE, "prezzo")
+        # ruolo OBBLIGATORIO dal 25/08: il filtro RBAC e' nella query SQL
+        params = extract_params(CODE, "prezzo", role="tecnico")
         
         with pytest.raises(Exception):
             executor.run(params)
@@ -191,7 +209,8 @@ class TestRuoloReadOnly:
         
         executor = PgSqlExecutor(_ro_conninfo(), schema=schema)
         from src.graph.tools.sql_tool import extract_params
-        params = extract_params(CODE, "prezzo")
+        # ruolo OBBLIGATORIO dal 25/08: il filtro RBAC e' nella query SQL
+        params = extract_params(CODE, "prezzo", role="tecnico")
         rows = executor.run(params)
         
         # Original is doc_stem="listino_x", page=1, prezzo="12.50" (added in fixture)

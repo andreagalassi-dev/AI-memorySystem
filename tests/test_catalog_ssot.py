@@ -127,7 +127,10 @@ class _FakeQdrant:
     def count(self, collection, exact, count_filter):  # noqa: ARG002
         if self.raises is not None:
             raise self.raises
-        key = count_filter.must[0].match.value
+        # il filtro ha ora due condizioni (`code` + `ruoli_consentiti`): qui
+        # interessa il codice, l'RBAC della proiezione e' provato per intero in
+        # tests/test_catalog_rbac.py con un fake che APPLICA anche il ruolo.
+        key = next(c.match.value for c in count_filter.must if c.key == "code")
         self.calls.append(key)
         return type("R", (), {"count": 1 if key in self.codes else 0})()
 
@@ -137,7 +140,8 @@ class _FakePgCatalog:
         self.canon = canon
         self.calls: list[str] = []
 
-    def contains(self, key: str) -> bool:
+    def contains(self, key: str, role) -> bool:
+        assert role, "il lookup non deve interrogare la SSOT senza ruolo"
         self.calls.append(key)
         return canonical(key) in self.canon
 
@@ -148,7 +152,7 @@ class TestUnione:
 
         qd = _FakeQdrant({"SOLO-QDRANT"})
         pg = _FakePgCatalog({"SOLOSSOT"})
-        lookup = make_catalog_lookup(qd, pg)
+        lookup = make_catalog_lookup(qd, pg, Role.TECNICO)
         assert lookup("SOLO-QDRANT") is True      # solo nella proiezione
         assert lookup("SOLO-SSOT") is True        # solo nella SSOT
         assert lookup("MAI-VISTO") is False       # in nessuna delle due
@@ -159,13 +163,13 @@ class TestUnione:
         from src.retrieval.catalog import make_catalog_lookup
 
         pg = _FakePgCatalog({"340006734"})
-        assert make_catalog_lookup(_FakeQdrant(set()), pg)("340-006-734") is True
+        assert make_catalog_lookup(_FakeQdrant(set()), pg, Role.TECNICO)("340-006-734") is True
 
     def test_senza_ssot_resta_il_comportamento_storico(self):
         from src.retrieval.catalog import make_catalog_lookup
 
         qd = _FakeQdrant({"ABC"})
-        lookup = make_catalog_lookup(qd, None)
+        lookup = make_catalog_lookup(qd, None, Role.TECNICO)
         assert lookup("ABC") is True
         assert lookup("XYZ") is False
 
@@ -174,7 +178,7 @@ class TestUnione:
         from src.retrieval.catalog import make_catalog_lookup
 
         lookup = make_catalog_lookup(_FakeQdrant(set(), raises=RuntimeError("qdrant giu'")),
-                                     _FakePgCatalog(set()))
+                                     _FakePgCatalog(set()), Role.TECNICO)
         with pytest.raises(RuntimeError):
             lookup("ABC")
         assert verify_code("ABC", [], lookup).status == "MISS_RETRIEVAL"
@@ -186,8 +190,8 @@ class TestDegrado:
 
         pg = PgCatalog("host=127.0.0.1 port=1 user=x dbname=x connect_timeout=1")
         qd = _FakeQdrant({"ABC"})
-        lookup = make_catalog_lookup(qd, pg)
-        assert pg.contains("ABC") is False        # degrado, non eccezione
+        lookup = make_catalog_lookup(qd, pg, Role.TECNICO)
+        assert pg.contains("ABC", Role.TECNICO) is False        # degrado, non eccezione
         assert lookup("ABC") is True              # la proiezione risponde comunque
         assert lookup("ZZZ") is False
 
@@ -199,18 +203,18 @@ class TestDegrado:
         from src.retrieval.catalog import PgCatalog
 
         pg = PgCatalog("host=127.0.0.1 port=1 user=x dbname=x connect_timeout=1")
-        assert pg.contains("ABC") is False
+        assert pg.contains("ABC", Role.TECNICO) is False
         assert pg._down_until > time.monotonic()
         t0 = time.monotonic()
         for _ in range(50):
-            assert pg.contains("ABC") is False
+            assert pg.contains("ABC", Role.TECNICO) is False
         assert time.monotonic() - t0 < 0.5     # breaker aperto: nessun connect
 
     def test_codice_vuoto_non_interroga_il_db(self):
         from src.retrieval.catalog import PgCatalog
 
         pg = PgCatalog("host=127.0.0.1 port=1 user=x dbname=x connect_timeout=1")
-        assert pg.contains("---") is False        # canonical('---') == '' -> nessuna query
+        assert pg.contains("---", Role.TECNICO) is False        # canonical('---') == '' -> nessuna query
         assert pg._conn is None
 
     def test_una_sola_connessione_riusata(self):
@@ -229,10 +233,10 @@ class TestConnessioneRiusata:
 
         pg = PgCatalog(conninfo_readonly())
         codes = _sample_real_codes(20)
-        assert all(pg.contains(_literal_key(c)) for c in codes)
+        assert all(pg.contains(_literal_key(c), Role.TECNICO) for c in codes)
         conn = pg._conn
         assert conn is not None and not conn.closed
         for c in codes:
-            pg.contains(_literal_key(c))
+            pg.contains(_literal_key(c), Role.TECNICO)
         assert pg._conn is conn                   # stessa connessione, nessuna nuova
         pg.close()
