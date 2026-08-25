@@ -163,10 +163,25 @@ l'indice della demo del 15/07/2026 (allora: corpus su disco ~141 PDF, indice dem
 allora l'ingestion ha continuato (epica C: documenti giganti aggiunti il 01/08, un bug di
 copertura per-ramo trovato il 13/08 con 28 documenti indicizzati solo parzialmente, altri
 in sospeso) e la collezione Qdrant di produzione è cambiata nome il 24/08 (`aike_chunks` →
-`aike_chunks_v2`). **Il conteggio reale odierno non è stabilito da nessuna fonte scritta
-verificabile senza interrogare Qdrant/Postgres in produzione: NON prendere per buoni i
-numeri sotto.** Prima della presentazione, verificare l'indice REALE (conteggio documenti +
-lista) con una query all'indice di produzione, non da questo file. La regola sotto (mai
+`aike_chunks_v2`). **NON prendere per buoni i numeri sotto.**
+
+**Conteggio reale misurato il 25/08/2026** (interrogando Postgres e Qdrant in produzione,
+non dedotto da questo file):
+
+| grandezza | valore |
+|---|---|
+| PDF nel corpus su disco | 142 |
+| documenti registrati nella SSOT (`public.documents`) | 147 |
+| documenti con righe di listino estratte | 96 |
+| righe di listino (`estrazione.righe_listino`) | 169.567 |
+| indice narrativo `aike_chunks_v2` | 199.689 punti / 120 documenti |
+| indice visivo `aike_pages_visual` | 10.462 punti / **94 documenti** |
+
+Due scarti da tenere a mente rispondendo a domande del pubblico: i documenti registrati (147)
+sono più dei PDF su disco (142), e **48 documenti per 3.931 pagine non sono mai entrati
+nell'indice visivo** — su quelli una domanda di tipo "mostrami l'esploso" non può funzionare,
+per assenza di materiale e non per un difetto del motore. Le 6 query visive collaudate NON
+sono fra questi: i loro bersagli sono stati verificati presenti il 25/08. La regola sotto (mai
 aprire un PDF a caso, provare solo query collaudate) resta valida a prescindere dal numero:
 1. **Mai aprire un PDF a caso davanti al pubblico** e interrogarne un codice.
 2. Se vuoi query extra oltre lo script, scegli SOLO dai documenti sotto, e **provale
