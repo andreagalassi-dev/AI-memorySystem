@@ -1,5 +1,10 @@
 # Stato del progetto — recap epiche A→H (aggiornato 2026-08-11, v2 corretta)
 
+> **Nota di allineamento (25/08/2026):** fotografia dell'11/08/2026, non lo stato attuale (per
+> lo stato ricostruito dai commit vedi `15_piano_prodotto.md`, allineato il 25/08). La
+> collezione Qdrant `aike_chunks` citata sotto era corretta allora; il 24/08/2026 la
+> produzione è passata a `aike_chunks_v2` (`aike_chunks` resta solo come rollback).
+
 Documento vivo di stato/gap, complementare al piano `15_piano_prodotto.md`.
 Legenda: ✅ fatto · ⚠️ parziale · 🔲 da fare.
 

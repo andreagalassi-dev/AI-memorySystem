@@ -1,5 +1,14 @@
 # Demo di mercoledì — piano operativo + registro COMPLETO dei tagli
 
+> **Nota di allineamento (25/08/2026):** registro storico della demo del 15/07/2026 (CLAUDE.md
+> lo classifica tra i documenti storici, non toccare il contenuto sotto). Le menzioni sotto a
+> Streamlit e a Ollama `qwen2.5:14b` come cervello di produzione erano corrette per quella
+> demo; oggi la UI di prodotto è **Chainlit** e il cervello di produzione è **Gemma 4 26B via
+> Ollama** (fallback `qwen2.5:14b`) — vedi CLAUDE.md. La collezione Qdrant `aike_chunks` citata
+> alla riga 138 (dipendenze del worktree demo permanente) era corretta all'epoca; il
+> 24/08/2026 la produzione principale è passata a `aike_chunks_v2` — il worktree demo, se e
+> quando riattivato, va verificato per capire quale collezione stia davvero interrogando.
+
 > **Contesto:** deadline demo presentabile **mercoledì** (~2,5 giorni dal 2026-07-12).
 > Per arrivarci si fanno tagli **temporanei** sulle prestazioni/completezza del prodotto.
 > Questo file è il registro vincolante: OGNI taglio è tracciato con il perché e come

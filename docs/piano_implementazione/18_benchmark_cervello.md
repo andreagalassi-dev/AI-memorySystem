@@ -1,5 +1,12 @@
 # Benchmark Cervello A/B/D — Metriche Citazioni e Latenza
 
+> **Nota di allineamento (25/08/2026):** questo è il benchmark storico che ha portato alla
+> decisione di produzione (A9.4, commit `c7a6249`): backend **B** (`ollama:gemma4:26b-mlx`,
+> MTP, `think=False`) è il cervello di produzione, con **D** (`ollama:qwen2.5:14b`) come
+> **fallback**, non alternativa equivalente — anche se qui D misura correttezza/citazioni pari
+> o migliori di B su questo set ridotto (8 query), non è il modello scelto come primario.
+> Coerente con CLAUDE.md ("Cervello: Gemma 4 26B via Ollama... fallback qwen2.5:14b").
+
 Questo documento riporta i risultati del benchmark eseguito sui tre backend candidati per il "cervello unificatore" (LLM) del sistema AIKE, misurando la stabilità delle citazioni, la correttezza, i rifiuti e la latenza (senza caching).
 
 ## Setup

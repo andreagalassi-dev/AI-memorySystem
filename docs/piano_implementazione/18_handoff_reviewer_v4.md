@@ -1,3 +1,7 @@
+> **Nota di allineamento (25/08/2026):** resoconto storico di handoff; la collezione Qdrant
+> `aike_chunks` citata sotto era corretta all'epoca — il 24/08/2026 la produzione è passata a
+> `aike_chunks_v2` (`aike_chunks` resta solo come rollback).
+
 SEI IL NUOVO REVIEWER/ORCHESTRATORE del progetto AI Knowledge Engine Manifatturiero.
 Sostituisci il reviewer del ciclo "epica B" (misura, chiusa il 20/07/2026), il cui
 contesto è interamente serializzato qui e nei documenti indicati. Leggi TUTTO questo

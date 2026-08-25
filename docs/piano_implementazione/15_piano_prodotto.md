@@ -1,5 +1,10 @@
 # Piano Prodotto — dal PoC dimostrato al prodotto definitivo
 
+> **Ultimo allineamento stato epiche: 25/08/2026, a HEAD `f9fcffc`.** Gli stati e i commit-prova
+> sotto ogni intestazione di epica (A→H) sono stati ricostruiti da `git log`, non dedotti dal
+> codice sorgente: se un'epica appare fatta ma nessun commit lo prova, è marcata "da verificare".
+> Ri-derivare a mano ad ogni sessione lunga: questo documento non si auto-aggiorna.
+
 > **Origine:** brainstorming reviewer+utente del 2026-07-15, il giorno della demo riuscita.
 > **Sostituisce** come piano operativo: `08_piano_correzione.md` (completato) e la vecchia
 > roadmap a fasi `01-07` (archiviati in `docs/archive/`). **Non sostituisce**:
@@ -31,6 +36,11 @@
 ## Le epiche (ordine di esecuzione)
 
 ### A — Un solo sistema (fondamenta)
+**Stato: CHIUSA.** Commit-prova: `468244b` (merge su main), `206bcf1` (Action Chainlit),
+`0f50405`+`7cd9730` (T3 warning/health), `d85dae0` (pool Postgres RO), `96249c6` (smoke gate),
+`c7a6249` (cervello Ollama gemma4 + fallback qwen2.5), `f8f8e90`+`cfb5dea`+`1575ba5`+`41f3e70`
+(coda docs CLAUDE.md/README). Nessun residuo aperto trovato nei commit.
+
 Il lavoro vero vive su `feature/fase1-model-multiplexer`; main è 60+ commit indietro.
 - [x] Merge `feature/fase1-model-multiplexer` → `main`; suite verde prima e dopo. (`468244b`)
 - [x] Pulizia ~16 branch mergiati; decisione su `feat/fase-d2-quote` (bozza preventivo). (`468244b`)
@@ -51,6 +61,12 @@ Il lavoro vero vive su `feature/fase1-model-multiplexer`; main è 60+ commit ind
 - [x] Coda docs: aggiornare CLAUDE.md (stack reale) e README; archiviare ciò che A rende obsoleto.
 
 ### B — Misura (il metro di "irrifiutabile")
+**Stato: CHIUSA.** Commit-prova B1: `0432db0`/`82ba679`/`0b7f1bc`/`e03a225`/`96eea49` (B1.a),
+`ad13dac`/`2df9b1b`/`6fa0a7a`/`a7385d0`/`550114a`/`a783263` (B1.b), `82f7c4f`/`3a4ecaa` (B1.c),
+`d3eff53`/`009a349`/`e41f22a` (B1.d). Commit-prova B2: `be313eb`/`251d7e3`/`9225fe9`/`9c46584`/
+`fe59d77`/`a555fb3` (harness+baseline+regressione), chiusura formale in `182143e` (handoff v4,
+"fine epica B: audit B1 + golden gate B2"). Nessun residuo aperto trovato nei commit; l'eval
+ampio successivo (`e803c20`…`9491a86`, 30/07) è lavoro di misura continuativo, non un punto B aperto.
 - **B1 Audit diagnostico** (prima i numeri, poi i target):
   a. 82 PDF fuori dall'indice (59/141): censimento con motivo per ciascuno;
   b. 58% dei codici degradati: campione stratificato, root-cause per categoria
@@ -64,6 +80,34 @@ Il lavoro vero vive su `feature/fase1-model-multiplexer`; main è 60+ commit ind
   ×N run (lezione B3/B5).
 
 ### C — Estrazione di massa affidabile (il cuore: i dati)
+**Stato: IN CORSO.** Nota sulla collezione: i riferimenti a `aike_chunks` (senza `_v2`) nella
+narrativa storica sotto (eventi del 20/07-01/08) sono corretti per l'epoca — era il nome
+reale della collezione allora; il 24/08/2026 (`541ccb2`) la produzione è passata a
+`aike_chunks_v2` (`aike_chunks` resta come rollback, non cancellata). Non riscritti riga per
+riga per non alterare il resoconto storico.
+
+**Aggiornamento non ancora integrato nella narrativa sotto (commit successivi al 28/07,
+verificati in questo allineamento):**
+- `c1ea806`/`6cb99d6`/`7c14b9a`/`09df559`/`146f365`/`b5d37ad` (30/07) — orchestratore
+  `ingest_document_full` + runner ripartibile `scripts/run_ingest_full.py` **costruiti**
+  (questo è C1, dato SOSPESA più sotto nella narrativa storica: il codice è stato ripreso).
+- `17824cd` (01/08) — narrativo+visivo completati per i 2 documenti giganti
+  era_sensori/era_macchine_rotanti (narr 48060/41243 chunk, gate 20/12/9/0 WRONG_ALTA).
+- `a6039a5` (13/08) — bug reale trovato: la copertura "fatto" era un OR fra i 3 rami invece
+  che per-ramo → **28 documenti su 147 erano invisibili al narrativo E al visivo** pur avendo
+  righe strutturate (21434 righe, 2879 pagine). Fix: copertura ora per-ramo (`branch_coverage`,
+  `pending_branches`); pending reale dopo il fix = 88 (non più 0).
+- `cc6d576` (24/08) — due bug fix in preparazione dell'ingestion dei 28: `delete_document_points`
+  era un no-op totale sul ramo visivo (filtrava solo `doc_stem`, mai `doc`) e `--exclude-giants`
+  non escludeva nulla (census senza i 28 → 0 pagine → classificati "normali"). **L'ingestion
+  vera e propria dei 28 documenti resta SOSPESA per decisione utente** (macchina satura, 17GB
+  di swap) — non risulta eseguita in nessun commit successivo fino a HEAD `f9fcffc`.
+
+**Residuo aperto (da commit, non dedotto):** i 28 documenti (narrativo+visivo) restano da
+ingerire quando la macchina lo permette; C3 (riconciliazione prezzi↔pagine) e C4 (dashboard
+scarti) non risultano in nessun commit trovato — **da verificare/non iniziati**; C5 (bonifica
+igiene aike_chunks) idem.
+
 - Ridisegno del binario strutturato sui numeri di B1: copertura 141/141 PDF,
   campi verbatim garantiti (il collasso multi-riga di Mamoli p8 non deve più esistere).
 - Censimento scarti con motivo + **dashboard di risoluzione umana** (promessa della visione).
@@ -203,6 +247,15 @@ una causa minoritaria (B1.b: ≥62% del degrado codici è dato povero/estrazione
 normalizzazione) e presuppone comunque C1.a.
 
 ### D — Correttezza e stabilità della risposta
+**Stato: IN CORSO (nucleo chiuso).** D1 RESPINTA (vedi sotto), D2 FATTA (`36c4a94`/`c41ee9b`/
+`110bcbc`). **La sezione D-B sotto dice "RESTA: D-B.2-wiring e D-B.4" ma questo è stato
+scritto a metà arco — i commit successivi mostrano D-B.4 completata**: `52aa8d5`
+(D-B.2-wiring: selettore Docling nel runner), `a14f104`+`8450c08` (D-B.4 stage1: 4 doc pilota
+in produzione), `915664b` (D-B.4 stage2a: 7 doc, gate 20/13/8 0 WRONG_ALTA), `42f4859`
+(D-B.4 stage2b: 7 doc + 2 rollback), `3a841c5` (D-B.4 stage2c: sweep finale 27 doc, gate
+20/13/8). TextTableExtractor→Docling è quindi la decisione ESEGUITA, non solo presa.
+Residuo aperto dai commit: il testo D-B stesso dichiara un "recall gap residuo" (pagine ivm
+multi-tabella affiancate, TableFormer non le vede) — non risulta un commit che lo chiuda.
 - **D1 — Guardia estrazione a livello-riga: ❌ RESPINTA (26/07, 2 validazioni reviewer su dati
   reali).** Nessun segnale di CONTENUTO per-riga separa il garbage dai dati validi: il garbage ha
   3 modalità che tirano in direzioni opposte — (A) contentless (`GM41013→"7.1"`, no prezzo/no
@@ -254,6 +307,20 @@ normalizzazione) e presuppone comunque C1.a.
 - La copertura ALTA sui codici (oggi ~42%) sale col lavoro C+D; target da B2.
 
 ### E — Visivo performante (su questo Mac)
+**Stato: IN CORSO (fasi centrali chiuse).** Etichettata "non iniziata" nella revisione
+precedente di questo documento — **falso**: `aecd942` (Fase 1a, eval visivo veloce),
+`8431944` (Fase 0, truth set 19 query + misura onesta del recall), `8960144` (Fase 1,
+reranker visivo in produzione, recall@3 0.58→0.84), `7eb88f1` (Fase 2a, gate sicurezza
+`VISUAL_SCORE_FLOOR` anti confident-wrong), `1e0eb06` (fix router: query pezzo/assieme senza
+marker → visivo). Continuazione non esplicitamente etichettata "epica E" ma sullo stesso
+ramo: `d4c0f58` (il ramo visivo impara a dire "non lo so"), `2e31942`+`ebc6468` (giudice
+pagina: spento perché in perdita sul metro, poi riacceso in modalità RIORDINA anziché
+rifiuto), `a5c747e` (fix filtro-documento che scartava la risposta giusta), `0e6f661`+
+`98c1066` (pool reranker configurabile, cross-encoder a 50 — voce esplicita del piano
+"batch nel reranker, pool adattivo"). **Fase 2b (disambiguazione) RIMANDATA per feasibility
+negativa** (non risulta un commit che la implementi — coerente con "da verificare/non fatto").
+Residuo aperto dai commit: latenza/modelli residenti tra query e tuning cross-lingua IT non
+hanno un commit dedicato trovato — **da verificare**.
 - Latenza: modelli residenti tra le query (multiplexer condiviso nel serving UI, non
   ricreato per chiamata), batch nel reranker, pool adattivo (grande se margine basso).
 - Recall: eval ampliato oltre le 15 query (anche col feedback della UI), analisi
@@ -261,6 +328,27 @@ normalizzazione) e presuppone comunque C1.a.
 - Opzioni future primo stadio (dal registro): Ops-Colqwen3-4B, Qwen3-VL-8B, 2048d.
 
 ### F — Memoria a tre livelli e apprendimento dai feedback
+**Stato: IN CORSO (avanzata, funzione UI completata; RBAC sull'evidenza scoperto in
+regressione il 25/08 — vedi nota critica).** Etichettata "non iniziata" nella revisione
+precedente — **falso**: F.1 contesto conversazionale CHIUSO (`e9aceb0` F.1a, `2e053fe` F.1b
+wiring Chainlit confermato dal vivo, `2f1ba30` F.1c eval multi-turno 8/8, `ac8da1a` fix guardia
+M1 su insiemi canonicalizzati). F.2 memoria a 3 livelli: `492c35d` (F.2a-1 MemoryStore
+RBAC-filtrato), poi **PIVOT dopo un exploit provato end-to-end** — `d1b2414` abbandona
+l'estensione della query con l'hint (il carburatore/radiatore exploit: overlap di 2 termini
+faceva iniettare il codice sbagliato in una risposta ALTA), `f977568` fissa la suite avversaria
+di regressione, `d9736a4` (F.2a-3 ranking full-text Postgres), `54633ee` (F.2b RevalidationGate,
+evidenza ri-verificata VIVA prima di mostrare qualunque hint). Chiusura: `f9fcffc` — la card di
+suggerimento (mai la risposta memorizzata, mai tocca la query, click = turno utente verbatim),
+descritta nel commit come "ultima funzione mancante del piano".
+**NOTA CRITICA non ancora in un commit:** il working tree di questo audit (25/08, NON
+committato) contiene `tests/test_sql_rbac.py` (untracked) e una modifica a
+`docker/init-db/10-readonly-role.sh`, che documentano un difetto RBAC reale e vivo in
+produzione fino al 25/08: il ramo STRUCTURED (`sql_tool.py`) non filtra `righe_listino` per
+`document_roles`, quindi un `commerciale` può ricevere ALTA su documenti tecnico-only (168495/
+169567 righe, 99.4%, esposte). Questo non è un commit quindi non è "fatto" per la regola di
+questo audit — è lavoro in corso non salvato, riportato qui perché tocca direttamente il
+prerequisito RBAC che F.2b richiede. Va verificato/completato e committato prima di considerare
+il gate della memoria davvero sicuro end-to-end.
 - Identità reale via auth Chainlit; RBAC per utente.
 - **Requisito utente (19/07, dal collaudo UI): contesto conversazionale di sessione**
   — oggi ogni domanda è indipendente (answer stateless, scelta fase 0); il prodotto
@@ -281,6 +369,19 @@ normalizzazione) e presuppone comunque C1.a.
 - Arriva DOPO C/D/E: si memorizza sopra risposte stabili, non sopra difetti mobili.
 
 ### H — Risposta a cascata e conoscenza aperta (decisione utente 15/07)
+**Stato: IN CORSO (primi due blocchi chiusi).** Etichettata "non iniziata" nella revisione
+precedente — **falso**: `738238a` è solo il design (docs); l'implementazione reale è
+`1bd9a98` (motore SearXNG auto-ospitato scelto su DuckDuckGo/Tavily/Serper/Brave — verificato
+dal vivo: "Rotax 912 oil pump" → 29 risultati; difese `web_evidence.py`/`websearch.py`
+avversarialmente testate) e `65dd414` (cascata cablata nel grafo, predicato `corpus_exhausted`
+riusa `reconcile` — non una seconda definizione di rifiuto; le 4 situazioni che devono
+bloccare il web, incluso RBAC/guardrail BLOCK, escono da sole per costruzione, non da una
+lista a mano; `--branches`/config via `run_config.py`; opzionale dietro il profilo `web`).
+`03f385d` (UI: distingue risposta da catalogo da risposta web — miniatura pagina solo per il
+corpus, banner+link cliccabile+"fonte web, non verificata" per il web) chiude il requisito
+"mai un'affermazione senza fonte" lato interfaccia. Non trovato nei commit: il terzo livello
+della cascata (conoscenza dell'LLM verificata online), il RAG documentale generico
+potenziato su brochure, e il target di copertura ≥90% misurato — **da verificare/non fatti**.
 Il "non lo so" deve diventare RARO: target di prodotto ≥90% risposte corrette e utili.
 - Cascata: 1) corpus interno (doc+pagina) → 2) **agente di ricerca web** che ragiona,
   cita SEMPRE le fonti (URL) e passa dalla sandbox di igienizzazione → 3) conoscenza
@@ -300,6 +401,11 @@ Il "non lo so" deve diventare RARO: target di prodotto ≥90% risposte corrette 
   può intrecciarsi con E/F secondo le priorità del momento.
 
 ### G — Doppio profilo hardware (trasversale, sempre attivo)
+**Stato: NON INIZIATA.** Nessun commit trovato con `git log --grep` su "doppio profilo",
+"hardware", "MPS", "profilo hardware" che implementi una config a profili mac/nvidia; l'unico
+riscontro è `75719de` (doc, "piano prodotto post-demo epiche A-G") e `fc35445`/`8303bc1`
+(hardening MPS locale, non un profilo astratto). Coerente con l'assenza di hardware NVIDIA
+finanziato dichiarata nel piano.
 - Ogni epica: nessun nuovo hardcode MPS/MLX/32GB fuori dagli adapter.
 - Config a profili (mac/nvidia): modelli, quantizzazioni, max_resident, batch size.
 - All'arrivo del DGX: epica di migrazione dedicata (serving CUDA: vLLM/TensorRT-LLM/

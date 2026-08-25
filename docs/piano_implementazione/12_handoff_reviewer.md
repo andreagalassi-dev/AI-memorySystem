@@ -1,5 +1,12 @@
 # HANDOFF REVIEWER — stato completo dell'orchestrazione (2026-07-13 sera)
 
+> **Nota di allineamento (25/08/2026):** questo è un resoconto storico, fotografia del
+> 13/07/2026 — non lo stato attuale. In particolare: la collezione Qdrant `aike_chunks`
+> citata sotto era corretta allora; il 24/08/2026 la produzione è passata a
+> `aike_chunks_v2` (`aike_chunks` resta solo come rollback). La UI era Streamlit e il
+> modello demo `qwen2.5:14b`: oggi la UI di prodotto è **Chainlit** e il cervello di
+> produzione è **Gemma 4 26B via Ollama** (fallback `qwen2.5:14b`) — vedi CLAUDE.md.
+
 > **Chi legge questo file:** l'istanza Claude (reviewer/orchestratore) che continua il
 > lavoro in una nuova chat. Contiene TUTTA la conoscenza operativa della sessione
 > precedente. Le dimenticanze qui possono causare errori fatali sul repository:

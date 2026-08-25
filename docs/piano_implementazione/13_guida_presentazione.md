@@ -5,6 +5,14 @@
 > dettagliato delle query è in `11_script_demo.md` (nel worktree demo); questa guida lo
 > ingloba e aggiunge il resto.
 
+> ⚠️ **AVVISO — RI-COLLAUDO OBBLIGATORIO PRIMA DELLA PRESENTAZIONE (nota aggiunta 25/08/2026).**
+> Questa guida è stata scritta per la demo del 15/07/2026 e aggiornata il 25/08/2026 per
+> riflettere lo stack reale attuale (Chainlit, cervello Gemma4/Ollama). **Le query VISIVE
+> collaudate qui dipendono dal ramo visivo, che ha una copertura incompleta del corpus**:
+> vanno **ri-collaudate prima della presentazione**, questo ri-collaudo NON è ancora stato
+> fatto. Non fidarsi che una query visiva funzionante il 15/07 funzioni ancora oggi — indici e
+> collezioni sono cambiati da allora (vedi nota sul numero di documenti più sotto).
+
 ---
 
 ## 1. Cosa stai presentando (il messaggio in 30 secondi)
@@ -54,27 +62,28 @@ docker ps          # devono esserci: aike_postgres (healthy) e aike_qdrant (Up)
 # se spenti: docker compose up -d qdrant postgres
 
 # 2. Ollama: apri l'app Ollama (icona in menu bar), poi verifica
-ollama list        # deve comparire qwen2.5:14b (e mxbai-embed-large se elencato nello script)
+ollama list        # deve comparire gemma4:26b-mlx (cervello di produzione) e qwen2.5:14b (fallback)
 
-# 3. UI demo (QUESTO TERMINALE RESTA APERTO per tutta la demo)
-cd ~/Documents/AI/AI-memorySystem-demo
-source ../AI-memorySystem/.venv/bin/activate
-streamlit run src/ui/app.py --server.port 8501
+# 3. UI (QUESTO TERMINALE RESTA APERTO per tutta la demo)
+cd ~/Documents/AI/AI-memorySystem
+source .venv/bin/activate
+chainlit run src/ui/chainlit_app.py -w
 ```
 
-Apri `http://localhost:8501` nel browser.
+Apri `http://localhost:8000` nel browser.
 
 ### 3.2 Riscaldamento (fondamentale)
 
 - [ ] Lancia una query codice qualsiasi (es. `codice 877615`) → scalda Ollama
-      (il primo caricamento del 14B richiede decine di secondi).
+      (il primo caricamento del cervello Gemma 4 26B richiede decine di secondi; più lungo
+      del vecchio 14B usato in questa demo — ricronometrare, non fidarsi dei tempi sotto).
 - [ ] Lancia TUTTE le query visive dello script (Gehl, poi Micron) UNA volta:
       OGNI query visiva nuova impiega **~2,5-5 minuti** (ricarica i modelli +
       reranking). I risultati finiscono in cache persistente: in demo le stesse
       query saranno ISTANTANEE (anche dopo un reload della pagina).
       **Aspetta ogni risposta senza cliccare altro.**
 - [ ] Verifica che l'immagine dell'esploso compaia davvero a schermo.
-- [ ] ⚠️ Da qui in poi NON riavviare streamlit (la cache vive nel processo):
+- [ ] ⚠️ Da qui in poi NON riavviare il processo chainlit (la cache vive nel processo):
       se il terminale muore, rifai il riscaldamento visivo da capo.
 
 ### 3.3 Igiene macchina
@@ -116,7 +125,7 @@ Suggerimenti di conduzione:
 | Sintomo | Azione immediata |
 |---|---|
 | Una query dà risposta strana/errore | "Vi mostro il flusso registrato" → apri lo screenshot corrispondente da `output/demo_assets/` e prosegui con la query successiva live |
-| La UI si blocca / spinner infinito | Ricarica la pagina del browser (F5). Se non basta: Ctrl+C nel terminale streamlit e rilancia il comando (≈20s). Intanto mostra uno screenshot |
+| La UI si blocca / spinner infinito | Ricarica la pagina del browser (F5). Se non basta: Ctrl+C nel terminale chainlit e rilancia il comando (≈20s). Intanto mostra uno screenshot |
 | La query visiva impiega troppo | È il cold start: parla del funzionamento ("sta analizzando migliaia di pagine come immagini"). Se supera il minuto abbondante → screenshot |
 | Crash totale / macchina inutilizzabile | Presenta l'intero giro con screenshot + screen recording: "vi mostro la sessione registrata ieri sul sistema reale" |
 
@@ -149,9 +158,16 @@ preparato apposta.
 
 ## 6-bis. SU QUALI MANUALI PUÒ RISPONDERE LA DEMO
 
-⚠️ Il corpus su disco ha ~141 PDF ma **l'indice della demo ne contiene 59**: un codice
-preso da un PDF NON in questa lista non verrà MAI trovato (es. bgr_radiator_catalog_2026
-NON è indicizzato — scoperto in prova generale). Regole:
+⚠️ **Numero e lista sotto NON aggiornati (nota 25/08/2026):** questa sezione fotografa
+l'indice della demo del 15/07/2026 (allora: corpus su disco ~141 PDF, indice demo 59). Da
+allora l'ingestion ha continuato (epica C: documenti giganti aggiunti il 01/08, un bug di
+copertura per-ramo trovato il 13/08 con 28 documenti indicizzati solo parzialmente, altri
+in sospeso) e la collezione Qdrant di produzione è cambiata nome il 24/08 (`aike_chunks` →
+`aike_chunks_v2`). **Il conteggio reale odierno non è stabilito da nessuna fonte scritta
+verificabile senza interrogare Qdrant/Postgres in produzione: NON prendere per buoni i
+numeri sotto.** Prima della presentazione, verificare l'indice REALE (conteggio documenti +
+lista) con una query all'indice di produzione, non da questo file. La regola sotto (mai
+aprire un PDF a caso, provare solo query collaudate) resta valida a prescindere dal numero:
 1. **Mai aprire un PDF a caso davanti al pubblico** e interrogarne un codice.
 2. Se vuoi query extra oltre lo script, scegli SOLO dai documenti sotto, e **provale
    la sera prima**: essere indicizzato non garantisce che ogni singolo codice del PDF
@@ -164,7 +180,8 @@ rotax_912_914_IPC (1428), nargesa_catalogo_2026 (1300), lycoming_IGO540_PC116 (1
 opacmare_catalogo_ricambi_idraulica (1196), pi_pulley_listino_pulegge_2025 (1147),
 branson_4520R_parts (1107).
 
-**Lista completa (59):** abco_export_price_list_valves, arol_listino_oleodinamica_2024,
+**Lista completa dell'indice demo al 15/07/2026 (59 all'epoca, oggi da riverificare):**
+abco_export_price_list_valves, arol_listino_oleodinamica_2024,
 ave_listino_materiale_elettrico_2023, benassi_t623_flail_mower, branson_4520R_parts,
 cassani_concrete_machinery, castelgarden_tcp102_parts, contexo_automation_brochure,
 crusader_marine_L510008, DeliTools_SpareParts_List.xlsx, DirectKitchen_Forni_Schemi_IT_EN,
@@ -187,7 +204,7 @@ westermann_kehrmaschine, yts_pump_D200STN-A (+ 5 voci di test/frammenti minori).
 ## 7. COSA NON FARE (mercoledì)
 
 - ❌ Nessun `git commit`, `git pull`, update di librerie o modelli. FREEZE totale.
-- ❌ Non chiudere il terminale con streamlit (la UI muore con lui).
+- ❌ Non chiudere il terminale con chainlit (la UI muore con lui).
 - ❌ Non lanciare due query in parallelo, soprattutto visive (RAM).
 - ❌ Non improvvisare query fuori script se non nel modo protetto del punto 6.
 - ❌ Non aprire applicazioni pesanti durante la demo.
