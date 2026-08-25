@@ -1,7 +1,38 @@
 import os
-from pathlib import Path
+import re
+from pathlib import Path, PurePosixPath
 from typing import Any, Dict, Optional, Union
 from chainlit.data.storage_clients.base import BaseStorageClient
+
+from src.ui.page_render import is_safe_doc_stem
+
+# L'INVERSA della convenzione di nome che `upload_file` applica qui sotto, piu'
+# la forma pre-sanitizzatore rimasta su disco. Sta in questo file perche' e'
+# questo file a decidere come si chiamano gli elementi: la regola e la sua
+# inversa devono poter cambiare insieme.
+#   nuova   -> "Mamoli_Catalogo_Ricambi_2021_IT_EN_p0224.png"
+#   vecchia -> "Mamoli_Catalogo_Ricambi_2021_IT_EN p.224"   (senza estensione)
+# Misurato il 25/08 su output/ui_elements: 78 file su 87 sono pagine di
+# documento (77 con uno stem presente in `public.documents`, 1 residuo di test),
+# 9 sono `dummy.png` — non pagine, e infatti non matchano.
+_NOME_PAGINA = re.compile(r"^(?P<stem>.+?)(?:_p\d{4}(?:\.png)?| p\.\d+)$")
+
+
+def doc_stem_from_element_key(object_key: str) -> str | None:
+    """Il doc_stem della pagina servita da questo file, o None se non e' una pagina.
+
+    None significa "questo file non e' una pagina di documento" (una miniatura
+    generica, un allegato): NON significa "consentito". La decisione di cosa
+    farne e' del chiamante — vedi `serve_ui_element` in chainlit_app.
+    """
+    if not isinstance(object_key, str) or not object_key:
+        return None
+    nome = PurePosixPath(object_key).name
+    match = _NOME_PAGINA.match(nome)
+    if not match:
+        return None
+    stem = match.group("stem")
+    return stem if is_safe_doc_stem(stem) else None
 
 class LocalStorageClient(BaseStorageClient):
     """

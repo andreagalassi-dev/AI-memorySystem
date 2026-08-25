@@ -13,7 +13,11 @@ from src.graph.pipeline import answer  # noqa: E402
 from src.common.roles import Role, parse_role  # noqa: E402
 from src.graph.context import ContextAssembler  # noqa: E402
 from src.serving.session_deps import get_deps  # noqa: E402
-from src.ui.page_render import ensure_page_render  # noqa: E402
+from src.ui.page_render import ensure_page_render, is_safe_doc_stem  # noqa: E402
+# La guardia di accesso a un DOCUMENTO vive nel registro (src/registry/access.py),
+# non nella UI: e' la stessa domanda che si fanno il ramo strutturato e il
+# catalogo, e non deve avere una seconda casa qui dentro.
+from src.registry.access import doc_visible_to  # noqa: E402
 from src.ui.feedback_handler import save_feedback_ui  # noqa: E402
 
 # --- Memoria long-term (Epica F.2c) ------------------------------------------
@@ -40,7 +44,7 @@ load_dotenv()
 import chainlit.data as cl_data  # noqa: E402
 from chainlit.data.sql_alchemy import SQLAlchemyDataLayer  # noqa: E402
 
-from src.ui.storage_client import LocalStorageClient # noqa: E402
+from src.ui.storage_client import LocalStorageClient, doc_stem_from_element_key # noqa: E402
 
 db_url = os.environ.get("DATABASE_URL")
 if db_url:
@@ -577,27 +581,75 @@ async def on_feedback(action: cl.Action):
     else:
         await cl.Message(content="Errore durante la registrazione del feedback. Riprovare più tardi.").send()
 
+# Un SOLO testo per ogni rifiuto della paginazione: negato per ruolo, documento
+# inesistente, doc malformato, render fallito. Non e' cortesia, e' la lezione
+# della falla precedente: "non hai accesso al documento X" (o anche solo un
+# testo diverso) e' gia' un ORACOLO DI ESISTENZA — dice al commerciale che
+# quel documento c'e' e non e' suo. Nessuna interpolazione di `doc`: due
+# rifiuti devono essere confrontabili byte per byte (test esplicito).
+PAGINA_NON_DISPONIBILE = "La pagina richiesta non è disponibile o è fuori range."
+
+
 @cl.action_callback("paginate")
 async def on_paginate(action: cl.Action):
+    """Un click su "Pagina prec/succ".
+
+    ATTENZIONE, e' il cuore della cosa: il payload di una `cl.Action` NON e'
+    un dato di fiducia. Chainlit ricostruisce l'azione dal corpo della POST
+    (`chainlit/server.py`: `action = Action(**payload.action)`) e non tiene
+    alcun registro delle azioni realmente emesse: l'unico controllo e' che la
+    sessione sia dell'utente autenticato. Quindi `doc` e `page` qui dentro
+    valgono quanto un parametro di query scritto a mano.
+
+    E' lo stesso ragionamento gia' fatto per la card di memoria (vedi il
+    commento in `handle_question`), ma con una conclusione diversa, perche' li'
+    il payload conteneva TESTO che vale quanto un testo digitato — nessun
+    privilegio — mentre qui contiene l'identita' di un DOCUMENTO e la si usa
+    per andare a prendere dei pixel dal disco. `paginate` e' nato accanto a
+    quel percorso e non ne ha ereditato la difesa: fino al 25/08 rendeva
+    l'immagine di qualunque pagina di qualunque documento a qualunque utente
+    autenticato — 139 documenti su 147 tecnico-only, `Mamoli_Catalogo_
+    Ricambi_2021_IT_EN` compreso, cioe' lo stesso documento della falla del
+    ramo strutturato: chiusa la porta del PREZZO in testo, restava aperta
+    quella dell'IMMAGINE della stessa pagina.
+
+    Ordine dei controlli (ognuno fail-closed): forma della pagina -> ruolo di
+    sessione -> forma del doc -> VISIBILITA' del doc -> solo allora il disco.
+    """
     from src.ui.pagination import calculate_next_page
-    
-    payload = action.payload
+
+    payload = action.payload or {}
     doc = payload.get("doc")
     current_page = payload.get("page")
     direction = payload.get("dir")
-    
+
     try:
         target_page = calculate_next_page(current_page, direction)
     except ValueError:
-        await cl.Message(content="Direzione non valida.").send()
+        # Non parla di documenti: nessuna informazione da proteggere qui.
+        await cl.Message(content="Direzione o pagina non valida.").send()
         return
 
-    png_path = ensure_page_render(doc, target_page)
-    
+    # Il ruolo della SESSIONE, mai dal payload. `handle_question` lo legge
+    # allo stesso modo; se manca l'utente o manca il ruolo, `doc_visible_to`
+    # risponde False — un solo ramo, nessun caso speciale da tenere allineato.
+    user = cl.user_session.get("user")
+    role = user.metadata.get("role") if user is not None else None
+
+    consentito = (
+        target_page >= 1
+        and is_safe_doc_stem(doc)
+        and await asyncio.to_thread(doc_visible_to, doc, role)
+    )
+    png_path = ensure_page_render(doc, target_page) if consentito else None
+
     if not png_path:
-        await cl.Message(content=f"La pagina {target_page} del documento {doc} non è disponibile o è fuori range.").send()
+        # Un unico messaggio, e senza i pulsanti: se li rimettessimo, il
+        # rifiuto sarebbe solo un passo indietro e si continuerebbe a
+        # camminare il documento a click.
+        await cl.Message(content=PAGINA_NON_DISPONIBILE).send()
         return
-        
+
     elements = [
         cl.Image(path=str(png_path), name=f"{doc} p.{target_page}", display="inline")
     ]
@@ -630,11 +682,39 @@ async def serve_ui_element(
     filename: str,
     user = Depends(get_current_user)
 ):
-    print(f"MY ROUTE HIT for {filename}, user={user}")
     if not user:
         raise HTTPException(status_code=401, detail="Unauthorized")
-        
-    # TODO: Il filtro per RUOLO sui file è debito tecnico -> epica F/RBAC
+
+    # Filtro per RUOLO sui file (era un TODO -> epica F/RBAC). Questo percorso
+    # serve le PAGINE gia' renderizzate: e' la stessa risorsa di `on_paginate`
+    # per un'altra porta, e senza questo controllo la correzione di `paginate`
+    # sarebbe stata solo uno spostamento della falla.
+    #
+    # Il nome del file porta il documento (`{stem}_p0224.png`), quindi il ruolo
+    # si applica al documento derivato. Un nome che NON e' una pagina di
+    # documento (`dummy.png`, un allegato) passa come prima: qui non c'e' un
+    # documento da proteggere e negarlo romperebbe elementi legittimi.
+    # Misurato il 25/08: 78 file su 87 sono pagine, 77 con uno stem presente in
+    # `public.documents` (l'unico fuori e' `test_image_p0001.png`, residuo di
+    # test alla radice, irraggiungibile da un URL di elemento reale).
+    #
+    # Gravita' reale del buco che si chiude: la chiave e' `{thread_uuid}/
+    # {element_uuid}/nome`, servono DUE uuid e non sono enumerabili; inoltre
+    # oggi in `AIKE_UI_USERS` utente e ruolo sono 1:1. Era dormiente, non vivo.
+    stem = doc_stem_from_element_key(filename)
+    if stem is not None:
+        # `user` qui e' quello del JWT o quello persistito dal data layer:
+        # entrambi portano `metadata['role']` (verificato il 25/08 su
+        # chainlit.users). Se un domani non lo portasse, si nega: fail-closed.
+        metadata = getattr(user, "metadata", None) or {}
+        ruolo = metadata.get("role")
+        if not await asyncio.to_thread(doc_visible_to, stem, ruolo):
+            # 404 e non 403, per lo stesso motivo del messaggio unico di
+            # `on_paginate`: un 403 direbbe "quel documento esiste e non e'
+            # tuo". Il perche' vero resta nel log del server.
+            print(f"[rbac] elemento negato: {filename} (doc={stem}, ruolo={ruolo!r})")
+            raise HTTPException(status_code=404, detail="File non trovato")
+
     file_path = Path("output/ui_elements") / filename
     if not file_path.resolve().is_relative_to(Path("output/ui_elements").resolve()):
         raise HTTPException(status_code=403, detail="Path traversal non consentito")
