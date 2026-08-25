@@ -228,11 +228,19 @@ def _degraded(evidence: Sequence[dict]) -> bool:
 
 
 def _page_key(doc, page) -> PageKey | None:
-    """Normalizza (doc, page) in una chiave confrontabile; None se incompleta."""
+    """Normalizza (doc, page) in una chiave confrontabile; None se incompleta.
+
+    Case-folding sul nome del documento: e' la STESSA semantica della guardia
+    citazioni (`synthesis._page_key`), che accetta una citazione con maiuscole
+    diverse e la conserva COSI' COM'E' SCRITTA dall'LLM. Senza il case-folding
+    anche qui, quella citazione arriva al guardrail come un documento diverso e
+    il gradino EXISTS_IN_TEXT non scatta mai (VERIFY invece di PASS) — un
+    gradino vivo solo in apparenza. Il confronto resta sul nome INTERO, mai per
+    sottostringa: 'rotax_912' non e' 'rotax_912_914_IPC' (lezione ac8da1a)."""
     if doc is None or page is None:
         return None
     try:
-        return (str(doc).strip(), int(page))
+        return (str(doc).strip().casefold(), int(page))
     except (TypeError, ValueError):
         return None
 

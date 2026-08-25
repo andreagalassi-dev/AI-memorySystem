@@ -17,7 +17,11 @@ from src.retrieval.guardrail import (
     is_measurement,
     verify_code,
 )
-from src.retrieval.synthesis import extract_citations, strip_citations
+from src.retrieval.synthesis import (
+    extract_citations,
+    strip_citations,
+    verify_citations,
+)
 
 # Codici REALI (forma ancorata al corpus: V0 Mamoli, 0US Electrolux, num-9).
 REAL_V0 = "V09156800007"
@@ -377,6 +381,29 @@ class TestExistsInText:
     def test_default_preserva_i_chiamanti_esistenti(self):
         """verify_code senza il nuovo parametro = comportamento invariato."""
         assert verify_code("SI-912-012", ["961267"], cat()).status == "ABSENT"
+
+    def test_citazione_con_maiuscole_diverse_conferma(self):
+        """La guardia citazioni (`verify_citations`) fa case-folding e TIENE la
+        citazione COSI' COM'E' SCRITTA dall'LLM. Se il guardrail confrontasse
+        le pagine case-sensitive, quella citazione varrebbe come un altro
+        documento e il gradino EXISTS_IN_TEXT non scatterebbe MAI: gradino vivo
+        solo in apparenza. Le due normalizzazioni devono coincidere."""
+        ans = ("Il codice e' SI-912-012 per il supporto "
+               f"({DOC.upper()}, pag. 79).")
+        payloads = [evd("961267", desc=C005_DESC)]
+        kept = verify_citations(ans, payloads).kept
+        assert kept == [(DOC.upper(), 79)], kept  # la guardia l'ha ACCETTATA
+        r = check_answer(strip_citations(ans), payloads, cat(), citations=kept)
+        assert r.gate == "PASS", [(v.raw, v.status) for v in r.verdicts]
+
+    def test_case_folding_non_confonde_documenti_diversi(self):
+        """Il case-folding non e' un confronto lasco: nome INTERO, mai
+        sottostringa (lezione ac8da1a)."""
+        for altro in ("rotax_912", "rotax_912_914_IPC_2", "ROTAX_913_914_IPC"):
+            r = check_answer("Il codice e SI-912-012 per il supporto",
+                             [evd("961267", desc=C005_DESC)], cat(),
+                             citations=[(altro, 79)])
+            assert r.gate == "VERIFY", (altro, [(v.raw, v.status) for v in r.verdicts])
 
     def test_citazione_malformata_non_esplode(self):
         """Fail-closed: una citazione malformata degrada a VERIFY, non solleva."""
