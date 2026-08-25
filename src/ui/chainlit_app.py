@@ -1,5 +1,6 @@
 import os
 import asyncio
+import logging
 import chainlit as cl
 from chainlit.user import User
 from dotenv import load_dotenv
@@ -40,6 +41,13 @@ from src.ui.memory_card import (  # noqa: E402
 )
 
 load_dotenv()
+
+# Il resto del file segnala con `print` (memoria, contesto): li' l'esito e'
+# atteso e informativo. Qui serve un LOGGER vero, perche' l'unico evento che
+# emette e' un ALLARME — una difesa di riserva che scatta — e un allarme deve
+# poter essere filtrato per livello e raccolto, non finire mescolato allo
+# stdout di Chainlit.
+logger = logging.getLogger(__name__)
 
 import chainlit.data as cl_data  # noqa: E402
 from chainlit.data.sql_alchemy import SQLAlchemyDataLayer  # noqa: E402
@@ -342,12 +350,64 @@ async def handle_question(question: str):
         main_citation = corpus_citations[0] if corpus_citations else None
         cit_text_lines = []
 
+        # --- Difesa in profondita' sulle miniature (25/08) -------------------
+        #
+        # NON e' una falla oggi: `citations` arriva da `answer()`, che il ruolo
+        # lo applica su tutti e tre i rami. Ma `ensure_page_render` risolve il
+        # PDF con un glob sul filesystem — nessuna query, nessun ruolo — e dopo
+        # adc8449 questo e' rimasto l'unico punto della UI che materializza i
+        # pixel di un documento senza una seconda verifica. Se un ramo di
+        # retrieval regredisse, la miniatura passerebbe: la stessa forma della
+        # falla di `on_paginate`, un piano piu' a monte.
+        #
+        # La visibilita' e' una proprieta' del DOCUMENTO, non della pagina:
+        # una query per doc_stem, memorizzata per la durata di questa risposta.
+        # Numeri veri, non stime — `doc_visible_to` costa 8.9 ms (misurato il
+        # 25/08); sui 48 run di `output/audit/b2_2_gate_run.json` le citazioni
+        # per risposta sono 0 (13), 1 (27), 3 (7) e una volta 32, ma i
+        # DOCUMENTI distinti sono 1 in 34 casi su 35 e 3 nell'unico rimanente.
+        # Quindi il caso reale costa UNA query e il caso peggiore possibile ne
+        # costa 8, perche' il ciclo si ferma a 8 pagine distinte. Una verifica
+        # per miniatura sarebbe costata fino a 8 query per lo stesso documento.
+        visibilita_doc: dict[str, bool] = {}
+
+        async def _doc_consentito(doc_stem) -> bool:
+            if doc_stem not in visibilita_doc:
+                # `to_thread`: `doc_visible_to` apre una connessione psycopg
+                # sincrona, e bloccare il loop di Chainlit fermerebbe l'intera
+                # UI. Stesso trattamento che ha in `on_paginate`.
+                consentito = await asyncio.to_thread(doc_visible_to, doc_stem, role)
+                visibilita_doc[doc_stem] = consentito
+                if not consentito:
+                    # WARNING e non DEBUG: questa guardia non deve scattare mai.
+                    # Se scatta, `answer()` ha consegnato la citazione di un
+                    # documento che il ruolo non puo' vedere, cioe' un ramo di
+                    # retrieval ha regredito. E' un segnale, non un caso
+                    # normale: senza il log si perderebbe in silenzio, che e'
+                    # esattamente il modo in cui questo progetto si e' gia'
+                    # ritrovato guardie morte addosso.
+                    logger.warning(
+                        "miniatura soppressa: la citazione del documento %r non e' "
+                        "visibile al ruolo %r. La risposta testuale resta. Questa "
+                        "difesa non dovrebbe mai scattare: verificare il ramo di "
+                        "retrieval che ha prodotto la citazione.",
+                        doc_stem, role)
+            return visibilita_doc[doc_stem]
+
         for doc, page in corpus_citations:
             if (doc, page) not in seen:
                 seen.add((doc, page))
 
-                # Ottieni PNG
-                png_path = ensure_page_render(doc, page)
+                # Ottieni PNG — solo se il documento e' visibile al ruolo di
+                # SESSIONE. Se non lo e', `png_path` resta None e cadono
+                # insieme miniatura, riga di citazione e pulsanti di
+                # paginazione: la riga nominerebbe il documento (un oracolo di
+                # esistenza, la falla chiusa in `catalog.py`) e i pulsanti
+                # riaprirebbero la porta chiusa in `on_paginate`. La RISPOSTA
+                # testuale invece resta: e' gia' filtrata e legittima, e
+                # cancellarla trasformerebbe una difesa di riserva in un guasto.
+                png_path = (ensure_page_render(doc, page)
+                            if await _doc_consentito(doc) else None)
                 if png_path:
                     element_name = f"{doc} p.{page}"
                     if (doc, page) == main_citation:

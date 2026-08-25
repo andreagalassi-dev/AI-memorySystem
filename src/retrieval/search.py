@@ -152,13 +152,47 @@ def group_by_code(hits: list) -> list:
                 seen.add(c)
     return out
 
-def apply_hop2(client: QdrantClient, hits: list, role: Role) -> tuple[list, list, str | None]:
+def apply_hop2(client: QdrantClient, hits: list, role: Role, *,
+               version_status: str = "current") -> tuple[list, list, str | None]:
     """Applica Hop 1 (group by) e Hop 2 (recupero children).
 
     P4.5/A6 — il recupero dei figli di un assembly applica lo STESSO filtro
     ruolo del resto del retrieval (`ruoli_consentiti` contiene il ruolo), in
     AND con `parent_id`: un ruolo non deve mai ricevere componenti riservati a
     un altro ruolo (l'RBAC è obbligatorio, non opzionale).
+
+    DIFETTO TROVATO (25/08) e corretto qui — la META' MANCANTE di quella
+    promessa: il filtro dei figli era ruolo + `parent_id` e BASTA. Un figlio
+    `superseded` (o `deleted`) di un padre `current` rientrava nella distinta,
+    e l'avviso di obsolescenza — che il grafo decide sul PADRE — non lo
+    copriva. L'altra copia della regola, `_apply_hop2` in
+    `src/graph/pipeline.py`, era gia' corretta perche' estende con
+    `model_copy` il filtro d'accesso INTERO: il monito scritto li' ("una
+    divergenza fra le due e' un bug, non una scelta") descriveva esattamente
+    questa divergenza.
+
+    Ampiezza reale del difetto, misurata su `aike_chunks_v2` il 25/08: 199689
+    punti su 199689 sono `current`, zero `superseded`, zero `deleted`; dei 961
+    punti con `parent_id` non nullo, ZERO sono non-`current`. Bersaglio VUOTO
+    oggi. Resta una trappola: il grafo interroga gia' `superseded`/`deleted` in
+    fallback, e la prima re-ingestion che marca una versione la arma.
+
+    `version_status` keyword-only con default `"current"` — lo scope piu'
+    restrittivo, lo stesso nome e lo stesso default di `search_unified` e di
+    `visual_search`. Il default vale soprattutto per `src/retrieval/bom.py`,
+    che NON lo passa: quel modulo ancora gia' il PADRE a
+    `access_filter("current", role)` e con questo default i due scope
+    coincidono senza che debba dire nulla. Il default sicuro e' quello che
+    rende la BOM coerente per omissione: una distinta dichiarata corrente non
+    puo' contenere componenti sostituiti, e se un domani `get_bom` volesse
+    interrogare uno scope diverso dovrebbe dirlo in ENTRAMBI i punti, che e'
+    esattamente la disciplina che qui mancava.
+
+    Il filtro non e' riscritto a mano ma costruito da `access_filter` ed esteso
+    con `model_copy` (stesso pattern del grafo e di `registry/revalidation.py`):
+    un futuro irrigidimento di `access_filter` arriva qui da solo invece di
+    essere silenziosamente perso — che e' il modo in cui la versione si era
+    persa la prima volta.
     """
     grouped_hits = group_by_code(hits)
     children_hits = []
@@ -166,12 +200,12 @@ def apply_hop2(client: QdrantClient, hits: list, role: Role) -> tuple[list, list
     if grouped_hits and grouped_hits[0].payload.get("is_assembly"):
         kit_code = grouped_hits[0].payload.get("code")
         if kit_code:
-            children_filter = models.Filter(must=[
-                models.FieldCondition(key="parent_id",
-                                      match=models.MatchValue(value=kit_code)),
-                models.FieldCondition(key="ruoli_consentiti",
-                                      match=models.MatchValue(value=role.value)),
-            ])
+            access = access_filter(version_status, role)
+            children_filter = access.model_copy(update={
+                "must": list(access.must or []) + [
+                    models.FieldCondition(
+                        key="parent_id",
+                        match=models.MatchValue(value=kit_code))]})
             # Hop 2 exact match
             records, _ = client.scroll(COLLECTION, scroll_filter=children_filter, limit=100)
             if not records:
@@ -179,7 +213,18 @@ def apply_hop2(client: QdrantClient, hits: list, role: Role) -> tuple[list, list
             else:
                 for r in records:
                     children_hits.append(models.ScoredPoint(
-                        id=r.id, version=r.version, score=grouped_hits[0].score, payload=r.payload, vector=None
+                        # `getattr(..., 0)`: `.scroll` restituisce `models.Record`,
+                        # che NON ha il campo `version` (id/payload/vector/
+                        # shard_key/order_value). `r.version` sollevava
+                        # AttributeError contro Qdrant vero — verificato il
+                        # 25/08 sull'indice vivo, assieme `14557` con 3 figli:
+                        # l'intero Hop 2 di QUESTO modulo esplodeva, quindi
+                        # `get_bom`/`export_bom.py` non ha mai potuto
+                        # restituire una distinta non vuota. `bom.py` la stessa
+                        # difesa ce l'aveva gia' sul padre
+                        # (`getattr(parent_record, "version", 0)`), qui no.
+                        id=r.id, version=getattr(r, "version", 0),
+                        score=grouped_hits[0].score, payload=r.payload, vector=None
                     ))
     return grouped_hits, children_hits, hop2_warning
 
@@ -233,6 +278,11 @@ def search_unified(client: QdrantClient, query: str, limit: int = 10, *,
     a ENTRAMBI i call-site della ricerca principale, oltre che ad `apply_hop2`
     come gia' accadeva.
 
+    Lo stesso `version_status` viaggia ora fino ad `apply_hop2` (correzione del
+    25/08, vedi la sua docstring): la ricerca principale e l'Hop 2 devono
+    interrogare lo STESSO scope di versione, altrimenti la stessa risposta
+    mescolerebbe un padre corrente con figli sostituiti.
+
     P4.5/A6 — `role` è obbligatorio (keyword-only, fail-closed) e viene
     propagato fino all'Hop 2 per il filtro RBAC sui figli.
     """
@@ -256,12 +306,14 @@ def search_unified(client: QdrantClient, query: str, limit: int = 10, *,
 
         text = (search(client, route.code_token, "sparse", limit, query_filter=vf)
                 if route.code_token else [])
-        text, children, hop2_warning = apply_hop2(client, text, role)
+        text, children, hop2_warning = apply_hop2(
+            client, text, role, version_status=version_status)
         return {"route": "visual", "reason": route.reason,
                 "text_hits": text, "children_hits": children, "hop2_warning": hop2_warning,
                 "visual_hits": visual}
     text, children, hop2_warning = apply_hop2(
-        client, search(client, query, "routed", limit, query_filter=vf), role)
+        client, search(client, query, "routed", limit, query_filter=vf), role,
+        version_status=version_status)
     return {"route": route.query_type, "reason": route.reason,
             "text_hits": text, "children_hits": children, "hop2_warning": hop2_warning,
             "visual_hits": []}
