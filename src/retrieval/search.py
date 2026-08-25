@@ -185,7 +185,7 @@ def apply_hop2(client: QdrantClient, hits: list, role: Role) -> tuple[list, list
 
 
 def search_unified(client: QdrantClient, query: str, limit: int = 10, *,
-                   role: Role) -> dict:
+                   role: Role, version_status: str = "current") -> dict:
     """Instradamento unificato testo/visione (P2.7).
 
     - query 'visual' -> collection visiva (pagine citabili con render);
@@ -194,33 +194,74 @@ def search_unified(client: QdrantClient, query: str, limit: int = 10, *,
     - tutto il resto -> strategia routed su aike_chunks (invariata).
     Ritorna {"route", "reason", "text_hits", "visual_hits"}.
 
+    DIFETTO TROVATO (25/08) e corretto qui: la firma promette RBAC
+    fail-closed (`role` obbligatorio, keyword-only) da quando questa funzione
+    esiste, ma il ruolo arrivava SOLO all'Hop 2 (`apply_hop2`, sui figli di un
+    assieme). La ricerca PRINCIPALE — `search(client, query, "routed", limit)`
+    e, nel ramo visivo, `search(client, route.code_token, "sparse", limit)` —
+    girava senza `query_filter`: qualsiasi ruolo vedeva qualsiasi punto.
+    Misurato sull'indice vivo: 196876 punti su 199689 (98.6%) di
+    `aike_chunks_v2` erano raggiungibili da un ruolo non autorizzato
+    attraverso questa funzione. E' il duale esatto di una guardia scritta e
+    mai cablata: qui il parametro di sicurezza c'era nella firma, semplicemente
+    non veniva usato dove contava.
+
+    Effetto pratico oggi: il grafo di produzione (`src/graph/pipeline.py`,
+    `build_default_deps._retrieve`) NON passa da qui — costruisce il suo
+    proprio `access_filter` e lo passa a `search()` direttamente — quindi
+    questo percorso era MORTO in produzione. L'unico chiamante e'
+    `scripts/evaluate_hierarchy.py`, con `role=Role.TECNICO` fisso: per quel
+    ruolo l'RBAC di ruolo era gia' un no-op prima della correzione (il tecnico
+    vede tutto), quindi le sue misure non cambiano per l'aspetto ruolo — MA
+    prima della correzione perdeva ANCHE `version_status`, quindi la sua
+    ricerca principale poteva restituire documenti `superseded`/`deleted`
+    mescolati al corrente. Con la correzione lo scope e' `current` di default
+    (vedi sotto), quindi le misure di `evaluate_hierarchy` POSSONO cambiare se
+    l'eval-set contiene documenti non-`current` raggiungibili solo dal difetto.
+
+    `version_status` (parametro esplicito, default `"current"`): questa
+    funzione non riceve dal chiamante lo scope di versione (a differenza di
+    `build_default_deps._retrieve`, che lo riceve dal grafo). Il default piu'
+    sicuro e' quello che esclude i documenti sostituiti/cancellati — stessa
+    scelta e stesso nome di default di `visual_search`
+    (`src/retrieval/pixelrag/search.py`) — cosi' un chiamante che non lo passa
+    esplicitamente non rientra mai in una versione obsoleta per omissione.
+
+    Il filtro e' costruito UNA VOLTA con `access_filter(version_status, role)`
+    (definito in questo stesso modulo — nessun import incrociato con
+    `src/graph/pipeline.py`, che anzi importa questa funzione da qui) e passato
+    a ENTRAMBI i call-site della ricerca principale, oltre che ad `apply_hop2`
+    come gia' accadeva.
+
     P4.5/A6 — `role` è obbligatorio (keyword-only, fail-closed) e viene
     propagato fino all'Hop 2 per il filtro RBAC sui figli.
     """
     route = classify_query(query)
+    vf = access_filter(version_status, role)
     if route.query_type == "visual":
         from src.retrieval.pixelrag.search import visual_search
         from src.retrieval.pixelrag.index import QdrantVisualIndex
         from src.retrieval.pixelrag.embedder import Qwen3VLEmbedder
         from src.retrieval.pixelrag.reranker import Qwen3VLReranker
         from src.serving.multiplexer import ModelMultiplexer, FakeModelRuntime
-        
+
         # Imposta max_resident=2 affinche' la coppia visiva embedder+reranker
         # coesista senza evincersi a vicenda. FakeModelRuntime per l'adapter Qwen.
         mux = ModelMultiplexer(runtime=FakeModelRuntime(), max_resident=2)
         embedder = Qwen3VLEmbedder(multiplexer=mux)
         reranker = Qwen3VLReranker(multiplexer=mux)
         index = QdrantVisualIndex(client)
-        
+
         visual = visual_search(query, embedder=embedder, index=index, role=role, k=limit, reranker=reranker)
-        
-        text = (search(client, route.code_token, "sparse", limit)
+
+        text = (search(client, route.code_token, "sparse", limit, query_filter=vf)
                 if route.code_token else [])
         text, children, hop2_warning = apply_hop2(client, text, role)
         return {"route": "visual", "reason": route.reason,
                 "text_hits": text, "children_hits": children, "hop2_warning": hop2_warning,
                 "visual_hits": visual}
-    text, children, hop2_warning = apply_hop2(client, search(client, query, "routed", limit), role)
+    text, children, hop2_warning = apply_hop2(
+        client, search(client, query, "routed", limit, query_filter=vf), role)
     return {"route": route.query_type, "reason": route.reason,
             "text_hits": text, "children_hits": children, "hop2_warning": hop2_warning,
             "visual_hits": []}
