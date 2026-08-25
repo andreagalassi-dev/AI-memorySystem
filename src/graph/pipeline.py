@@ -30,6 +30,7 @@ from src.graph.tools.page_judge import (JUDGE_MODE_REFUSE, JUDGE_MODE_REORDER,
                                         OTHER_PAGE_TAG, REFUSE_NONE_TAG,
                                         REORDER_TAG, promote_chosen)
 from src.graph.tools.visual_tool import format_visual_answer, visual_citations
+from src.graph import visual_trace
 from src.retrieval.pixelrag.index import PageHit
 from src.retrieval.confidence import (Level, Signals, Thresholds, compute_margin,
                                       confidence_level, group_scores)
@@ -358,15 +359,26 @@ def visual_node(state: GraphState, deps: Deps) -> dict:
     except Exception as exc:  # fail-closed: Qdrant/embedder giu'/timeout
         return {"system_error": True, "level": "BASSA",
                 "audit": _audit(state, f"Sistema non disponibile (visual): {exc}")}
+    floor = deps.visual_score_floor
     if not pages:
+        visual_trace.record(query=state["query"], role=state.get("role"), pages=(),
+                            floor=floor, outcome=visual_trace.OUTCOME_NO_PAGES)
         return {"visual_pages": [], "level": "BASSA",
                 "audit": _audit(state, "visual: 0 pagine (o filtrate da RBAC) -> non lo so")}
     # Fase 2a — pavimento di sicurezza: se il miglior match del reranker e' sotto
     # soglia, il match e' troppo debole per essere mostrato con confidenza. Fail-closed:
     # BASSA ('non lo so'), NON mostriamo pagine (mai puntare a una pagina a caso). Attivo
     # solo col reranker (deps.visual_score_floor valorizzato); vedi VISUAL_SCORE_FLOOR.
-    floor = deps.visual_score_floor
-    if floor is not None and pages[0].score < floor:
+    sotto_soglia = floor is not None and pages[0].score < floor
+    # Osservazione PASSIVA, spenta di default (AIKE_VISUAL_TRACE): registra lo
+    # score PRIMA che la soglia lo scarti. Senza questo, il numero su cui la
+    # soglia decide non esiste da nessuna parte e ritararla resta un intuito.
+    # Non decide nulla: vedi src/graph/visual_trace.py.
+    visual_trace.record(
+        query=state["query"], role=state.get("role"), pages=pages, floor=floor,
+        outcome=(visual_trace.OUTCOME_REJECTED if sotto_soglia
+                 else visual_trace.OUTCOME_PASSED))
+    if sotto_soglia:
         return {"visual_pages": [], "level": "BASSA",
                 "audit": _audit(state, f"visual: score top {pages[0].score:.3f} < soglia "
                                        f"{floor:.2f} -> immagine non chiaramente pertinente "
