@@ -24,7 +24,7 @@ from decimal import Decimal, InvalidOperation
 from xml.sax.saxutils import escape, quoteattr
 
 from src.graph.tools.sql_tool import LookupRow
-from src.retrieval.price_variants import PriceAnswer
+from src.retrieval.price_variants import PriceAnswer, PriceVariant
 from src.retrieval.synthesis import REFUSAL, strip_citations
 
 SYSTEM_RENDER = f"""\
@@ -40,6 +40,19 @@ codici o descrizioni; NON aggiungere dati non presenti.
 3. Cita la fonte tra parentesi col valore esatto: (nome_doc, pag. N).
 4. Se <dati> e' vuoto, scrivi ESATTAMENTE: "{REFUSAL}" e fermati.
 5. NON generare mai query, SQL o codice. Conciso e fattuale, nessun riempitivo."""
+
+
+def _obsoleto_attr(v: PriceVariant) -> str:
+    """Valore dell'attributo `obsoleto` per una variante di prezzo.
+
+    ATTENZIONE a cosa NON e': questo attributo non e' l'avviso di versione.
+    `SYSTEM_RENDER` non contiene nessuna regola che obblighi il modello a
+    riportarlo, e un avviso di sicurezza affidato alla buona volonta' dell'LLM
+    non e' un avviso — l'avviso vero e' deterministico e lo appende `reconcile`,
+    acceso dai flag di `pipeline._version_flags`. Qui l'attributo resta solo per
+    NON mentire al modello: prima del 25/08 diceva `no` anche per un prezzo che
+    veniva da un documento ELIMINATO, perche' guardava solo `superseded`."""
+    return "si" if (v.superseded or v.deleted) else "no"
 
 
 def build_render_prompt(query: str, code_token: str, campo: str,
@@ -59,7 +72,7 @@ def build_render_prompt(query: str, code_token: str, campo: str,
                  f"valore={quoteattr('' if p.prezzo is None else str(p.prezzo))} "
                  f"pagine={quoteattr(','.join(map(str, p.pagine)))} "
                  f"docs={quoteattr(','.join(p.doc_stems))} "
-                 f"obsoleto={quoteattr('si' if p.superseded else 'no')}")
+                 f"obsoleto={quoteattr(_obsoleto_attr(p))}")
         righe.append(f"  <riga {attrs}/>")
         
         for v in price_answer.varianti:
@@ -69,7 +82,7 @@ def build_render_prompt(query: str, code_token: str, campo: str,
                      f"valore={quoteattr('' if v.prezzo is None else str(v.prezzo))} "
                      f"pagine={quoteattr(','.join(map(str, v.pagine)))} "
                      f"docs={quoteattr(','.join(v.doc_stems))} "
-                     f"obsoleto={quoteattr('si' if v.superseded else 'no')}")
+                     f"obsoleto={quoteattr(_obsoleto_attr(v))}")
             righe.append(f"  <riga {attrs}/>")
     else:
         # Formato standard piatto (per descrizione o fallback/single price prima)

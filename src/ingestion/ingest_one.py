@@ -159,7 +159,28 @@ def ingest_document(filepath: str, *, doc_stem: str, role: str, conn,
       doc_stem: identita' logica del documento (stem del filename).
       role: ruolo RBAC proprietario (finisce in `ruoli_consentiti`).
       conn: connessione psycopg3 al registro (SSOT Postgres).
-      is_update: se True (o sempre, per idempotenza) ripulisce i punti vecchi (B3).
+      is_update: ACCETTATO E IGNORATO — nessuna riga del corpo lo legge. Non e'
+        una svista da ripulire, ed e' bene saperlo prima di fidarsene:
+          * il Watchdog lo calcola davvero (`worker.py`: `action == "modified"`)
+            e lo passa (`watchdog/pipeline.py`), quindi qualcuno CREDE che
+            distingua l'aggiornamento dal primo caricamento. Qui non distingue
+            nulla: il documento viene reingerito allo stesso modo in entrambi i
+            casi;
+          * l'unico comportamento che potrebbe governare — la pulizia dei punti
+            della generazione precedente — e' gia' INCONDIZIONATO
+            (`delete_document_points` piu' sotto, sempre chiamato per
+            idempotenza): gatarlo su questo flag renderebbe il re-ingest
+            *meno* sicuro, non piu';
+          * l'altro significato possibile — "questa e' una versione NUOVA che
+            sostituisce la precedente" — non e' onorabile qui: un file
+            modificato conserva lo STESSO `doc_stem` (deriva dal nome del file),
+            quindi non e' una versione nuova per il registro, e
+            `supersede_document` rifiuterebbe lo switch per stato incoerente.
+            E' il buco descritto al punto 6 piu' sotto.
+        Si tiene invece di rimuoverlo perche' e' l'UNICO punto in cui il sistema
+        sa che un file e' stato MODIFICATO e non caricato per la prima volta:
+        cancellarlo cancellerebbe l'unico segnale che serve a chi un giorno
+        produrra' davvero lo stato `superseded`.
       cat: categoria (indizio cartella; default 'unknown', affinata in Fase C/B4).
       collection: collezione Qdrant (override per i test, mai droppa la reale).
       extract_fn: iniettabile per i test; default = ponte Docling isolato.
@@ -215,8 +236,31 @@ def ingest_document(filepath: str, *, doc_stem: str, role: str, conn,
         qc.upsert(collection, points=points[start:start + UPSERT_BATCH], wait=True)
 
     # 6. registro Postgres (SSOT): versione + ruoli. register_document e'
-    # idempotente (no-op se lo stem esiste gia'): la sostituzione di versione
-    # (mark_superseded) e' responsabilita' del Watchdog/versioning, non di qui.
+    # idempotente (no-op se lo stem esiste gia'), e scrive SEMPRE version_status
+    # 'current' (come il payload Qdrant al punto 4).
+    #
+    # BUCO NOTO, fra due componenti — nessuno produce lo stato 'superseded'.
+    # Fino al 25/08 questa riga diceva che la sostituzione di versione
+    # (`mark_superseded`) e' "responsabilita' del Watchdog/versioning": non e'
+    # vero, e rimandava a un componente che non esiste. Verificato:
+    # `grep -rn "mark_superseded\|supersede" src/watchdog/` -> ZERO occorrenze.
+    # Il Watchdog produce solo l'altro stato, 'deleted' (`watchdog/soft_delete.py`,
+    # sulla sparizione del file). L'unico scrittore di 'superseded' e'
+    # `registry.supersede_document`, chiamato solo a mano da
+    # `scripts/supersede_document.py` (e dal DoD `scripts/verify_p4_dod.py`).
+    # Misurato il 25/08: 147 documenti su 147 sono 'current'.
+    #
+    # Non e' risolvibile QUI, e non e' una dimenticanza di due righe: `doc_stem`
+    # e' lo stem del nome del file, quindi un listino aggiornato che conserva il
+    # nome e' indistinguibile dal suo predecessore, e uno che cambia nome diventa
+    # un documento SCOLLEGATO invece che la v2 del primo. Produrre 'superseded'
+    # richiede prima separare l'identita' LOGICA del documento dal nome del file
+    # — decisione di prodotto, non di questa funzione.
+    #
+    # Conseguenza operativa da tenere presente: tutta la catena a valle
+    # dell'avviso "documentazione SOSTITUITA" (fallback cascade P4.4, flag di
+    # `graph.pipeline`, cap di livello in `reconcile`) e' cablata e funziona, ma
+    # oggi si accende SOLO se qualcuno lancia lo script a mano.
     reg = register_document(conn, slug=doc_stem, category=cat, roles=[role],
                             doc_stem=doc_stem, langs=[lang])
 

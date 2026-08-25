@@ -35,7 +35,9 @@ from src.retrieval.pixelrag.index import PageHit
 from src.retrieval.confidence import (Level, Signals, Thresholds, compute_margin,
                                       confidence_level, group_scores)
 from src.retrieval.guardrail import check_answer
-from src.retrieval.price_variants import aggregate_price_variants, PriceAnswer
+from src.retrieval.price_variants import (DELETED, SUPERSEDED, PriceAnswer,
+                                          aggregate_price_variants,
+                                          normalize_version_status)
 from src.retrieval.router import classify_query, derive_intent
 from src.retrieval.synthesis import REFUSAL, strip_citations, verify_citations
 from src.retrieval.web_evidence import (extract_web_citations,
@@ -289,8 +291,52 @@ def sql_node(state: GraphState, deps: Deps) -> dict:
                 "audit": _audit(state, f"sql: 0 righe per '{params.codice_normalizzato}' "
                                        "-> fallback retrieval")}
     ev = [_row_to_evidence(r, state.get("code_token"), params.campo) for r in rows]
-    return {"sql_params": params, "sql_rows": rows, "evidence": ev, "level": "ALTA",
-            "audit": _audit(state, f"sql: {len(rows)} riga/e campo={params.campo} -> ALTA")}
+    out = {"sql_params": params, "sql_rows": rows, "evidence": ev, "level": "ALTA",
+           "audit": _audit(state, f"sql: {len(rows)} riga/e campo={params.campo} -> ALTA")}
+    return {**out, **_version_flags(rows, out["audit"])}
+
+
+def _version_flags(rows: list[LookupRow], audit: list[str]) -> dict:
+    """SPEC — l'avviso di versione del ramo STRUCTURED, deterministico.
+
+    Fino al 25/08 questo ramo LEGGEVA `v.version_status` (la SELECT di
+    `sql_tool` lo porta senza filtrarlo, apposta: le righe obsolete servono
+    proprio per avvisare) ma non lo trasformava MAI in un avviso: i flag erano
+    accesi solo dai due nodi di fallback narrativo, quindi una risposta
+    strutturata su un documento SOSTITUITO o ELIMINATO usciva ad ALTA e senza
+    una parola. L'unico accenno all'obsolescenza era l'attributo XML
+    `obsoleto="si"` passato all'LLM in `render.build_render_prompt`, che nessuna
+    regola di `SYSTEM_RENDER` obbliga a riportare: un avviso di sicurezza
+    affidato alla buona volonta' del modello non e' un avviso.
+
+    Regola ANY, non ALL: basta UNA riga usata non piu' valida. Le citazioni che
+    l'utente vede sono TUTTE le righe (`render_node`: `citations = [(doc, page)
+    for r in rows]`), quindi lo stiamo mandando su un documento sostituito o
+    sparito; e i due stati non si escludono in un mix, per cui si accendono
+    entrambi e lascio a `reconcile` decidere: la' `deleted_warning` e' gestito
+    per primo e cappa a BASSA, cosi' il piu' grave non puo' essere perso.
+    Alternativa scartata (ALL): con una sola riga current in mezzo l'avviso
+    sparirebbe, ed e' esattamente lo "sbagliato in silenzio" che il prodotto
+    vieta — meglio un avviso di troppo che una fonte morta taciuta.
+
+    NON si riscrive qui il testo dell'avviso ne' il cap di livello: sono di
+    `reconcile`, unica autorita', e due definizioni dello stesso avviso sono un
+    difetto che questo progetto ha gia' pagato. Qui si accendono solo i flag.
+
+    Con `version_status` `current` o NULL (oggi: 147 documenti su 147) il dict
+    ritornato e' VUOTO e lo stato del nodo resta identico a prima.
+    """
+    stati = {normalize_version_status(r.version_status) for r in rows}
+    flags: dict = {}
+    if SUPERSEDED in stati:
+        flags["obsolete_warning"] = True
+    if DELETED in stati:
+        flags["deleted_warning"] = True
+    if flags:
+        audit.append("versioning: riga/e da documento "
+                     + " e ".join(sorted(s for s in stati if s in (SUPERSEDED, DELETED)))
+                     + " -> avviso a finalize")
+    return flags
 
 
 def render_node(state: GraphState, deps: Deps) -> dict:
@@ -323,11 +369,18 @@ def render_node(state: GraphState, deps: Deps) -> dict:
                 code_text = state.get("code_token")
                 p = price_answer.principale
                 lines = [f"Il codice {code_text} costa {p.prezzo} EUR (pag. {','.join(map(str, p.pagine))})."]
-                if p.superseded:
-                    lines[0] = f"ATTENZIONE: VECCHIA VERSIONE. " + lines[0]
+                # I due stati restano DISTINTI anche qui: un eliminato non e' una
+                # "vecchia versione" (l'avviso vero, col cap di livello, lo mette
+                # comunque `reconcile`; questa e' solo l'etichetta in linea).
+                if p.deleted:
+                    lines[0] = "ATTENZIONE: DOCUMENTO ELIMINATO. " + lines[0]
+                elif p.superseded:
+                    lines[0] = "ATTENZIONE: VECCHIA VERSIONE. " + lines[0]
                 for v in price_answer.varianti:
                     v_line = f"- Variante: {v.prezzo} EUR (pag. {','.join(map(str, v.pagine))})"
-                    if v.superseded:
+                    if v.deleted:
+                        v_line += " [DOCUMENTO ELIMINATO]"
+                    elif v.superseded:
                         v_line += " [VECCHIA VERSIONE]"
                     lines.append(v_line)
                 out = "\n".join(lines)
