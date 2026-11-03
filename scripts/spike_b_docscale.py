@@ -4,12 +4,13 @@ import re
 import fitz
 import os
 import psycopg
-from decimal import Decimal
 from docling.document_converter import DocumentConverter, PdfFormatOption
 from docling.datamodel.base_models import InputFormat
 from docling.datamodel.pipeline_options import PdfPipelineOptions
 
-sys.path.append("/Users/AndreaGalassi/Documents/AI/AI-memorySystem")
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from src.ingestion.extraction.text_table import DEFAULT_CODE_RE, _to_decimal
 from src.ingestion.codes import base_cleanup

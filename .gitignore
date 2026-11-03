@@ -44,3 +44,4 @@ htmlcov/
 qdrant_storage/
 .files/
 output/eval/visual_contact_sheet.html
+.metadata_never_index

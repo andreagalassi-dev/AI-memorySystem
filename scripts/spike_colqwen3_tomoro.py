@@ -16,7 +16,7 @@ def print_memory():
     print(f"RSS Memory: {process.memory_info().rss / (1024 * 1024):.2f} MB")
 
 def get_pdf_page(pdf_rel_path, pno):
-    root = Path("/Users/AndreaGalassi/Documents/AI/AI-memorySystem")
+    root = Path(__file__).resolve().parent.parent
     doc = fitz.open(root / pdf_rel_path)
     page = doc[pno - 1]
     pix = page.get_pixmap(dpi=150)

@@ -58,6 +58,19 @@ class Settings(BaseSettings):
     ollama_host: str = "http://localhost:11434"  # env OLLAMA_HOST
     ollama_model: str = "qwen2.5:14b"  # fallback model
 
+    # --- Provider LLM alternativi (API Cloud / Mock) ---
+    # provider: 'auto', 'ollama', 'openai', 'gemini', 'anthropic', 'mock'
+    llm_provider: str = os.getenv("AIKE_LLM_PROVIDER", "auto")
+    openai_api_key: str | None = os.getenv("OPENAI_API_KEY")
+    openai_base_url: str = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
+    openai_model: str = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+
+    gemini_api_key: str | None = os.getenv("GEMINI_API_KEY")
+    gemini_model: str = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
+
+    anthropic_api_key: str | None = os.getenv("ANTHROPIC_API_KEY")
+    anthropic_model: str = os.getenv("ANTHROPIC_MODEL", "claude-3-5-haiku-20241022")
+
     # --- Backend ---
     backend_host: str = "0.0.0.0"
     backend_port: int = 8000

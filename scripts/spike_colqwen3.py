@@ -26,7 +26,7 @@ def main():
     # 1. Kohler GT: tp6954 p.14
     # 2. KBS GT: 1717 p.3
     import fitz
-    root = Path("/Users/AndreaGalassi/Documents/AI/AI-memorySystem")
+    root = Path(__file__).resolve().parent.parent
     
     def get_pdf_page(pdf_rel_path, pno):
         doc = fitz.open(root / pdf_rel_path)

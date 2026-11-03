@@ -154,45 +154,108 @@ def _init_shared_singletons():
         if _llm is not None:
             return
             
-        # Initialize shared Ollama Models
-        from src.graph.llm import FallbackLLM
+        # Initialize shared LLM Models (Ollama locale, API Cloud o Mock)
+        from src.graph.llm import FallbackLLM, APIModel, MockModel
         from src.backend.clients.ollama_client import OllamaModel
         from src.backend.config import settings
         import requests
-    
-        primary_llm = OllamaModel(model=settings.brain_model, think=settings.brain_think)
-        fallback_llm = OllamaModel(model=settings.ollama_model)
-        
-        try:
-            r = requests.get(f"{settings.ollama_host}/api/tags", timeout=3)
-            r.raise_for_status()
-            models = [m.get("name") for m in r.json().get("models", [])]
-            if settings.brain_model not in models:
-                logger.warning(
-                    "\n=== ATTENZIONE: MODELLO PRIMARIO ASSENTE ===\n"
-                    f"Il modello Ollama '{settings.brain_model}' non è installato.\n"
-                    f"Esegui: ollama pull {settings.brain_model}\n"
-                    "============================================"
-                )
-            if settings.ollama_model not in models:
-                logger.warning(
-                    "\n=== ATTENZIONE: FALLBACK ASSENTE ===\n"
-                    f"Il modello Ollama '{settings.ollama_model}' non è installato.\n"
-                    f"Esegui: ollama pull {settings.ollama_model}\n"
-                    "====================================="
-                )
-        except Exception as e:
-            logger.warning("Impossibile contattare Ollama per il probe dei modelli: %s", e)
-            
-        _llm = FallbackLLM(primary_llm, fallback_llm, primary_name="Ollama (Brain)", fallback_name="Ollama (Fallback)")
 
-        # Giudice di pertinenza della pagina: stesso backend, decoding DIVERSO
-        # (temperatura 0, pochissimi token: la risposta e' una lettera).
-        _judge_llm = FallbackLLM(
-            OllamaModel(model=settings.brain_model, think=settings.brain_think,
-                        options=JUDGE_OPTIONS),
-            OllamaModel(model=settings.ollama_model, options=JUDGE_OPTIONS),
-            primary_name="Ollama (Judge)", fallback_name="Ollama (Judge fallback)")
+        provider = (settings.llm_provider or "auto").lower()
+
+        # 1. Mock esplicito
+        if provider == "mock":
+            logger.info("Inizializzazione LLM: Provider Mock / Demo attivo.")
+            _llm = MockModel()
+            _judge_llm = MockModel()
+
+        # 2. OpenAI / compatibili
+        elif provider in ("openai", "openrouter", "groq") or (provider == "auto" and settings.openai_api_key):
+            logger.info("Inizializzazione LLM: Provider API OpenAI attivo (%s).", settings.openai_model)
+            _llm = APIModel(
+                provider="openai",
+                api_key=settings.openai_api_key,
+                model_name=settings.openai_model,
+                base_url=settings.openai_base_url,
+            )
+            _judge_llm = APIModel(
+                provider="openai",
+                api_key=settings.openai_api_key,
+                model_name=settings.openai_model,
+                base_url=settings.openai_base_url,
+                temperature=0.0,
+                max_tokens=64,
+            )
+
+        # 3. Google Gemini
+        elif provider == "gemini" or (provider == "auto" and settings.gemini_api_key):
+            logger.info("Inizializzazione LLM: Provider API Google Gemini attivo (%s).", settings.gemini_model)
+            _llm = APIModel(
+                provider="gemini",
+                api_key=settings.gemini_api_key,
+                model_name=settings.gemini_model,
+            )
+            _judge_llm = APIModel(
+                provider="gemini",
+                api_key=settings.gemini_api_key,
+                model_name=settings.gemini_model,
+                temperature=0.0,
+                max_tokens=64,
+            )
+
+        # 4. Anthropic Claude
+        elif provider == "anthropic" or (provider == "auto" and settings.anthropic_api_key):
+            logger.info("Inizializzazione LLM: Provider API Anthropic attivo (%s).", settings.anthropic_model)
+            _llm = APIModel(
+                provider="anthropic",
+                api_key=settings.anthropic_api_key,
+                model_name=settings.anthropic_model,
+            )
+            _judge_llm = APIModel(
+                provider="anthropic",
+                api_key=settings.anthropic_api_key,
+                model_name=settings.anthropic_model,
+                temperature=0.0,
+                max_tokens=64,
+            )
+
+        # 5. Ollama locale (default tradizionale) con graceful fallback a MockModel
+        else:
+            primary_llm = OllamaModel(model=settings.brain_model, think=settings.brain_think)
+            fallback_llm = OllamaModel(model=settings.ollama_model)
+            ollama_reachable = False
+
+            try:
+                r = requests.get(f"{settings.ollama_host}/api/tags", timeout=2)
+                r.raise_for_status()
+                models = [m.get("name") for m in r.json().get("models", [])]
+                ollama_reachable = True
+                if settings.brain_model not in models:
+                    logger.warning(
+                        "\n=== ATTENZIONE: MODELLO PRIMARIO ASSENTE ===\n"
+                        f"Il modello Ollama '{settings.brain_model}' non è installato.\n"
+                        f"Esegui: ollama pull {settings.brain_model}\n"
+                        "============================================"
+                    )
+                if settings.ollama_model not in models:
+                    logger.warning(
+                        "\n=== ATTENZIONE: FALLBACK ASSENTE ===\n"
+                        f"Il modello Ollama '{settings.ollama_model}' non è installato.\n"
+                        f"Esegui: ollama pull {settings.ollama_model}\n"
+                        "====================================="
+                    )
+            except Exception as e:
+                logger.warning("Ollama non raggiungibile (%s). Attivato fallback su MockModel.", e)
+
+            if ollama_reachable:
+                _llm = FallbackLLM(primary_llm, fallback_llm, primary_name="Ollama (Brain)", fallback_name="Ollama (Fallback)")
+                _judge_llm = FallbackLLM(
+                    OllamaModel(model=settings.brain_model, think=settings.brain_think, options=JUDGE_OPTIONS),
+                    OllamaModel(model=settings.ollama_model, options=JUDGE_OPTIONS),
+                    primary_name="Ollama (Judge)", fallback_name="Ollama (Judge fallback)"
+                )
+            else:
+                _llm = MockModel(prefix="[OLLAMA OFFLINE - DEMO MOCK] ")
+                _judge_llm = MockModel(prefix="[OLLAMA OFFLINE] ")
 
         # Initialize shared Visual Search
         try:

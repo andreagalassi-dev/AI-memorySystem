@@ -104,3 +104,118 @@ class FallbackLLM:
                 f"Subentra fallback {self.fallback_name}."
             )
             return self.fallback.generate(system, user)
+
+
+class APIModel:
+    """Adapter `LanguageModel` per provider Cloud via API (OpenAI, Gemini, Anthropic).
+
+    Zero dipendenze esterne pesanti: usa `requests` o `urllib.request`.
+    Supporta:
+    - Provider OpenAI o compatibili (OpenRouter, Groq, Mistral, Gemini via endpoint OpenAI)
+    - Anthropic Claude (messages API nativa)
+    - Google Gemini (native REST API)
+    """
+
+    def __init__(
+        self,
+        provider: str = "openai",
+        api_key: str | None = None,
+        model_name: str | None = None,
+        base_url: str | None = None,
+        timeout_s: float = 30.0,
+        temperature: float = 0.0,
+        max_tokens: int = 1024,
+    ):
+        self.provider = (provider or "openai").lower()
+        self.api_key = api_key or ""
+        self.model_name = model_name or ("gpt-4o-mini" if self.provider == "openai" else "gemini-1.5-flash")
+        self.base_url = (base_url or "").rstrip("/")
+        self.timeout_s = timeout_s
+        self.temperature = temperature
+        self.max_tokens = max_tokens
+
+        if not self.base_url:
+            if self.provider == "openai":
+                self.base_url = "https://api.openai.com/v1"
+            elif self.provider == "gemini":
+                # Google Gemini supporta l'endpoint standard OpenAI-compatible
+                self.base_url = "https://generativelanguage.googleapis.com/v1beta/openai"
+            elif self.provider == "anthropic":
+                self.base_url = "https://api.anthropic.com/v1"
+
+    def generate(self, system: str, user: str) -> str:
+        import requests
+
+        if not self.api_key:
+            raise ValueError(f"API key mancante per il provider LLM '{self.provider}'. Imposta la chiave in .env.")
+
+        if self.provider in ("openai", "gemini", "openrouter", "groq"):
+            url = f"{self.base_url}/chat/completions"
+            headers = {
+                "Authorization": f"Bearer {self.api_key}",
+                "Content-Type": "application/json",
+            }
+            payload = {
+                "model": self.model_name,
+                "messages": [
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": user},
+                ],
+                "temperature": self.temperature,
+                "max_tokens": self.max_tokens,
+            }
+            resp = requests.post(url, headers=headers, json=payload, timeout=self.timeout_s)
+            resp.raise_for_status()
+            data = resp.json()
+            return data["choices"][0]["message"]["content"] or ""
+
+        elif self.provider == "anthropic":
+            url = f"{self.base_url}/messages"
+            headers = {
+                "x-api-key": self.api_key,
+                "anthropic-version": "2023-06-01",
+                "Content-Type": "application/json",
+            }
+            payload = {
+                "model": self.model_name or "claude-3-5-haiku-20241022",
+                "system": system,
+                "messages": [{"role": "user", "content": user}],
+                "max_tokens": self.max_tokens,
+                "temperature": self.temperature,
+            }
+            resp = requests.post(url, headers=headers, json=payload, timeout=self.timeout_s)
+            resp.raise_for_status()
+            data = resp.json()
+            for block in data.get("content", []):
+                if block.get("type") == "text":
+                    return block.get("text", "")
+            return ""
+
+        raise ValueError(f"Provider LLM non riconosciuto: '{self.provider}'")
+
+
+class MockModel:
+    """Adapter `LanguageModel` per dimostrazioni offline, test o sandbox senza LLM.
+
+    Restituisce una risposta strutturata deterministica basata sul contesto utente,
+    senza chiamare alcun servizio esterno o pesi locali.
+    """
+
+    def __init__(self, prefix: str = "[DEMO MOCK] "):
+        self.prefix = prefix
+
+    def generate(self, system: str, user: str) -> str:
+        logger.info("MockModel: generata risposta fittizia deterministica.")
+        lines = [
+            f"{self.prefix}Risposta generata in modalità Mock / Demo (nessun modello attivo).",
+            "",
+            "Evidenza recuperata dalla query:",
+        ]
+        # Estrai campioni o codici dalla query per simulare sintesi
+        if "codice" in user.lower() or "art" in user.lower():
+            lines.append("- Informazione identificata e verificata nelle tabelle.")
+        else:
+            lines.append("- Dati recuperati correttamente dalle pagine del catalogo tecnico.")
+        lines.append("")
+        lines.append("Fonte citata conformemente al principio zero-allucinazioni.")
+        return "\n".join(lines)

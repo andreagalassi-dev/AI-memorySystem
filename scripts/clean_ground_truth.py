@@ -6,7 +6,7 @@ Clean up ground truth expected.csv files according to the rules.
 import csv
 from pathlib import Path
 
-BASE = Path("/Users/AndreaGalassi/Documents/AI/AI-memorySystem/data/ground_truth")
+BASE = Path(__file__).resolve().parent.parent / "data" / "ground_truth"
 
 def clean_mamoli_p231():
     """Process MAMOLI_P231_IT: remove ** from codes, split multi-value cells."""
