@@ -150,4 +150,4 @@ uv run pytest tests/common/ tests/eval/ -v
 
 ## ⚖️ License & Attribution
 
-Designed and developed by **Andrea Galassi**. Released under the **MIT License** (see [`LICENSE`](LICENSE)).
+Designed and developed by **Andrea Galassi**. Released under the **GNU General Public License v3.0** (see [`LICENSE`](LICENSE)).
